@@ -1,7 +1,6 @@
 #pragma once
 // common definitions
 #include "CommonDefinitions.h"
-#include "CommunicationData.h"
 
 #include "IActuator.hpp"
 #include "ISee.hpp"
@@ -20,7 +19,6 @@
 // ros
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <CommunicationData.h>
 // messages
 #include <std_msgs/Float32.h>
 // boost

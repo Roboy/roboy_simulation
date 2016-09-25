@@ -1,6 +1,5 @@
 #pragma once
 // common definitions
-#include "CommunicationData.h"
 #include "CommonDefinitions.h"
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"

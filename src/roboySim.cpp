@@ -22,10 +22,10 @@ namespace gazebo_ros_control {
         visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
         marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
-        cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
-        pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
-        vel = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
-        eff = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
+        cmd = new double[24];
+        pos = new double[24];
+        vel = new double[24];
+        eff = new double[24];
 
         force_torque_ankle_left_sub  = nh->subscribe("/roboy/force_torque_ankle_left", 1,
                                                      &RoboySim::finite_state_machine, this);

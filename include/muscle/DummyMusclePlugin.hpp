@@ -1,7 +1,6 @@
 #pragma once
 // common definitions
 #include "CommonDefinitions.h"
-#include "CommunicationData.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -13,7 +12,6 @@
 // ros
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <CommunicationData.h>
 // messages
 #include <std_msgs/Float32.h>
 //std
