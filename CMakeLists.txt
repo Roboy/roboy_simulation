@@ -108,8 +108,14 @@ install(TARGETS
         roboy_rviz
         contact_plugin
         force_torque_plugin
+	WalkController
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         )
+
+install(TARGETS
+	walkTrainer
+	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 install(FILES
         package.xml
