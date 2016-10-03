@@ -69,10 +69,6 @@ target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARM
 add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
 target_link_libraries(dummy_muscle_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
-add_library(roboySim SHARED src/roboySim.cpp)
-add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
-target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
-
 qt4_wrap_cpp(MOC_FILES include/walking_plugin.hpp)
 add_library(roboy_rviz src/walking_plugin.cpp ${MOC_FILES})
 add_dependencies(roboy_rviz roboy_simulation_gencpp)
@@ -85,30 +81,34 @@ add_library(force_torque_plugin SHARED src/ForceTorquePlugin.cpp)
 add_dependencies(force_torque_plugin roboy_simulation_gencpp)
 target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-add_executable(walkTrainer src/walkTrainer.cpp src/helperClasses.cpp)
+add_executable(walkTrainer src/walkTrainer.cpp src/helperClasses.cpp src/simulationControl.cpp)
 add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${libcmaes_LIBRARIES})
 
 add_library(WalkController SHARED src/walkController.cpp src/walkVisualization.cpp src/helperClasses.cpp)
 add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(roboySim src/main.cpp src/simulationControl.cpp)
+add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
+target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
 #==============================================================================
 # Installation
 #==============================================================================
 install(TARGETS
         muscle_plugin
         dummy_muscle_plugin
-        roboySim
         roboy_rviz
         contact_plugin
         force_torque_plugin
-	WalkController
+	    WalkController
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         )
 
 install(TARGETS
-	walkTrainer
-	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+	    walkTrainer
+        roboySim
+	    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 install(FILES

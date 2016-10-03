@@ -164,6 +164,7 @@ public:
      * */
     void motorControl(const roboy_simulation::MotorControl::ConstPtr &msg);
 
+
     /**
      * Callback for update of control parameters, typically sent by walkTrainer
      * @param msg with new control parameters
@@ -204,7 +205,7 @@ private:
 
     LEG_STATE leg_state[2];
 
-    bool control = true;
+    bool control = false;
 
     ControllerParameters params;
 

@@ -25,6 +25,7 @@
 #include "helperClasses.hpp"
 // libcmaes
 #include "cmaes.h"
+#include "simulationControl.hpp"
 
 using namespace gazebo;
 using namespace std;
@@ -32,14 +33,7 @@ using namespace libcmaes;
 
 #define POPULATION_SIZE 1
 
-
-boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
-physics::ModelPtr modelControl;
-bool paused = false;
-bool slow_motion = false;
-
-void processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
-class WalkTrainer : public CMAStrategy<CovarianceUpdate>{
+class WalkTrainer : public CMAStrategy<CovarianceUpdate>, public SimulationControl{
 public:
     WalkTrainer(FitFunc &func, CMAParameters<> &parameters);
     ~WalkTrainer();
@@ -48,12 +42,8 @@ public:
      * @param numberOfWorlds
      */
     void initializeWorlds(uint numberOfWorlds);
-    void simulate();
     /** Initializes ControllerParameters */
     void initializeControllerParameters(ControllerParameters &params, physics::ModelPtr parent_model);
-    bool resetWorld(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
-    void initializeInterActiveMarkers(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,
-                                      physics::ModelPtr model, int roboyID);
     dMat ask();
     void eval(const dMat &candidates, const dMat &phenocandidates=dMat(0,0));
     void tell();
@@ -61,7 +51,6 @@ public:
     ControllerParameters inital_params;
 private:
     void updateID(const std_msgs::Int32::ConstPtr &msg);
-    void simulationControl(const std_msgs::Int32::ConstPtr &msg);
     transport::NodePtr node;
     transport::PublisherPtr serverControlPub, resetPub;
 

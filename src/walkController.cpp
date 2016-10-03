@@ -26,6 +26,7 @@ WalkController::WalkController() {
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &WalkController::motorControl, this);
 
     roboyID = roboyID_generator++;
+    ID = roboyID;
     char topic[200];
     sprintf(topic, "/roboy%d/controller_parameters", roboyID);
     control_parameters_srv = nh->advertiseService(topic, &WalkController::updateControllerParameters, this);
