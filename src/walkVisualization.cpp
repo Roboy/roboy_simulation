@@ -164,9 +164,9 @@ void WalkVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::
             p.y = (*sim_muscles)[muscle]->viaPoints[i]->prevForcePoint.y;
             p.z = (*sim_muscles)[muscle]->viaPoints[i]->prevForcePoint.z;
             arrow.points.push_back(p);
-            p.x += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.x;
-            p.y += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.y;
-            p.z += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.z;
+            p.x += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.x * 0.01; // show fraction of force
+            p.y += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.y * 0.01;
+            p.z += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.z * 0.01;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
             // reactio
@@ -180,9 +180,9 @@ void WalkVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::
             p.y = (*sim_muscles)[muscle]->viaPoints[i]->nextForcePoint.y;
             p.z = (*sim_muscles)[muscle]->viaPoints[i]->nextForcePoint.z;
             arrow.points.push_back(p);
-            p.x += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.x;
-            p.y += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.y;
-            p.z += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.z;
+            p.x += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.x * 0.01;
+            p.y += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.y * 0.01;
+            p.z += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.z * 0.01;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
         }
