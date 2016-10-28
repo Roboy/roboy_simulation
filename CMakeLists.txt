@@ -92,6 +92,10 @@ target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${B
 add_executable(roboySim src/main.cpp src/simulationControl.cpp)
 add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
+
+add_executable(VRRoboy src/VRRoboy.cpp src/simulationControl.cpp)
+add_dependencies(VRRoboy common_utilities_gencpp)
+target_link_libraries(VRRoboy ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
 #==============================================================================
 # Installation
 #==============================================================================
@@ -108,6 +112,7 @@ install(TARGETS
 install(TARGETS
 	    walkTrainer
         roboySim
+        VRRoboy
 	    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

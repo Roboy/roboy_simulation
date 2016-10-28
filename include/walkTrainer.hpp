@@ -57,7 +57,6 @@ private:
     ros::NodeHandlePtr nh;
     ros::ServiceServer reset_world_srv;
     vector<ros::ServiceClient> control_parameters_srvs, energie_srvs;
-    ros::Subscriber sim_control_sub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     vector<int> roboyIDs;
@@ -66,5 +65,4 @@ private:
     vector<ControllerParameters> controllerParams;
 };
 
-void OnWorldModify(ConstWorldModifyPtr &_msg);
 int main(int _argc, char **_argv);
