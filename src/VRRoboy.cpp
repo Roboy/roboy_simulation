@@ -39,16 +39,14 @@ void VRRoboy::publishPose(uint modelNr){
     common_utilities::Pose msg;
     for(auto link:model[modelNr]->GetLinks()){
         msg.name.push_back(link->GetName());
-        geometry_msgs::Pose pose;
         math::Pose p = link->GetWorldPose();
-        pose.position.x = p.pos.x;
-        pose.position.y = p.pos.y;
-        pose.position.z = p.pos.z;
-        pose.orientation.w = p.rot.w;
-        pose.orientation.x = p.rot.x;
-        pose.orientation.y = p.rot.y;
-        pose.orientation.z = p.rot.z;
-        msg.pose.push_back(pose);
+        msg.x.push_back(p.pos.x);
+        msg.y.push_back(p.pos.y);
+        msg.z.push_back(p.pos.z);
+        math::Vector3 rot = p.rot.GetAsEuler();
+        msg.roll.push_back(p.pos.x);
+        msg.pitch.push_back(p.pos.y);
+        msg.yaw.push_back(p.pos.z);
     }
     pose_pub.publish(msg);
 }
