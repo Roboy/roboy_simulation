@@ -94,7 +94,7 @@ add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
 
 add_executable(VRRoboy src/VRRoboy.cpp src/simulationControl.cpp)
-add_dependencies(VRRoboy common_utilities_gencpp)
+add_dependencies(VRRoboy common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(VRRoboy ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
 #==============================================================================
 # Installation
