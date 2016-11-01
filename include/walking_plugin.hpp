@@ -35,6 +35,7 @@
 
 using namespace std;
 
+// little helper class for led visualization
 class LightWidget : public QWidget {
 Q_OBJECT
 public:
@@ -99,53 +100,58 @@ public:
     virtual void save(rviz::Config config) const;
 
 public Q_SLOTS:
-
+    /** Sends a bool on "/roboy/toggle_walk_controller" */
     void toggleWalkController();
-
-    void shutDownWalkController();
-
+    /** Sends a message that triggers publishing of COM visualization */
     void showCOM();
-
+    /** Sends a message that triggers publishing of forces from the muscles visualization*/
     void showForce();
-
+    /** Sends a message that triggers publishing of Tenodon visualization */
     void showTendon();
-
+    /** Sends a message that triggers publishing of mesh visualization */
     void showMesh();
-
+    /** Sends a message that triggers publishing of moment arm visualization */
     void showMomentArm();
-
+    /** Sends a message that triggers publishing of state machine parameters visualization */
     void showStateMachineParameters();
-
-    void showCoordinateSystems();
-
+    /** Sends a message that triggers publishing of ankle force visualization */
     void showForceTorqueSensors();
-
+    /** Changes the current roboyID and requests update for all visualizations
+     * @param index new roboyID
+    */
     void changeID(int index);
-
+    /** Callback for ControllerParameters, draws them in the table
+     * @param msg controller parameters
+    */
     void updateSimulationState(const roboy_simulation::ControllerParameters::ConstPtr &msg);
-
+    /** Call to reset world service */
     void resetWorld();
-
+    /** Sends a play message */
     void play();
-
+    /** Sends a pause message */
     void pause();
-
+    /** Sends a slow motion */
     void slowMotion();
-
+    /** Sends a update interactive marker message */
     void updateInteractiveMarker();
-
+    /** Sends a message containing Motor control of all motors */
     void sendMotorControl();
-
+    /** Refreshes visualization updates */
     void refresh();
 
 private:
+    /** Callback for the leg state, visualization for each leg
+     * @param msg leg state (Stance, Lift-off, Swing, Stance-Preparation)
+    */
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
-
+    /** Callback for roboyID, adds a new entry when roboyID hasnt been seen before
+     * @param msg roboyID
+    */
     void updateId(const std_msgs::Int32::ConstPtr &msg);
-
+    /** Callback for abortion criterias
+     * @param msg reason for abortion
+    */
     void abortion(const roboy_simulation::Abortion::ConstPtr &msg);
-
-
 
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;

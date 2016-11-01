@@ -165,12 +165,19 @@ public:
 
 
     /**
-     * Callback for update of control parameters, typically sent by walkTrainer
-     * @param msg with new control parameters
+     * Service for update of control parameters, typically sent by walkTrainer
+     * @param req with new control parameters
+     * @param res not used
+     * @return success
      */
     bool updateControllerParameters(roboy_simulation::UpdateControllerParameters::Request  &req,
                                     roboy_simulation::UpdateControllerParameters::Response &res);
-
+    /**
+     * Service for retrieving current energies, typically sent by walkTrainer
+     * @param req not used
+     * @param res energies
+     * @return success
+     */
     bool energiesService(roboy_simulation::Energies::Request  &req,
                          roboy_simulation::Energies::Response &res);
 

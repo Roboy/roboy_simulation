@@ -23,7 +23,7 @@ WalkTrainer::~WalkTrainer() {
 void WalkTrainer::initializeWorlds(uint numberOfWorlds) {
     // load numberOfWorlds empty worlds
     for (uint i = 0; i < numberOfWorlds; i++) {
-        world.push_back(loadWorld("worlds/empty.world"));
+        world.push_back(loadWorld("worlds/contact.world"));
     }
     gazebo::sensors::run_once(true);
     gazebo::sensors::run_threads();

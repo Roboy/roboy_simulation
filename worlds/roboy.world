@@ -2,16 +2,11 @@
 <sdf version="1.5">
     <!-- We use a custom world for the roboy so that the camera angle is launched correctly -->
 
-    <world name="world">
-
-        <!-- A global light source -->
-        <include>
-            <uri>model://sun</uri>
-        </include>
+    <world name="default">
 
         <!-- A ground plane -->
         <include>
-            <uri>model://ground_plane</uri>
+            <uri>model://asphalt_plane</uri>
         </include>
 
         <!-- Focus camera on tall pendulum -->

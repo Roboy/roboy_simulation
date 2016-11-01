@@ -308,6 +308,8 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
 
     this->setLayout(mainLayout);
 
+    // initialize ros
+
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
@@ -327,9 +329,6 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     abort_sub = nh->subscribe("/roboy/abort", 1, &WalkingPlugin::abortion, this);
     sim_control_pub = nh->advertise<std_msgs::Int32>("/roboy/sim_control", 1);
     motor_control_pub = nh->advertise<roboy_simulation::MotorControl>("/roboy/motor_control", 100);
-
-    // create a timer to update the published transforms
-//    frame_timer = nh->createTimer(ros::Duration(0.01), &WalkingPlugin::frameCallback, this);
 }
 
 WalkingPlugin::~WalkingPlugin(){
@@ -403,12 +402,6 @@ void WalkingPlugin::toggleWalkController(){
 
 }
 
-void WalkingPlugin::shutDownWalkController(){
-    std_msgs::Bool msg;
-    msg.data = false;
-//    init_walk_controller_pub.publish(msg);
-}
-
 void WalkingPlugin::showCOM() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeCOM");
     roboy_simulation::VisualizationControl msg;
@@ -461,15 +454,6 @@ void WalkingPlugin::showStateMachineParameters(){
     msg.control = StateMachineParameters;
     msg.value = w->isChecked();
     roboy_visualization_control_pub.publish(msg);
-}
-
-void WalkingPlugin::showCoordinateSystems(){
-//    QCheckBox* w = this->findChild<QCheckBox*>("visualizeCoordinateSystems");
-//    roboy_simulation::VisualizationControl msg;
-//    msg.roboyID = currentID.second;
-//    msg.control = CoordinateSystems;
-//    msg.value = w->isChecked();
-//    roboy_visualization_control_pub.publish(msg);
 }
 
 void WalkingPlugin::showForceTorqueSensors(){
@@ -641,7 +625,6 @@ void WalkingPlugin::sendMotorControl(){
 
 void WalkingPlugin::refresh(){
     showCOM();
-    showCoordinateSystems();
     showForce();
     showForceTorqueSensors();
     showMesh();

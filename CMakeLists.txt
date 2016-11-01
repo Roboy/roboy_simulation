@@ -81,6 +81,14 @@ add_library(force_torque_plugin SHARED src/ForceTorquePlugin.cpp)
 add_dependencies(force_torque_plugin roboy_simulation_gencpp)
 target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
+add_library(force_torque_plugin_halterung SHARED src/ForceTorquePluginHalterung.cpp)
+add_dependencies(force_torque_plugin_halterung roboy_simulation_gencpp)
+target_link_libraries(force_torque_plugin_halterung ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_library(force_compensating_halterung SHARED src/ForceCompensatingHalterung.cpp)
+add_dependencies(force_compensating_halterung common_utilities_gencpp roboy_simulation_gencpp)
+target_link_libraries(force_compensating_halterung ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
 add_executable(walkTrainer src/walkTrainer.cpp src/helperClasses.cpp src/simulationControl.cpp)
 add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${libcmaes_LIBRARIES})
