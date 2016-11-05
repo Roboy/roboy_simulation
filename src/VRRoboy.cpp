@@ -21,7 +21,7 @@ VRRoboy::~VRRoboy(){
 void VRRoboy::initializeWorlds(uint numberOfWorlds){
     // load numberOfWorlds empty worlds
     for (uint i = 0; i < numberOfWorlds; i++) {
-        world.push_back(loadWorld("worlds/roboy.world"));
+        world.push_back(loadWorld("worlds/empty.world"));
     }
     gazebo::sensors::run_once(true);
     gazebo::sensors::run_threads();
