@@ -30,7 +30,7 @@ void WalkTrainer::initializeWorlds(uint numberOfWorlds) {
 
     // load the legs in each world
     for (uint i = 0; i < numberOfWorlds; i++) {
-        physics::ModelPtr m = loadModel(world[i], "model://legs_with_muscles_simplified" );
+        physics::ModelPtr m = loadModel(world[i], "model://legs_with_upper_body" );
         if (m != nullptr) {
             model.push_back(m);
             roboyIDs.push_back(i);

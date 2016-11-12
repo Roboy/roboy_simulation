@@ -126,6 +126,7 @@ install(TARGETS
 
 install(FILES
         package.xml
+	dummy_muscle_plugin.xml
         muscle_plugin.xml
         walking_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
