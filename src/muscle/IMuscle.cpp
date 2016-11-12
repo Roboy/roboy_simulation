@@ -1,4 +1,4 @@
-#include "IMuscle.hpp"
+#include "roboy_simulation/muscle/IMuscle.hpp"
 
 namespace roboy_simulation {
 

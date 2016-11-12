@@ -1,6 +1,4 @@
-#include <std_msgs/Bool.h>
-#include <CommonDefinitions.h>
-#include "walking_plugin.hpp"
+#include "roboy_simulation/walking_plugin.hpp"
 
 WalkingPlugin::WalkingPlugin(QWidget *parent)
         : rviz::Panel(parent){

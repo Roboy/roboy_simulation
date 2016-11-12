@@ -69,7 +69,7 @@ target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARM
 add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
 target_link_libraries(dummy_muscle_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
-qt4_wrap_cpp(MOC_FILES include/walking_plugin.hpp)
+qt4_wrap_cpp(MOC_FILES include/roboy_simulation/walking_plugin.hpp)
 add_library(roboy_rviz src/walking_plugin.cpp ${MOC_FILES})
 add_dependencies(roboy_rviz roboy_simulation_gencpp)
 target_link_libraries(roboy_rviz ${QT_LIBRARIES} ${catkin_LIBRARIES})

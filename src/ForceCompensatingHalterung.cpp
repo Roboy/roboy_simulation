@@ -1,4 +1,4 @@
-#include "ForceCompensatingHalterung.hpp"
+#include "roboy_simulation/ForceCompensatingHalterung.hpp"
 
 ForceCompensatingHalterung::ForceCompensatingHalterung(){
     if (!ros::isInitialized()) {

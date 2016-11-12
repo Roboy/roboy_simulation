@@ -1,4 +1,4 @@
-#include "IActuator.hpp"
+#include "roboy_simulation/muscle/IActuator.hpp"
 
 using namespace gazebo;
 

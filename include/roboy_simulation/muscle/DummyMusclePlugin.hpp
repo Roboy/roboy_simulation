@@ -1,6 +1,6 @@
 #pragma once
 // common definitions
-#include "CommonDefinitions.h"
+#include "common_utilities/CommonDefinitions.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>

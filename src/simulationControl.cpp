@@ -1,4 +1,4 @@
-#include "simulationControl.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
 physics::ModelPtr modelControl;

@@ -1,4 +1,4 @@
-#include "walkController.hpp"
+#include "roboy_simulation/walkController.hpp"
 
 int WalkController::roboyID_generator = 0;
 

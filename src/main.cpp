@@ -1,4 +1,4 @@
-#include "simulationControl.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 int main(int _argc, char **_argv) {
     // setup Gazebo server

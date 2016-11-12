@@ -25,7 +25,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 // muscle plugin
-#include "IMuscle.hpp"
+#include "roboy_simulation/muscle/IMuscle.hpp"
 // ros messages
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
@@ -40,15 +40,15 @@
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
-#include <common_utilities/Steer.h>
+#include "common_utilities/Steer.h"
 #include "common_utilities/Trajectory.h"
 #include "common_utilities/RoboyState.h"
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
 
-#include "walkVisualization.hpp"
-#include "helperClasses.hpp"
-#include "controllerParameters.hpp"
+#include "roboy_simulation/walkVisualization.hpp"
+#include "roboy_simulation/helperClasses.hpp"
+#include "roboy_simulation/controllerParameters.hpp"
 
 using namespace gazebo;
 using namespace std;

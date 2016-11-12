@@ -6,8 +6,8 @@
 // ros messages
 #include "roboy_simulation/ControllerParameters.h"
 // common definitions
-#include "CommonDefinitions.h"
-#include "controllerParameters.hpp"
+#include "common_utilities/CommonDefinitions.h"
+#include "roboy_simulation/controllerParameters.hpp"
 
 using namespace std;
 

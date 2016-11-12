@@ -20,12 +20,12 @@
 #include "roboy_simulation/UpdateControllerParameters.h"
 #include "roboy_simulation/Energies.h"
 // common definitions
-#include "CommonDefinitions.h"
-#include "controllerParameters.hpp"
-#include "helperClasses.hpp"
+#include "common_utilities/CommonDefinitions.h"
+#include "roboy_simulation/controllerParameters.hpp"
+#include "roboy_simulation/helperClasses.hpp"
 // libcmaes
 #include "cmaes.h"
-#include "simulationControl.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 using namespace gazebo;
 using namespace std;

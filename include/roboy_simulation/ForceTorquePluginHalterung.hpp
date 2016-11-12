@@ -1,6 +1,6 @@
 #pragma once
 // common definitions
-#include "CommonDefinitions.h"
+#include "common_utilities/CommonDefinitions.h"
 // ros
 #include <ros/ros.h>
 // gazebo
@@ -14,14 +14,14 @@
 
 using namespace gazebo;
 
-class ForceTorquePlugin : public SensorPlugin {
+class ForceTorquePluginHalterung : public SensorPlugin {
 
 public:
     /// \brief Constructor.
-    ForceTorquePlugin();
+    ForceTorquePluginHalterung();
 
     /// \brief Destructor.
-    virtual ~ForceTorquePlugin();
+    virtual ~ForceTorquePluginHalterung();
 
     /// \brief Load the sensor plugin.
     /// \param[in] sensor Pointer to the sensor that loaded this plugin.
@@ -46,5 +46,4 @@ private:
     ros::Publisher force_torque_pub;
     ros::Subscriber roboyID_sub;
     int roboyID;
-    int leg;
 };

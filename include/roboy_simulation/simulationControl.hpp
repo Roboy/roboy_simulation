@@ -19,7 +19,7 @@
 // ros messages
 #include <std_msgs/Int32.h>
 // common definitions
-#include "CommonDefinitions.h"
+#include "common_utilities/CommonDefinitions.h"
 
 using namespace gazebo;
 using namespace std;

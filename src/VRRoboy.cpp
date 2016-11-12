@@ -1,4 +1,4 @@
-#include "VRRoboy.hpp"
+#include "roboy_simulation/VRRoboy.hpp"
 
 VRRoboy::VRRoboy(){
     if (!ros::isInitialized()) {

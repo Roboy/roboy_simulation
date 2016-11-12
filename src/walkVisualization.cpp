@@ -1,4 +1,4 @@
-#include "walkVisualization.hpp"
+#include "roboy_simulation/walkVisualization.hpp"
 
 WalkVisualization::WalkVisualization(){
     if (!ros::isInitialized()) {

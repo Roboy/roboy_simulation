@@ -1,5 +1,4 @@
-#include <thread>
-#include "walkTrainer.hpp"
+#include "roboy_simulation/walkTrainer.hpp"
 
 WalkTrainer::WalkTrainer(FitFunc &func, CMAParameters<> &parameters):CMAStrategy<CovarianceUpdate>(func,parameters) {
     if (!ros::isInitialized()) {

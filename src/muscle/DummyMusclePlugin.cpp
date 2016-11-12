@@ -1,4 +1,4 @@
-#include "DummyMusclePlugin.hpp"
+#include "roboy_simulation/muscle/DummyMusclePlugin.hpp"
 
 namespace roboy_simulation {
 
