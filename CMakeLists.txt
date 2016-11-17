@@ -13,10 +13,12 @@ find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_con
 		geometry_msgs message_generation rviz tf interactive_markers visualization_msgs
 		common_utilities flexrayusbinterface)
 
-find_package(Qt4)
-find_package(Protobuf REQUIRED)
-include(${QT_USE_FILE})
-add_definitions(${QT_DEFINITIONS})
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui)
 
 find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
@@ -56,6 +58,9 @@ include_directories(
 		include/
 		include/muscle
         ${catkin_INCLUDE_DIRS}
+		${Qt5Widgets_INCLUDE_DIRS}
+		${Qt5Core_INCLUDE_DIRS}
+		${Qt5Gui_INCLUDE_DIRS}
 )
 #==============================================================================
 # Application
@@ -68,7 +73,7 @@ target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARM
 add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
 target_link_libraries(dummy_muscle_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
-qt4_wrap_cpp(MOC_FILES include/roboy_simulation/walking_plugin.hpp)
+qt5_wrap_cpp(MOC_FILES include/roboy_simulation/walking_plugin.hpp)
 add_library(roboy_rviz src/walking_plugin.cpp ${MOC_FILES})
 add_dependencies(roboy_rviz roboy_simulation_gencpp)
 target_link_libraries(roboy_rviz ${QT_LIBRARIES} ${catkin_LIBRARIES})
