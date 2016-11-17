@@ -9,6 +9,10 @@ SET(CMAKE_BUILD_TYPE Debug)
 #==============================================================================
 # Dependencies
 #==============================================================================
+find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs
+		geometry_msgs message_generation rviz tf interactive_markers visualization_msgs
+		common_utilities flexrayusbinterface)
+
 find_package(Qt4)
 find_package(Protobuf REQUIRED)
 include(${QT_USE_FILE})
@@ -19,8 +23,9 @@ include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs
-        geometry_msgs message_generation rviz tf interactive_markers visualization_msgs)
+find_package(PkgConfig)
+pkg_check_modules(libcmaes REQUIRED libcmaes)
+include_directories(${libcmaes_INCLUDE_DIRS})
 
 add_message_files(
         DIRECTORY
@@ -45,18 +50,12 @@ add_service_files(
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
-catkin_package(CATKIN_DEPENDS message_runtime message_generation)
-
-find_package(PkgConfig)
-pkg_check_modules(libcmaes REQUIRED libcmaes)
-include_directories(${libcmaes_INCLUDE_DIRS})
+catkin_package(DEPENDS QT GAZEBO libcmaes CATKIN_DEPENDS message_runtime message_generation common_utilities flexrayusbinterface)
 
 include_directories(
+		include/
+		include/muscle
         ${catkin_INCLUDE_DIRS}
-        include/
-        include/muscle
-        ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/include
 )
 #==============================================================================
 # Application
