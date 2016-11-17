@@ -1,4 +1,4 @@
-#include "ForceTorquePluginHalterung.hpp"
+#include "roboy_simulation/ForceTorquePluginHalterung.hpp"
 
 using namespace gazebo;
 GZ_REGISTER_SENSOR_PLUGIN(ForceTorquePluginHalterung)

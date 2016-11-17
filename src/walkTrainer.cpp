@@ -1,5 +1,4 @@
-#include <thread>
-#include "walkTrainer.hpp"
+#include "roboy_simulation/walkTrainer.hpp"
 
 WalkTrainer::WalkTrainer(FitFunc &func, CMAParameters<> &parameters):CMAStrategy<CovarianceUpdate>(func,parameters) {
     if (!ros::isInitialized()) {
@@ -30,7 +29,7 @@ void WalkTrainer::initializeWorlds(uint numberOfWorlds) {
 
     // load the legs in each world
     for (uint i = 0; i < numberOfWorlds; i++) {
-        physics::ModelPtr m = loadModel(world[i], "model://legs_with_muscles_simplified" );
+        physics::ModelPtr m = loadModel(world[i], "model://legs_with_upper_body" );
         if (m != nullptr) {
             model.push_back(m);
             roboyIDs.push_back(i);

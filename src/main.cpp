@@ -1,4 +1,4 @@
-#include "simulationControl.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 int main(int _argc, char **_argv) {
     // setup Gazebo server
@@ -13,7 +13,7 @@ int main(int _argc, char **_argv) {
     gazebo::sensors::run_once(true);
     gazebo::sensors::run_threads();
 
-    physics::ModelPtr model = sim_control.loadModel(world, "model://legs_with_muscles_simplified");
+    physics::ModelPtr model = sim_control.loadModel(world, "model://legs_with_upper_body");
     while(ros::ok()){
         sim_control.simulate(world);
     }

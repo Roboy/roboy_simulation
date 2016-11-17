@@ -1,4 +1,4 @@
-#include "ContactPlugin.hpp"
+#include "roboy_simulation/ContactPlugin.hpp"
 
 using namespace gazebo;
 GZ_REGISTER_SENSOR_PLUGIN(ContactPlugin)

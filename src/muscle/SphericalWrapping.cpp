@@ -1,4 +1,4 @@
-#include "SphericalWrapping.hpp"
+#include "roboy_simulation/muscle/SphericalWrapping.hpp"
 
 using namespace roboy_simulation;
 

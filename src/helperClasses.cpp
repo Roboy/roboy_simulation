@@ -1,4 +1,4 @@
-#include "helperClasses.hpp"
+#include "roboy_simulation/helperClasses.hpp"
 
 void CoordinateSystem::Update(){
     gazebo::math::Pose pose = m_link->GetWorldPose();

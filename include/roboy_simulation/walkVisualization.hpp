@@ -18,11 +18,11 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 // common definitions
-#include "CommonDefinitions.h"
+#include "common_utilities/CommonDefinitions.h"
 // muscle plugin
-#include "IMuscle.hpp"
-#include "helperClasses.hpp"
-#include "controllerParameters.hpp"
+#include "roboy_simulation/muscle/IMuscle.hpp"
+#include "roboy_simulation/helperClasses.hpp"
+#include "roboy_simulation/controllerParameters.hpp"
 
 using namespace gazebo;
 using namespace std;
@@ -41,7 +41,7 @@ public:
 
     void publishMomentArm(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles);
 
-    void publishModel(vector<string> &link_names, physics::ModelPtr parent_model);
+    void publishModel(physics::LinkPtr parent_link, bool child_link);
 
     void publishSimulationState(ControllerParameters &params, gazebo::common::Time gz_time_now);
 

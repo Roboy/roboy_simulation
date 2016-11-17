@@ -1,4 +1,4 @@
-#include "walkVisualization.hpp"
+#include "roboy_simulation/walkVisualization.hpp"
 
 WalkVisualization::WalkVisualization(){
     if (!ros::isInitialized()) {
@@ -229,8 +229,7 @@ void WalkVisualization::publishMomentArm(vector<boost::shared_ptr<roboy_simulati
     }
 }
 
-void WalkVisualization::publishModel(vector<string> &link_names, physics::ModelPtr parent_model){
-//    static bool add = true;
+void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_link){
     visualization_msgs::Marker mesh;
     mesh.header.frame_id = "world";
     char modelnamespace[20];
@@ -246,16 +245,11 @@ void WalkVisualization::publishModel(vector<string> &link_names, physics::ModelP
     mesh.scale.z = 1.0;
     mesh.lifetime = ros::Duration(0);
     mesh.header.stamp = ros::Time::now();
-//    if (add) {
     mesh.action = visualization_msgs::Marker::ADD;
-//        add = false;
-//    } else {
-//        mesh.action = visualization_msgs::Marker::MODIFY;
-//    }
-    for(auto link_name:link_names){
+
+    if(!child_link) { // parent_link is top link and connected to world frame
         mesh.id = message_counter++;
-        physics::LinkPtr link = parent_model->GetLink(link_name);
-        math::Pose pose = link->GetWorldPose();
+        math::Pose pose = parent_link->GetWorldPose();
         pose.rot.Normalize();
         mesh.pose.position.x = pose.pos.x;
         mesh.pose.position.y = pose.pos.y;
@@ -265,10 +259,33 @@ void WalkVisualization::publishModel(vector<string> &link_names, physics::ModelP
         mesh.pose.orientation.z = pose.rot.z;
         mesh.pose.orientation.w = pose.rot.w;
         char meshpath[200];
-        sprintf(meshpath,"package://roboy_models/legs_with_muscles_simplified/cad/%s.STL",
-                link_name.c_str() );
+        sprintf(meshpath,"package://roboy_models/legs_with_upper_body/cad/%s.STL",
+                parent_link->GetName().c_str() );
         mesh.mesh_resource = meshpath;
         marker_visualization_pub.publish(mesh);
+    }
+    physics::Link_V child_links = parent_link->GetChildJointsLinks();
+    if (child_links.empty()) {
+        return;
+    } else {
+        for (auto child_link:child_links) { // each child relative pose to parent
+            mesh.id = message_counter++;
+            math::Pose pose = child_link->GetWorldPose();
+            pose.rot.Normalize();
+            mesh.pose.position.x = pose.pos.x;
+            mesh.pose.position.y = pose.pos.y;
+            mesh.pose.position.z = pose.pos.z;
+            mesh.pose.orientation.x = pose.rot.x;
+            mesh.pose.orientation.y = pose.rot.y;
+            mesh.pose.orientation.z = pose.rot.z;
+            mesh.pose.orientation.w = pose.rot.w;
+            char meshpath[200];
+            sprintf(meshpath,"package://roboy_models/legs_with_upper_body/cad/%s.STL",
+                    child_link->GetName().c_str() );
+            mesh.mesh_resource = meshpath;
+            marker_visualization_pub.publish(mesh);
+            publishModel(child_link, true);
+        }
     }
 }
 

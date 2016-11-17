@@ -27,10 +27,11 @@
 #include "roboy_simulation/ControllerParameters.h"
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Bool.h>
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
 // common definitions
-#include "CommonDefinitions.h"
+#include "common_utilities/CommonDefinitions.h"
 #endif
 
 using namespace std;

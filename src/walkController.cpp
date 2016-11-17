@@ -1,4 +1,4 @@
-#include "walkController.hpp"
+#include "roboy_simulation/walkController.hpp"
 
 int WalkController::roboyID_generator = 0;
 
@@ -44,6 +44,12 @@ WalkController::WalkController() {
     link_names.push_back("shank_right");
     link_names.push_back("foot_left");
     link_names.push_back("foot_right");
+    link_names.push_back("torso");
+    link_names.push_back("head");
+    link_names.push_back("oberarm_left");
+    link_names.push_back("oberarm_right");
+    link_names.push_back("unterarm_left");
+    link_names.push_back("unterarm_right");
 
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
@@ -229,7 +235,7 @@ void WalkController::Update() {
         if (visualizeMomentArm)
             publishMomentArm(&sim_muscles);
         if(visualizeMesh)
-            publishModel(link_names, parent_model);
+            publishModel(parent_model->GetLink("hip"), false);
         if(visualizeStateMachineParameters)
             publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
 

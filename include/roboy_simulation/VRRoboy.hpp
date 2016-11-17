@@ -16,9 +16,9 @@
 #include <std_msgs/Int32.h>
 #include "common_utilities/Pose.h"
 // common definitions
-#include "CommonDefinitions.h"
-#include "helperClasses.hpp"
-#include "simulationControl.hpp"
+#include "common_utilities/CommonDefinitions.h"
+#include "roboy_simulation/helperClasses.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 using namespace gazebo;
 using namespace std;

@@ -1,4 +1,4 @@
-#include "simulationControl.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
 physics::ModelPtr modelControl;
@@ -55,7 +55,7 @@ physics::ModelPtr SimulationControl::loadModel(physics::WorldPtr world, string m
     }
     if (world->GetModelCount() == modelCountBefore + 1) {
         ROS_INFO("Successfully inserted model");
-        model = world->GetModel("legs_with_muscles_simplified");
+        model = world->GetModel("legs_with_upper_body");
     } else {
         ROS_WARN("Failed inserting model");
     }

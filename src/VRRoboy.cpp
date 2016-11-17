@@ -1,4 +1,4 @@
-#include "VRRoboy.hpp"
+#include "roboy_simulation/VRRoboy.hpp"
 
 VRRoboy::VRRoboy(){
     if (!ros::isInitialized()) {
@@ -28,7 +28,7 @@ void VRRoboy::initializeWorlds(uint numberOfWorlds){
 
     // load the legs in each world
     for (uint i = 0; i < numberOfWorlds; i++) {
-        physics::ModelPtr m = loadModel(world[i], "model://legs_with_muscles_simplified" );
+        physics::ModelPtr m = loadModel(world[i], "model://legs_with_upper_body" );
         if (m != nullptr) {
             model.push_back(m);
         }
@@ -43,10 +43,9 @@ void VRRoboy::publishPose(uint modelNr){
         msg.x.push_back(p.pos.x);
         msg.y.push_back(p.pos.y);
         msg.z.push_back(p.pos.z);
-        math::Vector3 rot = p.rot.GetAsEuler();
-        msg.roll.push_back(p.pos.x);
-        msg.pitch.push_back(p.pos.y);
-        msg.yaw.push_back(p.pos.z);
+        msg.roll.push_back(p.rot.x);
+        msg.pitch.push_back(p.rot.y);
+        msg.yaw.push_back(p.rot.z);
     }
     pose_pub.publish(msg);
 }
