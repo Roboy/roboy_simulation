@@ -721,7 +721,7 @@ void WalkController::updateMuscleActivities(){
         activity[sim_muscles[muscle]->name].pop_front();
         sim_muscles[muscle]->cmd = a[sim_muscles[muscle]->name];
     }
-    ROS_INFO("a: %lf, activity(%d): %lf, feedback %lf, Fmax %lf", a["motor0"], activity["motor0"].size(),
+    ROS_INFO("a: %lf, activity(%lu): %lf, feedback %lf, Fmax %lf", a["motor0"], activity["motor0"].size(),
              activity["motor0"].front(), feedback["motor0"], params[F_max]);
 }
 
