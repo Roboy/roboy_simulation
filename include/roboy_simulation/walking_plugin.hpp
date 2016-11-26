@@ -119,6 +119,8 @@ public Q_SLOTS:
     void showStateMachineParameters();
     /** Sends a message that triggers publishing of ankle force visualization */
     void showForceTorqueSensors();
+    /** Sends a message that triggers publishing of IMU visualization */
+    void showIMUs();
     /** Changes the current roboyID and requests update for all visualizations
      * @param index new roboyID
     */

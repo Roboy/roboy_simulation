@@ -133,6 +133,12 @@ public:
      */
     void publishIMUs();
 
+    /**
+     * Fetches the accelerations and the positions of the IMUs and
+     * publishes them on a topic
+     */
+    void publishIMUs();
+
     /** updates foot displacements and velocity of each foot wrt to hip orientation */
     void updateFootDisplacementAndVelocity();
 
