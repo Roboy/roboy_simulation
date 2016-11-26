@@ -224,7 +224,7 @@ void WalkController::Update() {
     last_write_sim_time_ros = sim_time_ros;
 
     // publish every now and then
-    if(counter%100==0){
+    if (counter % 100 == 0) {
         message_counter = 1000;
         if (visualizeTendon)
             publishTendon(&sim_muscles);
@@ -234,10 +234,12 @@ void WalkController::Update() {
             publishCOM(center_of_mass);
         if (visualizeMomentArm)
             publishMomentArm(&sim_muscles);
-        if(visualizeMesh)
+        if (visualizeMesh)
             publishModel(parent_model->GetLink("hip"), false);
-        if(visualizeStateMachineParameters)
+        if (visualizeStateMachineParameters)
             publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
+        if (visualizeIMUs)
+            publishIMUs();
 
         publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
         publishSimulationState(params, gz_time_now);
@@ -425,6 +427,77 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
         }
     }
     COM /= mass_total;
+}
+
+void WalkController::publishIMUs() {
+    // Construct the arrow visualization messages illustrating the accelerations
+    visualization_msgs::Marker arrow;
+    arrow.header.frame_id = "world";
+    char imunamespace[20];
+    sprintf(imunamespace, "imu_%d", ID);
+    arrow.ns = imunamespace;
+    arrow.type = visualization_msgs::Marker::ARROW;
+
+    arrow.scale.x = 0.03;
+    arrow.scale.y = 0.03;
+    arrow.scale.z = 0.03;
+
+    arrow.lifetime = ros::Duration();
+    arrow.action = visualization_msgs::Marker::ADD;
+
+    geometry_msgs::Point start_point;
+    geometry_msgs::Point end_point;
+
+    for (auto link_name : link_names) {
+        // choose which links to publish
+        if (link_name == "foot_left" ||
+            link_name == "foot_right") {
+            arrow.id = message_counter++;
+            arrow.header.stamp = ros::Time::now();
+            arrow.points.clear();
+
+            physics::LinkPtr link = parent_model->GetLink(link_name);
+            math::Pose pose = link->GetWorldPose();
+
+            math::Vector3 accel_rel = link->GetRelativeLinearAccel();
+            math::Vector3 accel_world = link->GetWorldLinearAccel();
+
+            // The acceleration vector starts at the position of the link
+            start_point.x = pose.pos.x;
+            start_point.y = pose.pos.y;
+            start_point.z = pose.pos.z;
+            arrow.points.push_back(start_point);
+
+            // Relative acceleration with red color
+            arrow.color.r = 1.0f;
+            arrow.color.g = 0.0f;
+            arrow.color.b = 0.0f;
+            arrow.color.a = 1.0f;
+
+            end_point.x = start_point.x + accel_rel.x * 0.01;
+            end_point.y = start_point.y + accel_rel.y * 0.01;
+            end_point.z = start_point.z + accel_rel.z * 0.01;
+            arrow.points.push_back(end_point);
+            marker_visualization_pub.publish(arrow);
+
+            arrow.id = message_counter++;
+            arrow.points.clear();
+            
+            arrow.points.push_back(start_point);
+
+            // Absolute world acceleration with light red color
+            arrow.color.r = 1.0f;
+            arrow.color.g = 0.5f;
+            arrow.color.b = 0.5f;
+            arrow.color.a = 1.0f;
+
+            end_point.x = start_point.x + accel_world.x * 0.01;
+            end_point.y = start_point.y + accel_world.y * 0.01;
+            end_point.z = start_point.z + accel_world.z * 0.01;
+            arrow.points.push_back(end_point);
+            marker_visualization_pub.publish(arrow);
+        }
+    }
 }
 
 void WalkController::updateFootDisplacementAndVelocity(){

@@ -52,12 +52,14 @@ public:
     void publishLegState(LEG_STATE *leg_state);
 
     void publishCoordinateSystems(physics::LinkPtr parent_link, ros::Time time, bool child_link=false);
+
 protected:
     ros::NodeHandlePtr nh;
     int ID;
     uint message_counter;
     bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeForceTorqueSensors = false;
+            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeForceTorqueSensors = false,
+            visualizeIMUs = false;
     ros::Publisher marker_visualization_pub;
 private:
     ros::Publisher leg_state_pub, simulation_state_pub;

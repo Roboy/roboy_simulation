@@ -192,6 +192,11 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(visualizeForceTorqueSensors, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
     options1->addWidget(visualizeForceTorqueSensors);
 
+    QCheckBox *visualizeIMUs = new QCheckBox(tr("show IMU sensors"));
+    visualizeIMUs->setObjectName("visualizeIMUs");
+    connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
+    options1->addWidget(visualizeIMUs);
+
     options->addLayout(options0);
     options->addLayout(options1);
     frameLayout->addLayout(options);
@@ -351,6 +356,8 @@ void WalkingPlugin::save(rviz::Config config) const {
     config.mapSetValue(w->objectName(), w->isChecked());
     w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
     config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeIMUs");
+    config.mapSetValue(w->objectName(), w->isChecked());
     rviz::Panel::save(config);
 }
 
@@ -379,6 +386,9 @@ void WalkingPlugin::load(const rviz::Config &config) {
     config.mapGetBool(w->objectName(), &checked);
     w->setChecked(checked);
     w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeIMUs");
     config.mapGetBool(w->objectName(), &checked);
     w->setChecked(checked);
 }
@@ -459,6 +469,15 @@ void WalkingPlugin::showForceTorqueSensors(){
     roboy_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = ForceTorqueSensors;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
+}
+
+void WalkingPlugin::showIMUs(){
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeIMUs");
+    roboy_simulation::VisualizationControl msg;
+    msg.roboyID = currentID.second;
+    msg.control = IMUs;
     msg.value = w->isChecked();
     roboy_visualization_control_pub.publish(msg);
 }
