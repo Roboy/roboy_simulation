@@ -27,6 +27,10 @@ void WalkVisualization::visualization_control(const roboy_simulation::Visualizat
                 visualizeCOM = msg->value;
                 break;
             }
+            case EstimatedCOM: {
+                visualizeEstimatedCOM = msg->value;
+                break;
+            }
             case Forces: {
                 visualizeForce = msg->value;
                 break;
