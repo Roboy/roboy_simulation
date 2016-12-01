@@ -36,6 +36,7 @@ add_message_files(
         Tendon.msg
         VisualizationControl.msg
         ForceTorque.msg
+        IMU.msg
         LegState.msg
         ControllerParameters.msg
         Abortion.msg

@@ -192,6 +192,19 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(visualizeForceTorqueSensors, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
     options1->addWidget(visualizeForceTorqueSensors);
 
+<<<<<<< HEAD
+=======
+    QCheckBox *visualizeIMUs = new QCheckBox(tr("show IMU sensors"));
+    visualizeIMUs->setObjectName("visualizeIMUs");
+    connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
+    options1->addWidget(visualizeIMUs);
+
+    QCheckBox *visualizeEstimatedCOM = new QCheckBox(tr("show estimated COM"));
+    visualizeEstimatedCOM->setObjectName("visualizeEstimatedCOM");
+    connect(visualizeEstimatedCOM, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
+    options1->addWidget(visualizeEstimatedCOM);
+
+>>>>>>> 715b266... Added more visualizations and new /roboy/imu topic
     options->addLayout(options0);
     options->addLayout(options1);
     frameLayout->addLayout(options);
@@ -409,6 +422,15 @@ void WalkingPlugin::showCOM() {
     roboy_visualization_control_pub.publish(msg);
 }
 
+void WalkingPlugin::showEstimatedCOM() {
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeEstimatedCOM");
+    roboy_simulation::VisualizationControl msg;
+    msg.roboyID = currentID.second;
+    msg.control = EstimatedCOM;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
+}
+
 void WalkingPlugin::showForce() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeForce");
     roboy_simulation::VisualizationControl msg;
@@ -469,11 +491,14 @@ void WalkingPlugin::changeID(int index){
     // republish visualization
     showMesh();
     showCOM();
+    showEstimatedCOM();
     showMomentArm();
     showForce();
     showTendon();
     toggleWalkController();
     showStateMachineParameters();
+    showForceTorqueSensors();
+    showIMUs();
 }
 
 void WalkingPlugin::updateSimulationState(const roboy_simulation::ControllerParameters::ConstPtr &msg){
@@ -623,8 +648,10 @@ void WalkingPlugin::sendMotorControl(){
 
 void WalkingPlugin::refresh(){
     showCOM();
+    showEstimatedCOM();
     showForce();
     showForceTorqueSensors();
+    showIMUs();
     showMesh();
     showMomentArm();
     showStateMachineParameters();
@@ -700,11 +727,14 @@ void WalkingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
         // republish visualization
         showMesh();
         showCOM();
+        showEstimatedCOM();
         showMomentArm();
         showForce();
         showTendon();
         toggleWalkController();
         showStateMachineParameters();
+        showForceTorqueSensors();
+        showIMUs();
     }
 }
 

@@ -45,6 +45,7 @@
 #include "common_utilities/RoboyState.h"
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
+#include "roboy_simulation/IMU.h"
 
 #include "roboy_simulation/walkVisualization.hpp"
 #include "roboy_simulation/helperClasses.hpp"
@@ -120,6 +121,21 @@ public:
      */
     void calculateCOM(int type, math::Vector3 &COM);
 
+<<<<<<< HEAD
+=======
+    /**
+     * Publishes the estimated position of COM based on the neural network
+     * interpretation of sensor data
+     */
+    void publishEstimatedCOM();
+
+    /**
+     * Fetches the accelerations and the positions of the IMUs and
+     * publishes them on a topic
+     */
+    void publishIMUs();
+
+>>>>>>> 715b266... Added more visualizations and new /roboy/imu topic
     /** updates foot displacements and velocity of each foot wrt to hip orientation */
     void updateFootDisplacementAndVelocity();
 
@@ -188,7 +204,7 @@ private:
     ros::NodeHandlePtr nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
             steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;
-    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub;
+    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub;
     ros::ServiceServer roboyID_srv, control_parameters_srv, energies_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
