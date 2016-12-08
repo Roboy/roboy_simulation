@@ -192,6 +192,16 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(visualizeForceTorqueSensors, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
     options1->addWidget(visualizeForceTorqueSensors);
 
+    QCheckBox *visualizeIMUs = new QCheckBox(tr("show IMU sensors"));
+    visualizeIMUs->setObjectName("visualizeIMUs");
+    connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
+    options1->addWidget(visualizeIMUs);
+
+    QCheckBox *visualizeEstimatedCOM = new QCheckBox(tr("show estimated COM"));
+    visualizeEstimatedCOM->setObjectName("visualizeEstimatedCOM");
+    connect(visualizeEstimatedCOM, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
+    options1->addWidget(visualizeEstimatedCOM);
+
     options->addLayout(options0);
     options->addLayout(options1);
     frameLayout->addLayout(options);
@@ -351,6 +361,8 @@ void WalkingPlugin::save(rviz::Config config) const {
     config.mapSetValue(w->objectName(), w->isChecked());
     w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
     config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeIMUs");
+    config.mapSetValue(w->objectName(), w->isChecked());
     rviz::Panel::save(config);
 }
 
@@ -381,6 +393,9 @@ void WalkingPlugin::load(const rviz::Config &config) {
     w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
     config.mapGetBool(w->objectName(), &checked);
     w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeIMUs");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
 }
 
 void WalkingPlugin::toggleWalkController(){
@@ -405,6 +420,15 @@ void WalkingPlugin::showCOM() {
     roboy_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = COM;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
+}
+
+void WalkingPlugin::showEstimatedCOM() {
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeEstimatedCOM");
+    roboy_simulation::VisualizationControl msg;
+    msg.roboyID = currentID.second;
+    msg.control = EstimatedCOM;
     msg.value = w->isChecked();
     roboy_visualization_control_pub.publish(msg);
 }
@@ -463,17 +487,29 @@ void WalkingPlugin::showForceTorqueSensors(){
     roboy_visualization_control_pub.publish(msg);
 }
 
+void WalkingPlugin::showIMUs(){
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeIMUs");
+    roboy_simulation::VisualizationControl msg;
+    msg.roboyID = currentID.second;
+    msg.control = IMUs;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
+}
+
 void WalkingPlugin::changeID(int index){
     QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
     currentID = make_pair(index, roboyID->currentText().toInt());
     // republish visualization
     showMesh();
     showCOM();
+    showEstimatedCOM();
     showMomentArm();
     showForce();
     showTendon();
     toggleWalkController();
     showStateMachineParameters();
+    showForceTorqueSensors();
+    showIMUs();
 }
 
 void WalkingPlugin::updateSimulationState(const roboy_simulation::ControllerParameters::ConstPtr &msg){
@@ -623,8 +659,10 @@ void WalkingPlugin::sendMotorControl(){
 
 void WalkingPlugin::refresh(){
     showCOM();
+    showEstimatedCOM();
     showForce();
     showForceTorqueSensors();
+    showIMUs();
     showMesh();
     showMomentArm();
     showStateMachineParameters();
@@ -700,11 +738,14 @@ void WalkingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
         // republish visualization
         showMesh();
         showCOM();
+        showEstimatedCOM();
         showMomentArm();
         showForce();
         showTendon();
         toggleWalkController();
         showStateMachineParameters();
+        showForceTorqueSensors();
+        showIMUs();
     }
 }
 

@@ -27,6 +27,10 @@ void WalkVisualization::visualization_control(const roboy_simulation::Visualizat
                 visualizeCOM = msg->value;
                 break;
             }
+            case EstimatedCOM: {
+                visualizeEstimatedCOM = msg->value;
+                break;
+            }
             case Forces: {
                 visualizeForce = msg->value;
                 break;
@@ -47,9 +51,14 @@ void WalkVisualization::visualization_control(const roboy_simulation::Visualizat
                 visualizeForceTorqueSensors = msg->value;
                 break;
             }
+            case IMUs: {
+                visualizeIMUs = msg->value;
+                break;
+            }
         }
         if(!visualizeTendon || !visualizeCOM || !visualizeForce || !visualizeMomentArm ||
-           !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors){
+           !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors ||
+           !visualizeIMUs) {
             visualization_msgs::Marker marker;
             marker.header.frame_id = "world";
             marker.id = message_counter++;

@@ -1,0 +1,6 @@
+int32 roboyID
+string link
+geometry_msgs/Point lin_accel_rel
+geometry_msgs/Point lin_accel_world
+geometry_msgs/Point ang_accel_rel
+geometry_msgs/Point ang_accel_world

@@ -25,6 +25,8 @@ WalkController::WalkController() {
                                                &WalkController::toggleWalkController, this);
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &WalkController::motorControl, this);
 
+    imu_pub = nh->advertise<roboy_simulation::IMU>("/roboy/imu", 100);
+
     roboyID = roboyID_generator++;
     ID = roboyID;
     char topic[200];
@@ -224,7 +226,7 @@ void WalkController::Update() {
     last_write_sim_time_ros = sim_time_ros;
 
     // publish every now and then
-    if(counter%100==0){
+    if (counter % 100 == 0) {
         message_counter = 1000;
         if (visualizeTendon)
             publishTendon(&sim_muscles);
@@ -232,12 +234,16 @@ void WalkController::Update() {
             publishForce(&sim_muscles);
         if (visualizeCOM)
             publishCOM(center_of_mass);
+        if (visualizeEstimatedCOM)
+            publishEstimatedCOM();
         if (visualizeMomentArm)
             publishMomentArm(&sim_muscles);
-        if(visualizeMesh)
+        if (visualizeMesh)
             publishModel(parent_model->GetLink("hip"), false);
-        if(visualizeStateMachineParameters)
+        if (visualizeStateMachineParameters)
             publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
+        if (visualizeIMUs)
+            publishIMUs();
 
         publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
         publishSimulationState(params, gz_time_now);
@@ -425,6 +431,171 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
         }
     }
     COM /= mass_total;
+}
+
+void WalkController::publishEstimatedCOM() {
+    // Construct the visualization message for the estimated position of COM
+    // illustrated by a sphere
+    visualization_msgs::Marker sphere;
+    sphere.header.frame_id = "world";
+    char estimatedcomnamespace[40];
+    sprintf(estimatedcomnamespace, "EstCOM_%d", ID);
+    sphere.ns = estimatedcomnamespace;
+    sphere.type = visualization_msgs::Marker::SPHERE;
+
+    // The sphere is transparent light blue
+    sphere.color.r = 0.5f;
+    sphere.color.g = 0.5f;
+    sphere.color.b = 1.0f;
+    sphere.color.a = 0.5f;
+
+    sphere.lifetime = ros::Duration(0);
+
+    sphere.scale.x = 0.1;
+    sphere.scale.y = 0.1;
+    sphere.scale.z = 0.1;
+
+    sphere.action = visualization_msgs::Marker::ADD;
+
+    sphere.header.stamp = ros::Time::now();
+    sphere.points.clear();
+    sphere.id = message_counter++;
+
+    // TODO: Fetch the estimation of the position of COM from the neural network
+
+    sphere.pose.position.x = 0.0f; // REPLACE WITH NN ESTIMATION
+    sphere.pose.position.y = 0.0f; // REPLACE WITH NN ESTIMATION
+    sphere.pose.position.z = 0.0f; // REPLACE WITH NN ESTIMATION
+
+    marker_visualization_pub.publish(sphere);
+}
+
+void WalkController::publishIMUs() {
+    // Construct the arrow visualization and /roboy/imu messages illustrating the accelerations
+    visualization_msgs::Marker arrow;
+    arrow.header.frame_id = "world";
+    char imunamespace[20];
+    sprintf(imunamespace, "imu_%d", ID);
+    arrow.ns = imunamespace;
+    arrow.type = visualization_msgs::Marker::ARROW;
+
+    arrow.scale.x = 0.01; // Shaft diameter scale
+    arrow.scale.y = 0.03; // Head diameter scale
+    arrow.scale.z = 0.03; // Head length scale
+
+    arrow.lifetime = ros::Duration();
+    arrow.action = visualization_msgs::Marker::ADD;
+
+    geometry_msgs::Point start_point;
+    geometry_msgs::Point end_point;
+
+    roboy_simulation::IMU imu_msg;
+    imu_msg.roboyID = roboyID;
+
+    for (auto link_name : link_names) {
+        imu_msg.link = link_name.c_str();
+        arrow.header.stamp = ros::Time::now();
+
+        physics::LinkPtr link = parent_model->GetLink(link_name);
+        math::Pose pose = link->GetWorldCoGPose();
+
+        math::Vector3 lin_accel_rel = link->GetRelativeLinearAccel();
+        math::Vector3 lin_accel_world = link->GetWorldLinearAccel();
+        math::Vector3 ang_accel_rel = link->GetRelativeAngularAccel();
+        math::Vector3 ang_accel_world = link->GetWorldAngularAccel();
+
+        // The acceleration vector starts at the center of gravity of the link
+        start_point.x = pose.pos.x;
+        start_point.y = pose.pos.y;
+        start_point.z = pose.pos.z;
+
+        arrow.id = message_counter++;
+        arrow.points.clear();
+
+        arrow.points.push_back(start_point);
+
+        // Relative acceleration with red color
+        arrow.color.r = 1.0f;
+        arrow.color.g = 0.0f;
+        arrow.color.b = 0.0f;
+        arrow.color.a = 1.0f;
+
+        end_point.x = start_point.x + lin_accel_rel.x * 0.01;
+        end_point.y = start_point.y + lin_accel_rel.y * 0.01;
+        end_point.z = start_point.z + lin_accel_rel.z * 0.01;
+        arrow.points.push_back(end_point);
+        marker_visualization_pub.publish(arrow);
+
+        arrow.id = message_counter++;
+        arrow.points.clear();
+
+        arrow.points.push_back(start_point);
+
+        // Absolute world acceleration with light red color
+        arrow.color.r = 1.0f;
+        arrow.color.g = 0.5f;
+        arrow.color.b = 0.5f;
+        arrow.color.a = 1.0f;
+
+        end_point.x = start_point.x + lin_accel_world.x * 0.01;
+        end_point.y = start_point.y + lin_accel_world.y * 0.01;
+        end_point.z = start_point.z + lin_accel_world.z * 0.01;
+        arrow.points.push_back(end_point);
+        marker_visualization_pub.publish(arrow);
+
+        arrow.id = message_counter++;
+        arrow.points.clear();
+
+        arrow.points.push_back(start_point);
+
+        // Angular absolute world acceleration with green color
+        arrow.color.r = 0.0f;
+        arrow.color.g = 0.7f;
+        arrow.color.b = 0.0f;
+        arrow.color.a = 1.0f;
+
+        end_point.x = start_point.x + ang_accel_world.x * 0.001;
+        end_point.y = start_point.y + ang_accel_world.y * 0.001;
+        end_point.z = start_point.z + ang_accel_world.z * 0.001;
+        arrow.points.push_back(end_point);
+        marker_visualization_pub.publish(arrow);
+
+        arrow.id = message_counter++;
+        arrow.points.clear();
+
+        arrow.points.push_back(start_point);
+
+        // Angular relative acceleration with light green color
+        arrow.color.r = 0.7f;
+        arrow.color.g = 1.0f;
+        arrow.color.b = 0.7f;
+        arrow.color.a = 1.0f;
+
+        end_point.x = start_point.x + ang_accel_rel.x * 0.001;
+        end_point.y = start_point.y + ang_accel_rel.y * 0.001;
+        end_point.z = start_point.z + ang_accel_rel.z * 0.001;
+        arrow.points.push_back(end_point);
+        marker_visualization_pub.publish(arrow);
+
+        // IMU message (not for rviz visualization)
+        imu_msg.lin_accel_rel.x = lin_accel_rel.x;
+        imu_msg.lin_accel_rel.y = lin_accel_rel.y;
+        imu_msg.lin_accel_rel.z = lin_accel_rel.z;
+
+        imu_msg.lin_accel_world.x = lin_accel_world.x;
+        imu_msg.lin_accel_world.y = lin_accel_world.y;
+        imu_msg.lin_accel_world.z = lin_accel_world.z;
+
+        imu_msg.ang_accel_rel.x = ang_accel_rel.x;
+        imu_msg.ang_accel_rel.y = ang_accel_rel.y;
+        imu_msg.ang_accel_rel.z = ang_accel_rel.z;
+
+        imu_msg.ang_accel_world.x = ang_accel_world.x;
+        imu_msg.ang_accel_world.y = ang_accel_world.y;
+        imu_msg.ang_accel_world.z = ang_accel_world.z;
+
+        imu_pub.publish(imu_msg);
+    }
 }
 
 void WalkController::updateFootDisplacementAndVelocity(){
