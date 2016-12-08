@@ -14,6 +14,7 @@
 #include <ros/ros.h>
 // ros messages
 #include <std_msgs/Int32.h>
+#include <geometry_msgs/Pose.h>
 #include "common_utilities/Pose.h"
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
@@ -33,6 +34,7 @@ public:
      */
     void initializeWorlds(uint numberOfWorlds);
     void publishPose(uint modelNr);
+    void publishTestPose( const geometry_msgs::Pose::ConstPtr& msg );
     vector<physics::WorldPtr> world;
 private:
     transport::NodePtr node;
@@ -40,7 +42,8 @@ private:
 
     ros::NodeHandlePtr nh;
     ros::ServiceServer reset_world_srv;
-    ros::Subscriber sim_control_sub;
+    ros::Subscriber sim_control_sub, pose_sub;
+    ros::Publisher marker_visualization_pub;
     ros::Publisher pose_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 

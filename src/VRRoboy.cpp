@@ -12,6 +12,9 @@ VRRoboy::VRRoboy(){
     spinner->start();
 
     pose_pub = nh->advertise<common_utilities::Pose>("/roboy/pose", 100);
+    pose_sub = nh->subscribe("/roboy/pose_test", 1000, &VRRoboy::publishTestPose, this);
+    marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
+
 }
 
 VRRoboy::~VRRoboy(){
@@ -49,6 +52,35 @@ void VRRoboy::publishPose(uint modelNr){
         msg.yaw.push_back(rot.z);
     }
     pose_pub.publish(msg);
+}
+
+void VRRoboy::publishTestPose( const geometry_msgs::Pose::ConstPtr& msg ){
+    visualization_msgs::Marker mesh;
+    mesh.header.frame_id = "world";
+    mesh.ns = "model_test";
+    mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
+    mesh.color.r = 1.0f;
+    mesh.color.g = 1.0f;
+    mesh.color.b = 1.0f;
+    mesh.color.a = 0.5;
+    mesh.scale.x = 1.0;
+    mesh.scale.y = 1.0;
+    mesh.scale.z = 1.0;
+    mesh.lifetime = ros::Duration(0);
+    mesh.header.stamp = ros::Time::now();
+    mesh.action = visualization_msgs::Marker::ADD;
+
+    mesh.id = 0;
+    mesh.pose.position.x = msg->position.x;
+    mesh.pose.position.y = msg->position.y;
+    mesh.pose.position.z = msg->position.z;
+    mesh.pose.orientation.x = msg->orientation.x;
+    mesh.pose.orientation.y = msg->orientation.y;
+    mesh.pose.orientation.z = msg->orientation.z;
+    mesh.pose.orientation.w = msg->orientation.w;
+
+    mesh.mesh_resource = "package://roboy_models/legs_with_upper_body/cad/torso.STL";
+    marker_visualization_pub.publish(mesh);
 }
 
 int main(int _argc, char **_argv){
