@@ -56,14 +56,9 @@ protected:
     ros::NodeHandlePtr nh;
     int ID;
     uint message_counter;
-<<<<<<< HEAD
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeForceTorqueSensors = false;
-=======
     bool visualizeTendon = false, visualizeCOM = false, visualizeEstimatedCOM = false, visualizeForce = false,
             visualizeMomentArm = false, visualizeMesh = false, visualizeStateMachineParameters = false,
             visualizeForceTorqueSensors = false, visualizeIMUs = false;
->>>>>>> 715b266... Added more visualizations and new /roboy/imu topic
     ros::Publisher marker_visualization_pub;
 private:
     ros::Publisher leg_state_pub, simulation_state_pub;

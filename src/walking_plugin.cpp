@@ -192,8 +192,6 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(visualizeForceTorqueSensors, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
     options1->addWidget(visualizeForceTorqueSensors);
 
-<<<<<<< HEAD
-=======
     QCheckBox *visualizeIMUs = new QCheckBox(tr("show IMU sensors"));
     visualizeIMUs->setObjectName("visualizeIMUs");
     connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
@@ -204,7 +202,6 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(visualizeEstimatedCOM, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
     options1->addWidget(visualizeEstimatedCOM);
 
->>>>>>> 715b266... Added more visualizations and new /roboy/imu topic
     options->addLayout(options0);
     options->addLayout(options1);
     frameLayout->addLayout(options);

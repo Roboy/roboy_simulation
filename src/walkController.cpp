@@ -431,8 +431,6 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
     COM /= mass_total;
 }
 
-<<<<<<< HEAD
-=======
 void WalkController::publishEstimatedCOM() {
     // Construct the visualization message for the estimated position of COM
     // illustrated by a sphere
@@ -598,7 +596,6 @@ void WalkController::publishIMUs() {
     }
 }
 
->>>>>>> 715b266... Added more visualizations and new /roboy/imu topic
 void WalkController::updateFootDisplacementAndVelocity(){
     // calculate the COM position and velocity
     calculateCOM(POSITION, center_of_mass[POSITION]);
