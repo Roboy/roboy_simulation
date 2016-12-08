@@ -433,7 +433,6 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
     COM /= mass_total;
 }
 
-<<<<<<< HEAD
 void WalkController::publishEstimatedCOM() {
     // Construct the visualization message for the estimated position of COM
     // illustrated by a sphere
@@ -473,10 +472,6 @@ void WalkController::publishEstimatedCOM() {
 
 void WalkController::publishIMUs() {
     // Construct the arrow visualization and /roboy/imu messages illustrating the accelerations
-=======
-void WalkController::publishIMUs() {
-    // Construct the arrow visualization messages illustrating the accelerations
->>>>>>> 9c0b071... Implemented IMU visualization
     visualization_msgs::Marker arrow;
     arrow.header.frame_id = "world";
     char imunamespace[20];
@@ -484,15 +479,9 @@ void WalkController::publishIMUs() {
     arrow.ns = imunamespace;
     arrow.type = visualization_msgs::Marker::ARROW;
 
-<<<<<<< HEAD
     arrow.scale.x = 0.01; // Shaft diameter scale
     arrow.scale.y = 0.03; // Head diameter scale
     arrow.scale.z = 0.03; // Head length scale
-=======
-    arrow.scale.x = 0.03;
-    arrow.scale.y = 0.03;
-    arrow.scale.z = 0.03;
->>>>>>> 9c0b071... Implemented IMU visualization
 
     arrow.lifetime = ros::Duration();
     arrow.action = visualization_msgs::Marker::ADD;
@@ -500,7 +489,6 @@ void WalkController::publishIMUs() {
     geometry_msgs::Point start_point;
     geometry_msgs::Point end_point;
 
-<<<<<<< HEAD
     roboy_simulation::IMU imu_msg;
     imu_msg.roboyID = roboyID;
 
@@ -607,57 +595,6 @@ void WalkController::publishIMUs() {
         imu_msg.ang_accel_world.z = ang_accel_world.z;
 
         imu_pub.publish(imu_msg);
-=======
-    for (auto link_name : link_names) {
-        // choose which links to publish
-        if (link_name == "foot_left" ||
-            link_name == "foot_right") {
-            arrow.id = message_counter++;
-            arrow.header.stamp = ros::Time::now();
-            arrow.points.clear();
-
-            physics::LinkPtr link = parent_model->GetLink(link_name);
-            math::Pose pose = link->GetWorldPose();
-
-            math::Vector3 accel_rel = link->GetRelativeLinearAccel();
-            math::Vector3 accel_world = link->GetWorldLinearAccel();
-
-            // The acceleration vector starts at the position of the link
-            start_point.x = pose.pos.x;
-            start_point.y = pose.pos.y;
-            start_point.z = pose.pos.z;
-            arrow.points.push_back(start_point);
-
-            // Relative acceleration with red color
-            arrow.color.r = 1.0f;
-            arrow.color.g = 0.0f;
-            arrow.color.b = 0.0f;
-            arrow.color.a = 1.0f;
-
-            end_point.x = start_point.x + accel_rel.x * 0.01;
-            end_point.y = start_point.y + accel_rel.y * 0.01;
-            end_point.z = start_point.z + accel_rel.z * 0.01;
-            arrow.points.push_back(end_point);
-            marker_visualization_pub.publish(arrow);
-
-            arrow.id = message_counter++;
-            arrow.points.clear();
-            
-            arrow.points.push_back(start_point);
-
-            // Absolute world acceleration with light red color
-            arrow.color.r = 1.0f;
-            arrow.color.g = 0.5f;
-            arrow.color.b = 0.5f;
-            arrow.color.a = 1.0f;
-
-            end_point.x = start_point.x + accel_world.x * 0.01;
-            end_point.y = start_point.y + accel_world.y * 0.01;
-            end_point.z = start_point.z + accel_world.z * 0.01;
-            arrow.points.push_back(end_point);
-            marker_visualization_pub.publish(arrow);
-        }
->>>>>>> 9c0b071... Implemented IMU visualization
     }
 }
 

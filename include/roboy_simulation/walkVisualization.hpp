@@ -57,15 +57,9 @@ protected:
     ros::NodeHandlePtr nh;
     int ID;
     uint message_counter;
-<<<<<<< HEAD
     bool visualizeTendon = false, visualizeCOM = false, visualizeEstimatedCOM = false, visualizeForce = false,
             visualizeMomentArm = false, visualizeMesh = false, visualizeStateMachineParameters = false,
             visualizeForceTorqueSensors = false, visualizeIMUs = false;
-=======
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeForceTorqueSensors = false,
-            visualizeIMUs = false;
->>>>>>> 9c0b071... Implemented IMU visualization
     ros::Publisher marker_visualization_pub;
 private:
     ros::Publisher leg_state_pub, simulation_state_pub;

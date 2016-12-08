@@ -197,14 +197,11 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
     options1->addWidget(visualizeIMUs);
 
-<<<<<<< HEAD
     QCheckBox *visualizeEstimatedCOM = new QCheckBox(tr("show estimated COM"));
     visualizeEstimatedCOM->setObjectName("visualizeEstimatedCOM");
     connect(visualizeEstimatedCOM, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
     options1->addWidget(visualizeEstimatedCOM);
 
-=======
->>>>>>> 9c0b071... Implemented IMU visualization
     options->addLayout(options0);
     options->addLayout(options1);
     frameLayout->addLayout(options);
