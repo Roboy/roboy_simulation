@@ -120,18 +120,12 @@ public:
      * @param COM is filled with the COM position/velocity
      */
     void calculateCOM(int type, math::Vector3 &COM);
-    
+
     /**
      * Publishes the estimated position of COM based on the neural network
      * interpretation of sensor data
      */
     void publishEstimatedCOM();
-
-    /**
-     * Fetches the accelerations and the positions of the IMUs and
-     * publishes them on a topic
-     */
-    void publishIMUs();
 
     /**
      * Fetches the accelerations and the positions of the IMUs and
