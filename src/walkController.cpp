@@ -499,10 +499,8 @@ void WalkController::publishIMUs() {
         physics::LinkPtr link = parent_model->GetLink(link_name);
         math::Pose pose = link->GetWorldCoGPose();
 
-        math::Vector3 lin_accel_rel = link->GetRelativeLinearAccel();
         math::Vector3 lin_accel_world = link->GetWorldLinearAccel();
-        math::Vector3 ang_accel_rel = link->GetRelativeAngularAccel();
-        math::Vector3 ang_accel_world = link->GetWorldAngularAccel();
+        math::Vector3 ang_vel_world = link->GetWorldAngularVel();
 
         // The acceleration vector starts at the center of gravity of the link
         start_point.x = pose.pos.x;
@@ -514,15 +512,15 @@ void WalkController::publishIMUs() {
 
         arrow.points.push_back(start_point);
 
-        // Relative acceleration with red color
+        // Linear world acceleration with red color
         arrow.color.r = 1.0f;
         arrow.color.g = 0.0f;
         arrow.color.b = 0.0f;
         arrow.color.a = 1.0f;
 
-        end_point.x = start_point.x + lin_accel_rel.x * 0.01;
-        end_point.y = start_point.y + lin_accel_rel.y * 0.01;
-        end_point.z = start_point.z + lin_accel_rel.z * 0.01;
+        end_point.x = start_point.x + lin_accel_world.x * 0.03;
+        end_point.y = start_point.y + lin_accel_world.y * 0.03;
+        end_point.z = start_point.z + lin_accel_world.z * 0.03;
         arrow.points.push_back(end_point);
         marker_visualization_pub.publish(arrow);
 
@@ -531,68 +529,26 @@ void WalkController::publishIMUs() {
 
         arrow.points.push_back(start_point);
 
-        // Absolute world acceleration with light red color
-        arrow.color.r = 1.0f;
-        arrow.color.g = 0.5f;
-        arrow.color.b = 0.5f;
-        arrow.color.a = 1.0f;
-
-        end_point.x = start_point.x + lin_accel_world.x * 0.01;
-        end_point.y = start_point.y + lin_accel_world.y * 0.01;
-        end_point.z = start_point.z + lin_accel_world.z * 0.01;
-        arrow.points.push_back(end_point);
-        marker_visualization_pub.publish(arrow);
-
-        arrow.id = message_counter++;
-        arrow.points.clear();
-
-        arrow.points.push_back(start_point);
-
-        // Angular absolute world acceleration with green color
+        // Angular world velocity with green color
         arrow.color.r = 0.0f;
-        arrow.color.g = 0.7f;
+        arrow.color.g = 1.0f;
         arrow.color.b = 0.0f;
         arrow.color.a = 1.0f;
 
-        end_point.x = start_point.x + ang_accel_world.x * 0.001;
-        end_point.y = start_point.y + ang_accel_world.y * 0.001;
-        end_point.z = start_point.z + ang_accel_world.z * 0.001;
-        arrow.points.push_back(end_point);
-        marker_visualization_pub.publish(arrow);
-
-        arrow.id = message_counter++;
-        arrow.points.clear();
-
-        arrow.points.push_back(start_point);
-
-        // Angular relative acceleration with light green color
-        arrow.color.r = 0.7f;
-        arrow.color.g = 1.0f;
-        arrow.color.b = 0.7f;
-        arrow.color.a = 1.0f;
-
-        end_point.x = start_point.x + ang_accel_rel.x * 0.001;
-        end_point.y = start_point.y + ang_accel_rel.y * 0.001;
-        end_point.z = start_point.z + ang_accel_rel.z * 0.001;
+        end_point.x = start_point.x + ang_vel_world.x * 0.02;
+        end_point.y = start_point.y + ang_vel_world.y * 0.02;
+        end_point.z = start_point.z + ang_vel_world.z * 0.02;
         arrow.points.push_back(end_point);
         marker_visualization_pub.publish(arrow);
 
         // IMU message (not for rviz visualization)
-        imu_msg.lin_accel_rel.x = lin_accel_rel.x;
-        imu_msg.lin_accel_rel.y = lin_accel_rel.y;
-        imu_msg.lin_accel_rel.z = lin_accel_rel.z;
-
         imu_msg.lin_accel_world.x = lin_accel_world.x;
         imu_msg.lin_accel_world.y = lin_accel_world.y;
         imu_msg.lin_accel_world.z = lin_accel_world.z;
 
-        imu_msg.ang_accel_rel.x = ang_accel_rel.x;
-        imu_msg.ang_accel_rel.y = ang_accel_rel.y;
-        imu_msg.ang_accel_rel.z = ang_accel_rel.z;
-
-        imu_msg.ang_accel_world.x = ang_accel_world.x;
-        imu_msg.ang_accel_world.y = ang_accel_world.y;
-        imu_msg.ang_accel_world.z = ang_accel_world.z;
+        imu_msg.ang_vel_world.x = ang_vel_world.x;
+        imu_msg.ang_vel_world.y = ang_vel_world.y;
+        imu_msg.ang_vel_world.z = ang_vel_world.z;
 
         imu_pub.publish(imu_msg);
     }
