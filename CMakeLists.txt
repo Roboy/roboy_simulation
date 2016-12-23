@@ -32,6 +32,7 @@ include_directories(${libcmaes_INCLUDE_DIRS})
 add_message_files(
         DIRECTORY
         msgs
+
         FILES
         Tendon.msg
         VisualizationControl.msg
@@ -41,11 +42,13 @@ add_message_files(
         ControllerParameters.msg
         Abortion.msg
         MotorControl.msg
+				Joint.msg
 )
 
 add_service_files(
         DIRECTORY
         srvs
+
         FILES
         UpdateControllerParameters.srv
         Energies.srv
@@ -118,7 +121,7 @@ install(TARGETS
         roboy_rviz
         contact_plugin
         force_torque_plugin
-	    WalkController
+	    	WalkController
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         )
 

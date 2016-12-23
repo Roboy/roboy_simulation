@@ -46,6 +46,7 @@
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
 #include "roboy_simulation/IMU.h"
+#include "roboy_simulation/Joint.h"
 
 #include "roboy_simulation/walkVisualization.hpp"
 #include "roboy_simulation/helperClasses.hpp"
@@ -194,6 +195,8 @@ public:
     bool energiesService(roboy_simulation::Energies::Request  &req,
                          roboy_simulation::Energies::Response &res);
 
+    void jointPublisher ();
+
 
 private:
     static int roboyID_generator;
@@ -201,7 +204,7 @@ private:
     ros::NodeHandlePtr nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
             steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;
-    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub;
+    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub, joint_pub;
     ros::ServiceServer roboyID_srv, control_parameters_srv, energies_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
@@ -218,6 +221,7 @@ private:
     sdf::ElementPtr sdf;
 
     vector<string> link_names;
+    vector<string> joint_names;
     map<string,vector<uint>> muscles_spanning_joint;
 
     double gazebo_max_step_size = 0.003;

@@ -27,6 +27,8 @@ WalkController::WalkController() {
 
     imu_pub = nh->advertise<roboy_simulation::IMU>("/roboy/imu", 100);
 
+    joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 100);
+
     roboyID = roboyID_generator++;
     ID = roboyID;
     char topic[200];
@@ -52,6 +54,19 @@ WalkController::WalkController() {
     link_names.push_back("oberarm_right");
     link_names.push_back("unterarm_left");
     link_names.push_back("unterarm_right");
+
+    joint_names.push_back("neck");
+    joint_names.push_back("shoulder_left");
+    joint_names.push_back("shoulder_right");
+    joint_names.push_back("elbow_left");
+    joint_names.push_back("elbow_right");
+    joint_names.push_back("spine");
+    joint_names.push_back("groin_left");
+    joint_names.push_back("groin_right");
+    joint_names.push_back("knee_left");
+    joint_names.push_back("knee_right");
+    joint_names.push_back("ankle_left");
+    joint_names.push_back("ankle_right");
 
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
@@ -467,7 +482,7 @@ void WalkController::publishEstimatedCOM() {
     sphere.pose.position.y = 0.0f; // REPLACE WITH NN ESTIMATION
     sphere.pose.position.z = 0.0f; // REPLACE WITH NN ESTIMATION
 
-    marker_visualization_pub.publish(sphere);
+    // marker_visualization_pub.publish(sphere);
 }
 
 void WalkController::publishIMUs() {
@@ -542,6 +557,7 @@ void WalkController::publishIMUs() {
         marker_visualization_pub.publish(arrow);
 
         // IMU message (not for rviz visualization)
+
         imu_msg.lin_accel_world.x = lin_accel_world.x;
         imu_msg.lin_accel_world.y = lin_accel_world.y;
         imu_msg.lin_accel_world.z = lin_accel_world.z;
@@ -550,8 +566,15 @@ void WalkController::publishIMUs() {
         imu_msg.ang_vel_world.y = ang_vel_world.y;
         imu_msg.ang_vel_world.z = ang_vel_world.z;
 
+        imu_msg.position.x = pose.pos.x;
+        imu_msg.position.y = pose.pos.y;
+        imu_msg.position.z = pose.pos.z;
+
+        imu_msg.mass = link->GetInertial()->GetMass();
+
         imu_pub.publish(imu_msg);
     }
+
 }
 
 void WalkController::updateFootDisplacementAndVelocity(){
@@ -1275,5 +1298,24 @@ bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
     res.E_effort = E_effort_int;
     return true;
 }
+
+void WalkController::jointPublisher () {
+  roboy_simulation::Joint joint_msg;
+  joint_msg.roboyID = roboyID;
+
+  for (auto joint_name : joint_names) {
+      joint_msg.name = joint_name;
+
+      physics::JointPtr joint = parent_model->GetJoint(joint_name);
+      math::Pose pose = joint->GetWorldPose();
+
+
+      joint_msg.position.x = pose.pos.x;
+      joint_msg.position.y = pose.pos.y;
+      joint_msg.position.z = pose.pos.z;
+      joint_pub.publish(joint_msg);
+  }
+}
+
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)
