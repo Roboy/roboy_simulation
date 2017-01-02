@@ -40,6 +40,7 @@ WalkController::WalkController() {
 
     params.resize(TOTAL_NUMBER_CONTROLLER_PARAMETERS);
 
+    /*
     // the following links are part of my robot (this is useful if the model.sdf contains additional links)
     link_names.push_back("hip");
     link_names.push_back("thigh_left");
@@ -67,6 +68,7 @@ WalkController::WalkController() {
     joint_names.push_back("knee_right");
     joint_names.push_back("ankle_left");
     joint_names.push_back("ankle_right");
+    */
 
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
@@ -105,6 +107,17 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         robot_description = sdf_->GetElement("robotParam")->Get<std::string>();
     } else {
         robot_description = "robot_description"; // default
+    }
+
+    // Get all link and joint names
+    physics::Link_V links = parent_model->GetLinks();
+    for (auto link : links) {
+        link_names.push_back(link->GetName());
+    }
+
+    physics::Joint_V joints = parent_model->GetJoints();
+    for (auto joint : joints) {
+        joint_names.push_back(joint->GetName());
     }
 
     gazebo_max_step_size = parent_model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize();
