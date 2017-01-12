@@ -120,10 +120,41 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         joint_names.push_back(joint->GetName());
     }
 
-    gazebo_max_step_size = parent_model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize();
+    physics::PhysicsEnginePtr physics_engine = parent_model->GetWorld()->GetPhysicsEngine();
+
+    gazebo_max_step_size = physics_engine->GetMaxStepSize();
 
     // Get the Gazebo simulation period
     ros::Duration gazebo_period = ros::Duration(gazebo_max_step_size);
+
+    // Get the Gazebo solver type
+    std::string solver_type = boost::any_cast<std::string>(physics_engine->GetParam("solver_type"));
+
+    // Give the global CFM (Constraint Force Mixing) a positive value (default 0) making the model a bit less stiff to avoid jittering
+    // Positive CFM allows links to overlap each other so the collisions aren't that hard
+    physics_engine->SetParam("cfm", 0.005);
+    double cfm = boost::any_cast<double>(physics_engine->GetParam("cfm"));
+
+    // Get the global ERP (Error Reduction Parameter) which is similar to CFM but is about joints
+    double erp = boost::any_cast<double>(physics_engine->GetParam("erp"));
+
+    ROS_INFO_STREAM("Simulation max_step_size: " << gazebo_max_step_size << " s");
+    ROS_INFO_STREAM("Solver type: " << solver_type);
+    ROS_INFO_STREAM("Global ERP: " << erp);
+    ROS_INFO_STREAM("Global CFM: " << cfm);
+
+    // List all models in the world and their links
+    ROS_INFO_STREAM("List of models in the world:");
+    physics::Model_V models = parent_model->GetWorld()->GetModels();
+    for (auto model : models) {
+        std::string model_name = model->GetName();
+        ROS_INFO_STREAM("  Model \"" << model_name << "\" links:");
+        physics::Link_V links = model->GetLinks();
+        for (auto link : links) {
+            std::string link_name = link->GetName();
+            ROS_INFO_STREAM("    " << link_name);
+        }
+    }
 
     // Decide the plugin control period
     control_period = ros::Duration(0.1);
