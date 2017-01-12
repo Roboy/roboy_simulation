@@ -112,7 +112,9 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     // Get all link and joint names
     physics::Link_V links = parent_model->GetLinks();
     for (auto link : links) {
-        link_names.push_back(link->GetName());
+        string link_name = link->GetName();
+        link_names.push_back(link_name);
+        acceleration_windows[link_name] = vector<math::Vector3>(ACCELERATION_WINDOW_SIZE, math::Vector3(0, 0, 0));
     }
 
     physics::Joint_V joints = parent_model->GetJoints();
@@ -561,6 +563,29 @@ void WalkController::publishIMUs() {
         math::Vector3 lin_accel_world = link->GetWorldLinearAccel();
         math::Vector3 ang_vel_world = link->GetWorldAngularVel();
 
+        // -------------------------------------------------------
+        // Calculate the average acceleration from the time window
+        // -------------------------------------------------------
+
+        vector<math::Vector3> &window = acceleration_windows[link->GetName()];
+
+        // First add the new measurement to the time window of earlier acceleration
+        // measurements and remove the oldest measurement
+        for (uint i = 0; i < window.size(); i++)
+        {
+            window[i] = window[i+1];
+        }
+        window[window.size()-1] = lin_accel_world;
+
+        // Calculate the average vector
+        math::Vector3 average_lin_accel;
+        for (auto acceleration : window) {
+            average_lin_accel += acceleration;
+        }
+        average_lin_accel /= window.size();
+
+        // -------------------------------------------------------
+
         // The acceleration vector starts at the center of gravity of the link
         start_point.x = pose.pos.x;
         start_point.y = pose.pos.y;
@@ -577,9 +602,9 @@ void WalkController::publishIMUs() {
         arrow.color.b = 0.0f;
         arrow.color.a = 1.0f;
 
-        end_point.x = start_point.x + lin_accel_world.x * 0.03;
-        end_point.y = start_point.y + lin_accel_world.y * 0.03;
-        end_point.z = start_point.z + lin_accel_world.z * 0.03;
+        end_point.x = start_point.x + average_lin_accel.x * 0.03;
+        end_point.y = start_point.y + average_lin_accel.y * 0.03;
+        end_point.z = start_point.z + average_lin_accel.z * 0.03;
         arrow.points.push_back(end_point);
         marker_visualization_pub.publish(arrow);
 
@@ -602,9 +627,9 @@ void WalkController::publishIMUs() {
 
         // IMU message (not for rviz visualization)
 
-        imu_msg.lin_accel_world.x = lin_accel_world.x;
-        imu_msg.lin_accel_world.y = lin_accel_world.y;
-        imu_msg.lin_accel_world.z = lin_accel_world.z;
+        imu_msg.lin_accel_world.x = average_lin_accel.x;
+        imu_msg.lin_accel_world.y = average_lin_accel.y;
+        imu_msg.lin_accel_world.z = average_lin_accel.z;
 
         imu_msg.ang_vel_world.x = ang_vel_world.x;
         imu_msg.ang_vel_world.y = ang_vel_world.y;

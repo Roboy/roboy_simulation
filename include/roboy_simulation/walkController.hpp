@@ -62,6 +62,8 @@ static const char * LEG_STATE_STRING[] = { "Stance", "Lift_off", "Swing", "Stanc
 
 static const char * LEG_NAMES_STRING[] = { "left leg", "right leg" };
 
+static const uint ACCELERATION_WINDOW_SIZE = 20;
+
 class WalkController : public gazebo::ModelPlugin, public WalkVisualization{
 public:
     /** Constructor */
@@ -223,6 +225,11 @@ private:
     vector<string> link_names;
     vector<string> joint_names;
     map<string,vector<uint>> muscles_spanning_joint;
+
+    // Acceleration "windows" for calculating the average accelerations to be published as IMU sensor data.
+    // This is done to make the IMU data less noisy.
+    // key: link name, value: array of accelerations
+    map<string, vector<math::Vector3>> acceleration_windows;
 
     double gazebo_max_step_size = 0.003;
 
