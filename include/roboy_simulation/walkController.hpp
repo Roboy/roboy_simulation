@@ -47,6 +47,8 @@
 #include "roboy_simulation/MotorControl.h"
 #include "roboy_simulation/IMU.h"
 #include "roboy_simulation/Joint.h"
+#include "roboy_simulation/RigidBody.h"
+#include "roboy_simulation/COM.h"
 
 #include "roboy_simulation/walkVisualization.hpp"
 #include "roboy_simulation/helperClasses.hpp"
@@ -206,7 +208,7 @@ private:
     ros::NodeHandlePtr nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
             steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;
-    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub, joint_pub;
+    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub, joint_pub, body_pub, com_pub;
     ros::ServiceServer roboyID_srv, control_parameters_srv, energies_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 

@@ -29,6 +29,10 @@ WalkController::WalkController() {
 
     joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 100);
 
+    body_pub = nh->advertise<roboy_simulation::RigidBody>("/roboy/body",100);
+
+    com_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",100);
+
     roboyID = roboyID_generator++;
     ID = roboyID;
     char topic[200];
@@ -491,7 +495,17 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
             }
         }
     }
+
     COM /= mass_total;
+
+    roboy_simulation::COM com_msg;
+    com_msg.roboyID = roboyID;
+    com_msg.position.x = COM.x;
+    com_msg.position.y = COM.y;
+    com_msg.position.z = COM.z;
+    com_pub.publish(com_msg);
+
+
 }
 
 void WalkController::publishEstimatedCOM() {
@@ -551,10 +565,14 @@ void WalkController::publishIMUs() {
     geometry_msgs::Point end_point;
 
     roboy_simulation::IMU imu_msg;
+    roboy_simulation::RigidBody body_msg;
+
     imu_msg.roboyID = roboyID;
+    body_msg.roboyID = roboyID;
 
     for (auto link_name : link_names) {
         imu_msg.link = link_name.c_str();
+        body_msg.link = link_name.c_str();
         arrow.header.stamp = ros::Time::now();
 
         physics::LinkPtr link = parent_model->GetLink(link_name);
@@ -635,13 +653,17 @@ void WalkController::publishIMUs() {
         imu_msg.ang_vel_world.y = ang_vel_world.y;
         imu_msg.ang_vel_world.z = ang_vel_world.z;
 
-        imu_msg.position.x = pose.pos.x;
-        imu_msg.position.y = pose.pos.y;
-        imu_msg.position.z = pose.pos.z;
+        // Link Position and Mass messages //
 
-        imu_msg.mass = link->GetInertial()->GetMass();
+        body_msg.position.x = pose.pos.x;
+        body_msg.position.y = pose.pos.y;
+        body_msg.position.z = pose.pos.z;
 
+        body_msg.mass = link->GetInertial()->GetMass();
+
+        // Publish imu and link msgs //
         imu_pub.publish(imu_msg);
+        body_pub.publish(body_msg);
     }
 
 }
