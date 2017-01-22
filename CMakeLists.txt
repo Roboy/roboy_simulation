@@ -43,7 +43,7 @@ add_message_files(
         Abortion.msg
         MotorControl.msg
 				Joint.msg
-				RigidBody.msg
+				BodyPart.msg
 				COM.msg
 )
 

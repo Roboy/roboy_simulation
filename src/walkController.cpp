@@ -29,9 +29,9 @@ WalkController::WalkController() {
 
     joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 100);
 
-    body_pub = nh->advertise<roboy_simulation::RigidBody>("/roboy/body",100);
+    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body",100);
 
-    com_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",100);
+    COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",100);
 
     roboyID = roboyID_generator++;
     ID = roboyID;
@@ -314,6 +314,8 @@ void WalkController::Update() {
         publishSimulationState(params, gz_time_now);
         publishID();
         publishLegState(leg_state);
+        publishJoints();
+        publishCOMmsg();
     }
 
     checkAbort();
@@ -498,12 +500,6 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
 
     COM /= mass_total;
 
-    roboy_simulation::COM com_msg;
-    com_msg.roboyID = roboyID;
-    com_msg.position.x = COM.x;
-    com_msg.position.y = COM.y;
-    com_msg.position.z = COM.z;
-    com_pub.publish(com_msg);
 
 
 }
@@ -565,7 +561,7 @@ void WalkController::publishIMUs() {
     geometry_msgs::Point end_point;
 
     roboy_simulation::IMU imu_msg;
-    roboy_simulation::RigidBody body_msg;
+    roboy_simulation::BodyPart body_msg;
 
     imu_msg.roboyID = roboyID;
     body_msg.roboyID = roboyID;
@@ -1390,7 +1386,7 @@ bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
     return true;
 }
 
-void WalkController::jointPublisher () {
+void WalkController::publishJoints () {
   roboy_simulation::Joint joint_msg;
   joint_msg.roboyID = roboyID;
 
@@ -1408,5 +1404,16 @@ void WalkController::jointPublisher () {
   }
 }
 
+void WalkController::publishCOMmsg () {
+  roboy_simulation::COM COM_msg;
+  COM_msg.roboyID = roboyID;
+  COM_msg.Position.x = center_of_mass[POSITION].x;
+  COM_msg.Position.y = center_of_mass[POSITION].y;
+  COM_msg.Position.z = center_of_mass[POSITION].z;
+  COM_msg.Velocity.x = center_of_mass[VELOCITY].x;
+  COM_msg.Velocity.y = center_of_mass[VELOCITY].y;
+  COM_msg.Velocity.z = center_of_mass[VELOCITY].z;
+  COM_pub.publish(COM_msg);
+}
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)

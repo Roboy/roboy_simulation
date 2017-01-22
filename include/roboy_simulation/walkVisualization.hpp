@@ -14,6 +14,7 @@
 #include "roboy_simulation/ForceTorque.h"
 #include "roboy_simulation/LegState.h"
 #include "roboy_simulation/ControllerParameters.h"
+#include "roboy_simulation/COM.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
