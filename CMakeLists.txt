@@ -84,6 +84,11 @@ add_library(roboy_rviz src/walking_plugin.cpp ${MOC_FILES})
 add_dependencies(roboy_rviz roboy_simulation_gencpp)
 target_link_libraries(roboy_rviz ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
+qt5_wrap_cpp(MOC_FILES include/roboy_simulation/balancing_plugin.hpp)
+add_library(roboy_rviz_balancing src/balancing_plugin.cpp ${MOC_FILES})
+add_dependencies(roboy_rviz_balancing roboy_simulation_gencpp)
+target_link_libraries(roboy_rviz_balancing ${QT_LIBRARIES} ${catkin_LIBRARIES})
+
 add_library(contact_plugin SHARED src/ContactPlugin.cpp)
 target_link_libraries(contact_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
@@ -139,5 +144,6 @@ install(FILES
 	dummy_muscle_plugin.xml
         muscle_plugin.xml
         walking_plugin.xml
+        balancing_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
         )
