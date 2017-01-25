@@ -76,6 +76,40 @@ WalkController::WalkController() {
 
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
+
+    // Generate the Gaussian kernel for IMU data low-pass filtering
+    ROS_INFO_STREAM("gaussian_kernel size and shape:");
+
+    // Set standard deviation to 3.0
+    double sigma = 3.0;
+    double r, s = 2.0 * sigma * sigma;
+
+    double sum = 0.0;
+    int half_size = ACCEL_WIN_SIZE / 2.0;
+    // If ACCEL_WIN_SIZE is odd, add one extra coefficient in the kernel
+    int add_coeff = (ACCEL_WIN_SIZE % 2 == 0 ? 0 : 1);
+
+    // Generate kernel
+    for(int i = -half_size; i < half_size + add_coeff; i++)
+    {
+        r = abs(i);
+        double coeff = (exp(-(r*r)/s))/(M_PI * s);
+        gaussian_kernel.push_back(coeff);
+        sum += coeff;
+    }
+
+    // Normalize the kernel
+    for(int i = 0; i < gaussian_kernel.size(); i++)
+    {
+        gaussian_kernel[i] /= sum;
+        // Visualize the shape of the kernel
+        ROS_INFO_STREAM(std::string(200 * gaussian_kernel[i], '#'));
+    }
+
+    if (gaussian_kernel.size() != ACCEL_WIN_SIZE) {
+        // This should never happen, but if it happens, give a warning
+        ROS_WARN_STREAM("gaussian_kernel size doesn't match ACCEL_WIN_SIZE!");
+    }
 }
 
 WalkController::~WalkController() {
@@ -118,7 +152,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     for (auto link : links) {
         string link_name = link->GetName();
         link_names.push_back(link_name);
-        acceleration_windows[link_name] = vector<math::Vector3>(ACCELERATION_WINDOW_SIZE, math::Vector3(0, 0, 0));
+        acceleration_windows[link_name] = vector<math::Vector3>(ACCEL_WIN_SIZE, math::Vector3(0, 0, 0));
     }
 
     physics::Joint_V joints = parent_model->GetJoints();
@@ -127,11 +161,6 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     }
 
     physics::PhysicsEnginePtr physics_engine = parent_model->GetWorld()->GetPhysicsEngine();
-
-    gazebo_max_step_size = physics_engine->GetMaxStepSize();
-
-    // Get the Gazebo simulation period
-    ros::Duration gazebo_period = ros::Duration(gazebo_max_step_size);
 
     // Get the Gazebo solver type
     std::string solver_type = boost::any_cast<std::string>(physics_engine->GetParam("solver_type"));
@@ -149,18 +178,44 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     ROS_INFO_STREAM("Global ERP: " << erp);
     ROS_INFO_STREAM("Global CFM: " << cfm);
 
-    // List all models in the world and their links
+    // List all models in the world
     ROS_INFO_STREAM("List of models in the world:");
     physics::Model_V models = parent_model->GetWorld()->GetModels();
     for (auto model : models) {
         std::string model_name = model->GetName();
-        ROS_INFO_STREAM("  Model \"" << model_name << "\" links:");
+        ROS_INFO_STREAM("Model \"" << model_name << "\" links:");
         physics::Link_V links = model->GetLinks();
+        // List all links of the model
         for (auto link : links) {
             std::string link_name = link->GetName();
-            ROS_INFO_STREAM("    " << link_name);
+            ROS_INFO_STREAM("  " << link_name);
+
+            // Modify and list the friction parameters of the link
+            physics::Collision_V collisions = link->GetCollisions();
+            for (auto collision : collisions) {
+                physics::FrictionPyramidPtr friction = collision->GetSurface()->FrictionPyramid();
+                friction->SetMuPrimary(100);
+                friction->SetMuSecondary(50);
+                friction->SetMuTorsion(10);
+                friction->SetPatchRadius(10);
+                friction->SetUsePatchRadius(true);
+                friction->SetElasticModulus(0.01);
+                //friction->SetPoissonsRatio(5);
+
+                ROS_INFO_STREAM("    Mu_1:            " << friction->MuPrimary());
+                ROS_INFO_STREAM("    Mu_2:            " << friction->MuSecondary());
+                ROS_INFO_STREAM("    Mu_Torsion:      " << friction->MuTorsion());
+                ROS_INFO_STREAM("    Patch radius:    " << friction->PatchRadius());
+                ROS_INFO_STREAM("    Elastic modulus: " << friction->ElasticModulus());
+                ROS_INFO_STREAM("    Poisson's ratio: " << friction->PoissonsRatio());
+            }
         }
     }
+
+    gazebo_max_step_size = physics_engine->GetMaxStepSize();
+
+    // Get the Gazebo simulation period
+    ros::Duration gazebo_period = ros::Duration(gazebo_max_step_size);
 
     // Decide the plugin control period
     control_period = ros::Duration(0.1);
@@ -352,6 +407,12 @@ void WalkController::Reset() {
     // Reset timing variables to not pass negative update periods to controllers on world reset
     last_update_sim_time_ros = ros::Time();
     last_write_sim_time_ros = ros::Time();
+
+    // Reset the recorded acceleration data
+    for (auto it = acceleration_windows.begin(); it != acceleration_windows.end(); it++) {
+        it->second.clear();
+        it->second.resize(ACCEL_WIN_SIZE, math::Vector3(0.0, 0.0, 0.0));
+    }
 }
 
 void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg) {
@@ -574,31 +635,8 @@ void WalkController::publishIMUs() {
         physics::LinkPtr link = parent_model->GetLink(link_name);
         math::Pose pose = link->GetWorldCoGPose();
 
-        math::Vector3 lin_accel_world = link->GetWorldLinearAccel();
+        math::Vector3 average_lin_accel = getFilteredLinearAcceleration(link);
         math::Vector3 ang_vel_world = link->GetWorldAngularVel();
-
-        // -------------------------------------------------------
-        // Calculate the average acceleration from the time window
-        // -------------------------------------------------------
-
-        vector<math::Vector3> &window = acceleration_windows[link->GetName()];
-
-        // First add the new measurement to the time window of earlier acceleration
-        // measurements and remove the oldest measurement
-        for (uint i = 0; i < window.size(); i++)
-        {
-            window[i] = window[i+1];
-        }
-        window[window.size()-1] = lin_accel_world;
-
-        // Calculate the average vector
-        math::Vector3 average_lin_accel;
-        for (auto acceleration : window) {
-            average_lin_accel += acceleration;
-        }
-        average_lin_accel /= window.size();
-
-        // -------------------------------------------------------
 
         // The acceleration vector starts at the center of gravity of the link
         start_point.x = pose.pos.x;
@@ -1387,33 +1425,66 @@ bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
 }
 
 void WalkController::publishJoints () {
-  roboy_simulation::Joint joint_msg;
-  joint_msg.roboyID = roboyID;
+    roboy_simulation::Joint joint_msg;
+    joint_msg.roboyID = roboyID;
 
-  for (auto joint_name : joint_names) {
-      joint_msg.name = joint_name;
+    for (auto joint_name : joint_names) {
+        joint_msg.name = joint_name;
 
-      physics::JointPtr joint = parent_model->GetJoint(joint_name);
-      math::Pose pose = joint->GetWorldPose();
+        physics::JointPtr joint = parent_model->GetJoint(joint_name);
+        math::Pose pose = joint->GetWorldPose();
 
 
-      joint_msg.position.x = pose.pos.x;
-      joint_msg.position.y = pose.pos.y;
-      joint_msg.position.z = pose.pos.z;
-      joint_pub.publish(joint_msg);
-  }
+        joint_msg.position.x = pose.pos.x;
+        joint_msg.position.y = pose.pos.y;
+        joint_msg.position.z = pose.pos.z;
+        joint_pub.publish(joint_msg);
+    }
 }
 
 void WalkController::publishCOMmsg () {
-  roboy_simulation::COM COM_msg;
-  COM_msg.roboyID = roboyID;
-  COM_msg.Position.x = center_of_mass[POSITION].x;
-  COM_msg.Position.y = center_of_mass[POSITION].y;
-  COM_msg.Position.z = center_of_mass[POSITION].z;
-  COM_msg.Velocity.x = center_of_mass[VELOCITY].x;
-  COM_msg.Velocity.y = center_of_mass[VELOCITY].y;
-  COM_msg.Velocity.z = center_of_mass[VELOCITY].z;
-  COM_pub.publish(COM_msg);
+    roboy_simulation::COM COM_msg;
+    COM_msg.roboyID = roboyID;
+    COM_msg.Position.x = center_of_mass[POSITION].x;
+    COM_msg.Position.y = center_of_mass[POSITION].y;
+    COM_msg.Position.z = center_of_mass[POSITION].z;
+    COM_msg.Velocity.x = center_of_mass[VELOCITY].x;
+    COM_msg.Velocity.y = center_of_mass[VELOCITY].y;
+    COM_msg.Velocity.z = center_of_mass[VELOCITY].z;
+    COM_pub.publish(COM_msg);
+}
+
+math::Vector3 WalkController::getFilteredLinearAcceleration(const physics::LinkPtr link)
+{
+    math::Vector3 lin_accel_world = link->GetWorldLinearAccel();
+    string link_name = link->GetName();
+
+    // -------------------------------------------------------
+    //               Gaussian low-pass filter
+    // -------------------------------------------------------
+
+    vector<math::Vector3> &window = acceleration_windows[link_name];
+    if (window.size() != ACCEL_WIN_SIZE) {
+        // This should never happen, but if it happens, give a warning
+        ROS_WARN_STREAM(link_name << ": Acceleration window size doesn't match ACCEL_WIN_SIZE!");
+    }
+
+    // Remove the oldest measurement from the time window of earlier
+    // acceleration measurements.
+    for (uint i = 0; i < ACCEL_WIN_SIZE-1; i++) {
+        window[i] = window[i+1];
+    }
+
+    // Add the new measurement to the time window
+    window[ACCEL_WIN_SIZE-1] = lin_accel_world;
+
+    // Calculate the low-pass filtered vector
+    math::Vector3 filtered_lin_accel;
+    for (uint i = 0; i < ACCEL_WIN_SIZE; i++) {
+        filtered_lin_accel += window[i] * gaussian_kernel[i];
+    }
+
+    return filtered_lin_accel;
 }
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)
