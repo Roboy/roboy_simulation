@@ -127,10 +127,6 @@ public Q_SLOTS:
     void pause();
     /** Sends a slow motion */
     void slowMotion();
-    /** Sends a update interactive marker message */
-    void updateInteractiveMarker();
-    /** Sends a message containing Motor control of all motors */
-    void sendMotorControl();
     /** Refreshes visualization updates */
     void refresh();
 

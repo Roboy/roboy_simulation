@@ -50,10 +50,6 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     connect(button, SIGNAL(clicked()), this, SLOT(slowMotion()));
     simcontrol->addWidget(button);
 
-    button = new QPushButton(tr("update interactive marker"));
-    connect(button, SIGNAL(clicked()), this, SLOT(updateInteractiveMarker()));
-    simcontrol->addWidget(button);
-
     frameLayout->addLayout(simcontrol);
 
     QCheckBox *visualizeMesh= new QCheckBox(tr("show mesh"));
@@ -216,7 +212,7 @@ void BalancingPlugin::showMesh() {
     roboy_visualization_control_pub.publish(msg);
 }
 
-void BalancingPlugin::showForceTorqueSensors(){
+void BalancingPlugin::showForceTorqueSensors() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
     roboy_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
@@ -225,7 +221,7 @@ void BalancingPlugin::showForceTorqueSensors(){
     roboy_visualization_control_pub.publish(msg);
 }
 
-void BalancingPlugin::showIMUs(){
+void BalancingPlugin::showIMUs() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeIMUs");
     roboy_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
@@ -234,63 +230,37 @@ void BalancingPlugin::showIMUs(){
     roboy_visualization_control_pub.publish(msg);
 }
 
-void BalancingPlugin::changeID(int index){
+void BalancingPlugin::changeID(int index) {
     QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
     currentID = make_pair(index, roboyID->currentText().toInt());
     // republish visualization
-    showMesh();
-    showCOM();
-    showEstimatedCOM();
-    showForce();
-    showTendon();
-    showForceTorqueSensors();
-    showIMUs();
+    refresh();
 }
 
-void BalancingPlugin::resetWorld(){
+void BalancingPlugin::resetWorld() {
     std_srvs::Trigger srv;
     reset_world_srv.call(srv);
 }
 
-void BalancingPlugin::play(){
+void BalancingPlugin::play() {
     std_msgs::Int32 msg;
     msg.data = Play;
     sim_control_pub.publish(msg);
 }
 
-void BalancingPlugin::pause(){
+void BalancingPlugin::pause() {
     std_msgs::Int32 msg;
     msg.data = Pause;
     sim_control_pub.publish(msg);
 }
 
-void BalancingPlugin::slowMotion(){
+void BalancingPlugin::slowMotion() {
     std_msgs::Int32 msg;
     msg.data = Slow_Motion;
     sim_control_pub.publish(msg);
 }
 
-void BalancingPlugin::updateInteractiveMarker(){
-    std_msgs::Int32 msg;
-    msg.data = UpdateInteractiveMarker;
-    sim_control_pub.publish(msg);
-}
-
-void BalancingPlugin::sendMotorControl(){
-    roboy_simulation::MotorControl msg;
-    msg.roboyID = currentID.second;
-    QString m("motor");
-    for(uint i=0; i<16; i++){
-        QLineEdit* line = this->findChild<QLineEdit *>(m+QString::number(i));
-        bool ok = false;
-        msg.voltage.push_back(line->text().toFloat(&ok));
-        if(!ok)
-            line->setText("invalid value");
-    }
-    motor_control_pub.publish(msg);
-}
-
-void BalancingPlugin::refresh(){
+void BalancingPlugin::refresh() {
     showCOM();
     showEstimatedCOM();
     showForce();
@@ -300,20 +270,14 @@ void BalancingPlugin::refresh(){
     showTendon();
 }
 
-void BalancingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
+void BalancingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg) {
     QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
     int index = roboyID->findText(QString::number(msg->data));
-    if(index==-1) {
+    if (index == -1) {
         roboyID->addItem(QString::number(msg->data));
         roboyID->repaint();
         // republish visualization
-        showMesh();
-        showCOM();
-        showEstimatedCOM();
-        showForce();
-        showTendon();
-        showForceTorqueSensors();
-        showIMUs();
+        refresh();
     }
 }
 
