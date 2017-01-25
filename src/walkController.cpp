@@ -1432,12 +1432,9 @@ void WalkController::publishJoints () {
         joint_msg.name = joint_name;
 
         physics::JointPtr joint = parent_model->GetJoint(joint_name);
-        math::Pose pose = joint->GetWorldPose();
+        math::Angle theta = joint->GetAngle(0);
 
-
-        joint_msg.position.x = pose.pos.x;
-        joint_msg.position.y = pose.pos.y;
-        joint_msg.position.z = pose.pos.z;
+        joint_msg.radian = theta.Radian();
         joint_pub.publish(joint_msg);
     }
 }

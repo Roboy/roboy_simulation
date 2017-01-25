@@ -1,3 +1,3 @@
 int32 roboyID
 string name
-geometry_msgs/Point position
+float32 radian
