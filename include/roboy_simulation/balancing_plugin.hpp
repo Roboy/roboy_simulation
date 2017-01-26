@@ -36,48 +36,6 @@
 
 using namespace std;
 
-// little helper class for led visualization
-class LightWidget2 : public QWidget {
-Q_OBJECT
-public:
-    LightWidget2(QWidget *parent = 0)
-            : QWidget(parent), m_on(false) {
-        this->setFixedWidth(20);
-        this->setFixedHeight(20);
-    }
-
-    bool isOn() const { return m_on; }
-
-    void setOn(bool on) {
-        if(on)
-            m_color = Qt::green;
-        else
-            m_color = Qt::gray;
-        if (on == m_on)
-            return;
-        m_on = on;
-    }
-
-    void turnOff() { setOn(false); }
-
-    void turnOn() { setOn(true); }
-
-    void setColor(Qt::GlobalColor color){m_color = color;}
-
-protected:
-    virtual void paintEvent(QPaintEvent *)
-    {
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setBrush(m_color);
-        painter.drawEllipse(0, 0, width(), height());
-    }
-
-private:
-    QColor m_color;
-    bool m_on;
-};
-
 class BalancingPlugin : public rviz::Panel{
 Q_OBJECT
 
@@ -143,8 +101,8 @@ private:
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
     ros::AsyncSpinner *spinner;
-    ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub, sim_control_pub, motor_control_pub;
-    ros::Subscriber id_sub, simulation_state_sub, abort_sub;
+    ros::Publisher roboy_visualization_control_pub, sim_control_pub, motor_control_pub;
+    ros::Subscriber id_sub, simulation_state_sub;
     ros::ServiceClient reset_world_srv;
 
     ros::Timer frame_timer;
