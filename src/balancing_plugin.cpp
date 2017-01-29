@@ -10,86 +10,87 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
 
     QVBoxLayout *frameLayout = new QVBoxLayout();
 
-    QHBoxLayout *roboyIdlayout = new QHBoxLayout();
-    QLabel *roboyIDlabel= new QLabel(tr("roboy ID:"));
-    roboyIdlayout->addWidget(roboyIDlabel);
-
-    QComboBox *roboyID = new QComboBox();
-    roboyID->setObjectName("roboyID");
-    connect(roboyID, SIGNAL(currentIndexChanged(int)), this, SLOT(changeID(int)));
-    roboyIdlayout->addWidget(roboyID);
-
-    QPushButton *refreshbutton = new QPushButton(tr("refresh"));
-    connect(refreshbutton, SIGNAL(clicked()), this, SLOT(refresh()));
-    roboyIdlayout->addWidget(refreshbutton);
-
-    frameLayout->addLayout(roboyIdlayout);
-
+    // Layout for reset, play, pause, slow motion
+    QGroupBox *simcontrolGroupBox = new QGroupBox(tr("Simulation control"), this);
     QHBoxLayout *simcontrol = new QHBoxLayout();
+
+    QPushButton *button = new QPushButton(tr("Reset"));
+    connect(button, SIGNAL(clicked()), this, SLOT(resetWorld()));
+    simcontrol->addWidget(button);
+
+    button = new QPushButton(tr("Play"));
+    connect(button, SIGNAL(clicked()), this, SLOT(play()));
+    simcontrol->addWidget(button);
+
+    button = new QPushButton(tr("Pause"));
+    connect(button, SIGNAL(clicked()), this, SLOT(pause()));
+    simcontrol->addWidget(button);
+
+    button = new QPushButton(tr("Slow motion"));
+    connect(button, SIGNAL(clicked()), this, SLOT(slowMotion()));
+    simcontrol->addWidget(button);
+
+    simcontrolGroupBox->setLayout(simcontrol);
+    frameLayout->addWidget(simcontrolGroupBox);
+
+    // Layouts for visualization options
+    QGroupBox *optionsGroupBox = new QGroupBox(tr("Visualizations"), this);
     QHBoxLayout *options = new QHBoxLayout();
     QVBoxLayout *options0 = new QVBoxLayout();
     QVBoxLayout *options1 = new QVBoxLayout();
 
-    QHBoxLayout *controllerOptions = new QHBoxLayout();
-
-    frameLayout->addLayout(controllerOptions);
-
-    QPushButton *button = new QPushButton(tr("reset"));
-    connect(button, SIGNAL(clicked()), this, SLOT(resetWorld()));
-    simcontrol->addWidget(button);
-
-    button= new QPushButton(tr("play"));
-    connect(button, SIGNAL(clicked()), this, SLOT(play()));
-    simcontrol->addWidget(button);
-
-    button = new QPushButton(tr("pause"));
-    connect(button, SIGNAL(clicked()), this, SLOT(pause()));
-    simcontrol->addWidget(button);
-
-    button = new QPushButton(tr("slow motion"));
-    connect(button, SIGNAL(clicked()), this, SLOT(slowMotion()));
-    simcontrol->addWidget(button);
-
-    frameLayout->addLayout(simcontrol);
-
-    QCheckBox *visualizeMesh= new QCheckBox(tr("show mesh"));
+    QCheckBox *visualizeMesh = new QCheckBox(tr("Meshes"));
     visualizeMesh->setObjectName("visualizeMesh");
     connect(visualizeMesh, SIGNAL(clicked()), this, SLOT(showMesh()));
     options0->addWidget(visualizeMesh);
 
-    QCheckBox *visualizeTendon= new QCheckBox(tr("show tendon"));
+    QCheckBox *visualizeTendon = new QCheckBox(tr("Tendons"));
     visualizeTendon->setObjectName("visualizeTendon");
     connect(visualizeTendon, SIGNAL(clicked()), this, SLOT(showTendon()));
     options0->addWidget(visualizeTendon);
 
-    QCheckBox *visualizeCOM = new QCheckBox(tr("show COM"));
+    QCheckBox *visualizeCOM = new QCheckBox(tr("COM"));
     visualizeCOM->setObjectName("visualizeCOM");
     connect(visualizeCOM, SIGNAL(clicked()), this, SLOT(showCOM()));
     options0->addWidget(visualizeCOM);
 
-    QCheckBox *visualizeForce = new QCheckBox(tr("show force"));
+    QCheckBox *visualizeForce = new QCheckBox(tr("Forces"));
     visualizeForce->setObjectName("visualizeForce");
     connect(visualizeForce, SIGNAL(clicked()), this, SLOT(showForce()));
     options0->addWidget(visualizeForce);
 
-    QCheckBox *visualizeForceTorqueSensors = new QCheckBox(tr("show force torque sensors"));
+    QCheckBox *visualizeForceTorqueSensors = new QCheckBox(tr("Force-torque sensors"));
     visualizeForceTorqueSensors->setObjectName("visualizeForceTorqueSensors");
     connect(visualizeForceTorqueSensors, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
     options1->addWidget(visualizeForceTorqueSensors);
 
-    QCheckBox *visualizeIMUs = new QCheckBox(tr("show IMU sensors"));
+    QCheckBox *visualizeIMUs = new QCheckBox(tr("IMU sensors"));
     visualizeIMUs->setObjectName("visualizeIMUs");
     connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
     options1->addWidget(visualizeIMUs);
 
-    QCheckBox *visualizeEstimatedCOM = new QCheckBox(tr("show estimated COM"));
+    QCheckBox *visualizeEstimatedCOM = new QCheckBox(tr("Estimated COM"));
     visualizeEstimatedCOM->setObjectName("visualizeEstimatedCOM");
     connect(visualizeEstimatedCOM, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
     options1->addWidget(visualizeEstimatedCOM);
 
     options->addLayout(options0);
     options->addLayout(options1);
-    frameLayout->addLayout(options);
+    optionsGroupBox->setLayout(options);
+    frameLayout->addWidget(optionsGroupBox);
+
+    QGroupBox *signalOptionsGroupBox = new QGroupBox(tr("Signal processing"), this);
+    QHBoxLayout *signalOptions = new QHBoxLayout();
+    QVBoxLayout *signalOptions0 = new QVBoxLayout();
+
+    QCheckBox *IMUFiltering = new QCheckBox(tr("Filter IMU data"));
+    IMUFiltering->setObjectName("IMUFiltering");
+    connect(IMUFiltering, SIGNAL(clicked()), this, SLOT(toggleIMUFiltering()));
+    signalOptions0->addWidget(IMUFiltering);
+
+    signalOptions->addLayout(signalOptions0);
+    signalOptionsGroupBox->setLayout(signalOptions);
+    frameLayout->addWidget(signalOptionsGroupBox);
 
     // Add frameLayout to the frame
     mainFrame->setLayout(frameLayout);
@@ -117,7 +118,6 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     spinner = new ros::AsyncSpinner(1);
 
     roboy_visualization_control_pub = nh->advertise<roboy_simulation::VisualizationControl>("/roboy/visualization_control", 1);
-    id_sub = nh->subscribe("/roboy/id", 1, &BalancingPlugin::updateId, this);
     reset_world_srv = nh->serviceClient<std_srvs::Trigger>("/roboy/reset_world");
     sim_control_pub = nh->advertise<std_msgs::Int32>("/roboy/sim_control", 1);
     motor_control_pub = nh->advertise<roboy_simulation::MotorControl>("/roboy/motor_control", 100);
@@ -163,6 +163,9 @@ void BalancingPlugin::load(const rviz::Config &config) {
     config.mapGetBool(w->objectName(), &checked);
     w->setChecked(checked);
     w = this->findChild<QCheckBox*>("visualizeIMUs");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("IMUFiltering");
     config.mapGetBool(w->objectName(), &checked);
     w->setChecked(checked);
 }
@@ -230,11 +233,13 @@ void BalancingPlugin::showIMUs() {
     roboy_visualization_control_pub.publish(msg);
 }
 
-void BalancingPlugin::changeID(int index) {
-    QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
-    currentID = make_pair(index, roboyID->currentText().toInt());
-    // republish visualization
-    refresh();
+void BalancingPlugin::toggleIMUFiltering() {
+    QCheckBox* w = this->findChild<QCheckBox*>("IMUFiltering");
+    roboy_simulation::VisualizationControl msg;
+    msg.roboyID = currentID.second;
+    msg.control = IMUFiltering;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
 }
 
 void BalancingPlugin::resetWorld() {
@@ -268,17 +273,7 @@ void BalancingPlugin::refresh() {
     showIMUs();
     showMesh();
     showTendon();
-}
-
-void BalancingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg) {
-    QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
-    int index = roboyID->findText(QString::number(msg->data));
-    if (index == -1) {
-        roboyID->addItem(QString::number(msg->data));
-        roboyID->repaint();
-        // republish visualization
-        refresh();
-    }
+    toggleIMUFiltering();
 }
 
 PLUGINLIB_EXPORT_CLASS(BalancingPlugin, rviz::Panel)

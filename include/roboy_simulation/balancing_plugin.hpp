@@ -12,6 +12,7 @@
 #include <QTableWidget>
 #include <QComboBox>
 #include <QTimer>
+#include <QGroupBox>
 // std
 #include <map>
 // ros
@@ -73,10 +74,8 @@ public Q_SLOTS:
     void showForceTorqueSensors();
     /** Sends a message that triggers publishing of IMU visualization */
     void showIMUs();
-    /** Changes the current roboyID and requests update for all visualizations
-     * @param index new roboyID
-    */
-    void changeID(int index);
+    /** Sends a message that triggers filtering of IMU data */
+    void toggleIMUFiltering();
     /** Call to reset world service */
     void resetWorld();
     /** Sends a play message */
@@ -89,20 +88,13 @@ public Q_SLOTS:
     void refresh();
 
 private:
-    /** Callback for roboyID, adds a new entry when roboyID hasnt been seen before
-     * @param msg roboyID
-    */
-    void updateId(const std_msgs::Int32::ConstPtr &msg);
-    /** Callback for abortion criterias
-     * @param msg reason for abortion
-    */
 
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
     ros::AsyncSpinner *spinner;
     ros::Publisher roboy_visualization_control_pub, sim_control_pub, motor_control_pub;
-    ros::Subscriber id_sub, simulation_state_sub;
+    ros::Subscriber simulation_state_sub;
     ros::ServiceClient reset_world_srv;
 
     ros::Timer frame_timer;

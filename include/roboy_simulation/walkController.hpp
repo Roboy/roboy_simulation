@@ -172,11 +172,6 @@ public:
     /** Publishes the roboyID of this instantiation */
     void publishID();
 
-    /** Callback for toggle of walkControl
-     * @param msg containing the trigger (true/false)
-     * */
-    void toggleWalkController(const std_msgs::Bool::ConstPtr &msg);
-
     /** Callback for manual motor control
      * @param msg contains vector with voltage values for every motor
      * */
