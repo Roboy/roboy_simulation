@@ -221,8 +221,7 @@ private:
 
     // Timing
     gazebo::common::Time gz_time_now;
-    gazebo::common::Time gz_time_previous;
-    gazebo::common::Time gz_deltaTime;
+
     ros::Duration control_period;
     ros::Time last_update_sim_time_ros;
     ros::Time last_write_sim_time_ros;
@@ -309,6 +308,11 @@ private:
     map<string, double> desiredAngles;
     //Mapping of joint's name and its own pid
     map<string, gazebo::common::PID> jointPIDs;
+
+    gazebo::common::Time currentTime;
+    gazebo::common::Time previousTime;
+    gazebo::common::Time deltaTime;
+    bool firstLoop = true;
 
     double outputMax = 500;
     double outputMin = -500;

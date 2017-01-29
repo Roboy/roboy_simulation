@@ -27,13 +27,13 @@ WalkController::WalkController() {
 
     imu_pub = nh->advertise<roboy_simulation::IMU>("/roboy/imu", 100);
 
-    joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 100);
+    joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 12);
 
-    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body",100);
+    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body",13);
 
-    COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",100);
+    COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",1);
 
-    input_pub = nh->advertise<roboy_simulation::Input>("/roboy/inputV", 100);
+    input_pub = nh->advertise<roboy_simulation::Input>("/roboy/inputV", 12);
 
     roboyID = roboyID_generator++;
     ID = roboyID;
@@ -315,7 +315,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     for (auto joint_name : joint_names) {
       physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
       desiredAngles[joint_name] = 0;
-      jointPIDs[joint_name] = gazebo::common::PID(0.86,0.45,0.15,1,-1,outputMax,outputMin);
+      jointPIDs[joint_name] = gazebo::common::PID(0.86,0.55,0.25,outputMax,outputMin,outputMax,outputMin);
     }
 
     ROS_INFO("WalkController ready");
@@ -324,13 +324,9 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
 void WalkController::Update() {
     static long unsigned int counter = 0;
     // Get the simulation time and period
-    gz_time_previous = gz_time_now;
     gz_time_now = parent_model->GetWorld()->GetSimTime();
-    gz_deltaTime = gz_time_now - gz_time_previous;
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
-
-    gz_deltaTime = gz_time_now - gz_time_previous;
 
     updateFootDisplacementAndVelocity();
 
@@ -1438,103 +1434,118 @@ bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
     res.E_effort = E_effort_int;
     return true;
 }
-
+//Basic PID joint control system described below...
 void WalkController::controlJoints(){
   roboy_simulation::Input input_msg;
   input_msg.roboyID = roboyID;
 
+  if(firstLoop) {
+    currentTime = parent_model->GetWorld()->GetSimTime();
+    firstLoop = false;
+    return;
+  }
+  else {
+    previousTime = currentTime;
+    currentTime = parent_model->GetWorld()->GetSimTime();
+    deltaTime = currentTime - previousTime;
+
+    bool IsPositive = false;
     for (auto joint_name : joint_names) {
-      physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
-      publishJoints(thisJoint);
-      double currentAngle = thisJoint->GetAngle(0).Radian();
-      double deltaAngle = -currentAngle + desiredAngles[joint_name];
-      jointPIDs[joint_name].Update(deltaAngle, gz_deltaTime);
-      double inputVoltage = jointPIDs[joint_name].GetCmd();
+        physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
+        publishJoints(thisJoint);
+        double currentAngle = thisJoint->GetAngle(0).Radian();
+        double deltaAngle = desiredAngles[joint_name] - currentAngle;
+        jointPIDs[joint_name].Update(deltaAngle, deltaTime);
+        double inputVoltage = jointPIDs[joint_name].GetCmd();
+        if (inputVoltage>0) {IsPositive = true;}
+        double effectiveVoltage = abs (inputVoltage);
 
-      input_msg.name = joint_name;
-      input_msg.inputVoltage = inputVoltage;
 
-      input_pub.publish(input_msg);
+        if(joint_name == "neck") {
+          // No motors existing...
+        }
+        if(joint_name == "shoulder_left") {
+          // No motors existing...
+        }
+        if(joint_name == "shoulder_right") {
+          // No motors existing...
+        }
+        if(joint_name == "elbow_left") {
+          // No motors existing...
+        }
+        if(joint_name == "elbow_right") {
+          // No motors existing...
+        }
+        if(joint_name == "spine") {
+          // No motors existing...
+        }
+        if(joint_name == "groin_left") {
+          if(IsPositive){
+            sim_muscles[0]->cmd = 0;
+            sim_muscles[2]->cmd = 100 * effectiveVoltage;
+          }
+          else if (!IsPositive){
+            sim_muscles[0]->cmd = 100 * effectiveVoltage;
+            sim_muscles[2]->cmd = 0;
+          }
+        }
+        if(joint_name == "groin_right") {
+          if(IsPositive){
+            sim_muscles[8]->cmd = 100 * effectiveVoltage;
+            sim_muscles[10]->cmd = 0;
+          }
+          else if (!IsPositive){
+            sim_muscles[8]->cmd = 0;
+            sim_muscles[10]->cmd = 100 * effectiveVoltage;
+          }
+        }
+        if(joint_name == "knee_left") {
+          if(IsPositive){
+            sim_muscles[4]->cmd = 0;
+            sim_muscles[5]->cmd = 10 * effectiveVoltage;
+          }
+          else if (!IsPositive){
+            sim_muscles[4]->cmd = 10 * effectiveVoltage;
+            sim_muscles[5]->cmd = 0;
+          }
+        }
+        if(joint_name == "knee_right") {
+          if(IsPositive){
+            sim_muscles[12]->cmd = 10 * effectiveVoltage;
+            sim_muscles[13]->cmd = 0;
+          }
+          else if (!IsPositive){
+            sim_muscles[12]->cmd = 0;
+            sim_muscles[13]->cmd = 10 * effectiveVoltage;
+          }
+        }
+        if(joint_name == "ankle_left") {
+          if(IsPositive){
+            sim_muscles[6]->cmd = 0;
+            sim_muscles[7]->cmd = 10 * effectiveVoltage;
+          }
+          else if (!IsPositive){
+            sim_muscles[6]->cmd = 10 * effectiveVoltage;
+            sim_muscles[7]->cmd = 0;
+          }
+        }
+        if(joint_name == "ankle_right") {
+          if(IsPositive){
+            sim_muscles[14]->cmd = 10 * effectiveVoltage;
+            sim_muscles[15]->cmd = 0;
+          }
+          else if (!IsPositive){
+              sim_muscles[14]->cmd = 0;
+              sim_muscles[15]->cmd = 10 * effectiveVoltage;
+          }
+        }
 
-      if(joint_name == "neck") {
-
-      }
-      if(joint_name == "shoulder_left") {
-
-      }
-      if(joint_name == "shoulder_right") {
-
-      }
-      if(joint_name == "elbow_left") {
-
-      }
-      if(joint_name == "elbow_right") {
-
-      }
-      if(joint_name == "spine") {
-
-      }
-      if(joint_name == "groin_left") {
-        if(inputVoltage>0){
-          sim_muscles[0]->cmd = 100 * inputVoltage;
-          sim_muscles[2]->cmd = 0;
-        }
-        else {
-          sim_muscles[2]->cmd = 100 * inputVoltage;
-          sim_muscles[0]->cmd = 0;
-        }
-      }
-      if(joint_name == "groin_right") {
-        if(inputVoltage>0){
-          sim_muscles[8]->cmd = 100 * inputVoltage;
-          sim_muscles[10]->cmd = 0;
-        }
-        else {
-          sim_muscles[10]->cmd = 100 * inputVoltage;
-          sim_muscles[8]->cmd = 0;
-        }
-      }
-      if(joint_name == "knee_left") {
-        if(inputVoltage>0){
-          sim_muscles[4]->cmd = 30 * inputVoltage;
-          sim_muscles[5]->cmd = 0;
-        }
-        else {
-          sim_muscles[5]->cmd = 30 * inputVoltage;
-          sim_muscles[4]->cmd = 0;
-        }
-      }
-      if(joint_name == "knee_right") {
-        if(inputVoltage>0){
-          sim_muscles[12]->cmd = 30 * inputVoltage;
-          sim_muscles[13]->cmd = 0;
-        }
-        else {
-          sim_muscles[13]->cmd = 30 * inputVoltage;
-          sim_muscles[12]->cmd = 0;
-        }
-      }
-      if(joint_name == "ankle_left") {
-        if(inputVoltage>0){
-          sim_muscles[6]->cmd = 20 * inputVoltage;
-          sim_muscles[7]->cmd = 0;
-        }
-        else {
-          sim_muscles[7]->cmd = 20 * inputVoltage;
-          sim_muscles[6]->cmd = 0;
-        }
-      }
-      if(joint_name == "ankle_right") {
-        if(inputVoltage>0){
-          sim_muscles[15]->cmd = 20 * inputVoltage;
-          sim_muscles[14]->cmd = 0;
-        }
-        else {
-          sim_muscles[14]->cmd = 20 * inputVoltage;
-          sim_muscles[15]->cmd = 0;
-        }
-      }
+        // input voltages for motors are being published here...
+        input_msg.name = joint_name;
+        input_msg.inputVoltage = inputVoltage;
+        input_pub.publish(input_msg);
     }
+}
 
 }
 
