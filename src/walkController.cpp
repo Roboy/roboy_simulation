@@ -27,15 +27,11 @@ WalkController::WalkController() {
 
     joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 12);
 
-<<<<<<< HEAD
     body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body",13);
 
     COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",1);
-=======
-    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body", 100);
 
-    COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM", 100);
->>>>>>> 49db7db724a111e6a1475181bba7ff98639eac10
+    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body", 13);
 
     input_pub = nh->advertise<roboy_simulation::Input>("/roboy/inputV", 12);
 
@@ -289,7 +285,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     for (auto joint_name : joint_names) {
       physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
       desiredAngles[joint_name] = 0;
-      jointPIDs[joint_name] = gazebo::common::PID(0.86,0.55,0.25,outputMax,outputMin,outputMax,outputMin);
+      jointPIDs[joint_name] = gazebo::common::PID(15,0,10,outputMax,outputMin,outputMax,outputMin);
     }
 
     ROS_INFO("WalkController ready");
@@ -1424,7 +1420,7 @@ void WalkController::controlJoints(){
         physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
         publishJoints(thisJoint);
         double currentAngle = thisJoint->GetAngle(0).Radian();
-        double deltaAngle = desiredAngles[joint_name] - currentAngle;
+        double deltaAngle = currentAngle -desiredAngles[joint_name];
         jointPIDs[joint_name].Update(deltaAngle, deltaTime);
         double inputVoltage = jointPIDs[joint_name].GetCmd();
         if (inputVoltage>0) {IsPositive = true;}
@@ -1451,62 +1447,62 @@ void WalkController::controlJoints(){
         }
         if(joint_name == "groin_left") {
           if(IsPositive){
-            sim_muscles[0]->cmd = 0;
-            sim_muscles[2]->cmd = 100 * effectiveVoltage;
-          }
-          else if (!IsPositive){
-            sim_muscles[0]->cmd = 100 * effectiveVoltage;
+            sim_muscles[0]->cmd = effectiveVoltage;
             sim_muscles[2]->cmd = 0;
+          }
+          else {
+            sim_muscles[0]->cmd = 0;
+            sim_muscles[2]->cmd = effectiveVoltage;
           }
         }
         if(joint_name == "groin_right") {
           if(IsPositive){
-            sim_muscles[8]->cmd = 100 * effectiveVoltage;
-            sim_muscles[10]->cmd = 0;
-          }
-          else if (!IsPositive){
             sim_muscles[8]->cmd = 0;
-            sim_muscles[10]->cmd = 100 * effectiveVoltage;
+            sim_muscles[10]->cmd = effectiveVoltage;
+          }
+          else {
+            sim_muscles[8]->cmd = effectiveVoltage;
+            sim_muscles[10]->cmd = 0;
           }
         }
         if(joint_name == "knee_left") {
           if(IsPositive){
             sim_muscles[4]->cmd = 0;
-            sim_muscles[5]->cmd = 10 * effectiveVoltage;
+            sim_muscles[5]->cmd = effectiveVoltage;
           }
-          else if (!IsPositive){
-            sim_muscles[4]->cmd = 10 * effectiveVoltage;
+          else {
+            sim_muscles[4]->cmd = effectiveVoltage;
             sim_muscles[5]->cmd = 0;
           }
         }
         if(joint_name == "knee_right") {
           if(IsPositive){
-            sim_muscles[12]->cmd = 10 * effectiveVoltage;
-            sim_muscles[13]->cmd = 0;
-          }
-          else if (!IsPositive){
             sim_muscles[12]->cmd = 0;
-            sim_muscles[13]->cmd = 10 * effectiveVoltage;
+            sim_muscles[13]->cmd = effectiveVoltage;
+          }
+          else {
+            sim_muscles[12]->cmd = effectiveVoltage;
+            sim_muscles[13]->cmd = 0;
           }
         }
         if(joint_name == "ankle_left") {
           if(IsPositive){
             sim_muscles[6]->cmd = 0;
-            sim_muscles[7]->cmd = 10 * effectiveVoltage;
+            sim_muscles[7]->cmd = effectiveVoltage;
           }
-          else if (!IsPositive){
-            sim_muscles[6]->cmd = 10 * effectiveVoltage;
+          else {
+            sim_muscles[6]->cmd = effectiveVoltage;
             sim_muscles[7]->cmd = 0;
           }
         }
         if(joint_name == "ankle_right") {
           if(IsPositive){
-            sim_muscles[14]->cmd = 10 * effectiveVoltage;
+            sim_muscles[14]->cmd = effectiveVoltage;
             sim_muscles[15]->cmd = 0;
           }
-          else if (!IsPositive){
-              sim_muscles[14]->cmd = 0;
-              sim_muscles[15]->cmd = 10 * effectiveVoltage;
+          else {
+            sim_muscles[14]->cmd = 0;
+            sim_muscles[15]->cmd = effectiveVoltage;
           }
         }
 
