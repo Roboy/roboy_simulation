@@ -33,6 +33,8 @@ WalkController::WalkController() {
 
     COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",100);
 
+    input_pub = nh->advertise<roboy_simulation::Input>("/roboy/inputV", 100);
+
     roboyID = roboyID_generator++;
     ID = roboyID;
     char topic[200];
@@ -307,15 +309,28 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&WalkController::Update, this));
 
+    desiredAngles.clear();
+    jointPIDs.clear();
+
+    for (auto joint_name : joint_names) {
+      physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
+      desiredAngles[joint_name] = 0;
+      jointPIDs[joint_name] = gazebo::common::PID(0.86,0.45,0.15,1,-1,outputMax,outputMin);
+    }
+
     ROS_INFO("WalkController ready");
 }
 
 void WalkController::Update() {
     static long unsigned int counter = 0;
     // Get the simulation time and period
+    gz_time_previous = gz_time_now;
     gz_time_now = parent_model->GetWorld()->GetSimTime();
+    gz_deltaTime = gz_time_now - gz_time_previous;
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
+
+    gz_deltaTime = gz_time_now - gz_time_previous;
 
     updateFootDisplacementAndVelocity();
 
@@ -369,8 +384,8 @@ void WalkController::Update() {
         publishSimulationState(params, gz_time_now);
         publishID();
         publishLegState(leg_state);
-        publishJoints();
         publishCOMmsg();
+        controlJoints();
     }
 
     checkAbort();
@@ -1424,19 +1439,113 @@ bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
     return true;
 }
 
-void WalkController::publishJoints () {
-    roboy_simulation::Joint joint_msg;
-    joint_msg.roboyID = roboyID;
+void WalkController::controlJoints(){
+  roboy_simulation::Input input_msg;
+  input_msg.roboyID = roboyID;
 
     for (auto joint_name : joint_names) {
-        joint_msg.name = joint_name;
+      physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
+      publishJoints(thisJoint);
+      double currentAngle = thisJoint->GetAngle(0).Radian();
+      double deltaAngle = -currentAngle + desiredAngles[joint_name];
+      jointPIDs[joint_name].Update(deltaAngle, gz_deltaTime);
+      double inputVoltage = jointPIDs[joint_name].GetCmd();
 
-        physics::JointPtr joint = parent_model->GetJoint(joint_name);
-        math::Angle theta = joint->GetAngle(0);
+      input_msg.name = joint_name;
+      input_msg.inputVoltage = inputVoltage;
 
-        joint_msg.radian = theta.Radian();
-        joint_pub.publish(joint_msg);
+      input_pub.publish(input_msg);
+
+      if(joint_name == "neck") {
+
+      }
+      if(joint_name == "shoulder_left") {
+
+      }
+      if(joint_name == "shoulder_right") {
+
+      }
+      if(joint_name == "elbow_left") {
+
+      }
+      if(joint_name == "elbow_right") {
+
+      }
+      if(joint_name == "spine") {
+
+      }
+      if(joint_name == "groin_left") {
+        if(inputVoltage>0){
+          sim_muscles[0]->cmd = 100 * inputVoltage;
+          sim_muscles[2]->cmd = 0;
+        }
+        else {
+          sim_muscles[2]->cmd = 100 * inputVoltage;
+          sim_muscles[0]->cmd = 0;
+        }
+      }
+      if(joint_name == "groin_right") {
+        if(inputVoltage>0){
+          sim_muscles[8]->cmd = 100 * inputVoltage;
+          sim_muscles[10]->cmd = 0;
+        }
+        else {
+          sim_muscles[10]->cmd = 100 * inputVoltage;
+          sim_muscles[8]->cmd = 0;
+        }
+      }
+      if(joint_name == "knee_left") {
+        if(inputVoltage>0){
+          sim_muscles[4]->cmd = 30 * inputVoltage;
+          sim_muscles[5]->cmd = 0;
+        }
+        else {
+          sim_muscles[5]->cmd = 30 * inputVoltage;
+          sim_muscles[4]->cmd = 0;
+        }
+      }
+      if(joint_name == "knee_right") {
+        if(inputVoltage>0){
+          sim_muscles[12]->cmd = 30 * inputVoltage;
+          sim_muscles[13]->cmd = 0;
+        }
+        else {
+          sim_muscles[13]->cmd = 30 * inputVoltage;
+          sim_muscles[12]->cmd = 0;
+        }
+      }
+      if(joint_name == "ankle_left") {
+        if(inputVoltage>0){
+          sim_muscles[6]->cmd = 20 * inputVoltage;
+          sim_muscles[7]->cmd = 0;
+        }
+        else {
+          sim_muscles[7]->cmd = 20 * inputVoltage;
+          sim_muscles[6]->cmd = 0;
+        }
+      }
+      if(joint_name == "ankle_right") {
+        if(inputVoltage>0){
+          sim_muscles[15]->cmd = 20 * inputVoltage;
+          sim_muscles[14]->cmd = 0;
+        }
+        else {
+          sim_muscles[14]->cmd = 20 * inputVoltage;
+          sim_muscles[15]->cmd = 0;
+        }
+      }
     }
+
+}
+
+
+void WalkController::publishJoints(const physics::JointPtr thisJoint){
+    roboy_simulation::Joint joint_msg;
+    joint_msg.roboyID = roboyID;
+    joint_msg.name = thisJoint->GetName();
+    joint_msg.radian = thisJoint->GetAngle(0).Radian();
+    joint_pub.publish(joint_msg);
+    return;
 }
 
 void WalkController::publishCOMmsg () {

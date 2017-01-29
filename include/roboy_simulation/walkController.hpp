@@ -49,6 +49,7 @@
 #include "roboy_simulation/Joint.h"
 #include "roboy_simulation/BodyPart.h"
 #include "roboy_simulation/COM.h"
+#include "roboy_simulation/Input.h"
 
 #include "roboy_simulation/walkVisualization.hpp"
 #include "roboy_simulation/helperClasses.hpp"
@@ -199,9 +200,11 @@ public:
     bool energiesService(roboy_simulation::Energies::Request  &req,
                          roboy_simulation::Energies::Response &res);
 
-    void publishJoints ();
-
     void publishCOMmsg ();
+
+    void controlJoints ();
+
+    void publishJoints (gazebo::physics::JointPtr thisJoint);
 
 
 private:
@@ -210,7 +213,7 @@ private:
     ros::NodeHandlePtr nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
             steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;
-    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub, joint_pub, body_pub, COM_pub;
+    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub, joint_pub, body_pub, COM_pub, input_pub;
     ros::ServiceServer roboyID_srv, control_parameters_srv, energies_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
@@ -218,6 +221,8 @@ private:
 
     // Timing
     gazebo::common::Time gz_time_now;
+    gazebo::common::Time gz_time_previous;
+    gazebo::common::Time gz_deltaTime;
     ros::Duration control_period;
     ros::Time last_update_sim_time_ros;
     ros::Time last_write_sim_time_ros;
@@ -300,4 +305,14 @@ private:
     boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
     vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
     vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
+
+    map<string, double> desiredAngles;
+    //Mapping of joint's name and its own pid
+    map<string, gazebo::common::PID> jointPIDs;
+
+    double outputMax = 500;
+    double outputMin = -500;
+
+
+
 };

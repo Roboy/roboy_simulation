@@ -45,6 +45,7 @@ add_message_files(
 				Joint.msg
 				BodyPart.msg
 				COM.msg
+				Input.msg
 )
 
 add_service_files(
