@@ -55,6 +55,10 @@ void WalkVisualization::visualization_control(const roboy_simulation::Visualizat
                 visualizeIMUs = msg->value;
                 break;
             }
+            case IMUFiltering: {
+                filterIMUs = msg->value;
+                break;
+            }
         }
         if(!visualizeTendon || !visualizeCOM || !visualizeForce || !visualizeMomentArm ||
            !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors ||

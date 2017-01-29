@@ -21,17 +21,21 @@ WalkController::WalkController() {
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
     abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
-    toggle_walk_controller_sub = nh->subscribe("/roboy/toggle_walk_controller", 10,
-                                               &WalkController::toggleWalkController, this);
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &WalkController::motorControl, this);
 
     imu_pub = nh->advertise<roboy_simulation::IMU>("/roboy/imu", 100);
 
     joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 12);
 
+<<<<<<< HEAD
     body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body",13);
 
     COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",1);
+=======
+    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body", 100);
+
+    COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM", 100);
+>>>>>>> 49db7db724a111e6a1475181bba7ff98639eac10
 
     input_pub = nh->advertise<roboy_simulation::Input>("/roboy/inputV", 12);
 
@@ -45,36 +49,6 @@ WalkController::WalkController() {
     energies_srv = nh->advertiseService(topic, &WalkController::energiesService, this);
 
     params.resize(TOTAL_NUMBER_CONTROLLER_PARAMETERS);
-
-    /*
-    // the following links are part of my robot (this is useful if the model.sdf contains additional links)
-    link_names.push_back("hip");
-    link_names.push_back("thigh_left");
-    link_names.push_back("thigh_right");
-    link_names.push_back("shank_left");
-    link_names.push_back("shank_right");
-    link_names.push_back("foot_left");
-    link_names.push_back("foot_right");
-    link_names.push_back("torso");
-    link_names.push_back("head");
-    link_names.push_back("oberarm_left");
-    link_names.push_back("oberarm_right");
-    link_names.push_back("unterarm_left");
-    link_names.push_back("unterarm_right");
-
-    joint_names.push_back("neck");
-    joint_names.push_back("shoulder_left");
-    joint_names.push_back("shoulder_right");
-    joint_names.push_back("elbow_left");
-    joint_names.push_back("elbow_right");
-    joint_names.push_back("spine");
-    joint_names.push_back("groin_left");
-    joint_names.push_back("groin_right");
-    joint_names.push_back("knee_left");
-    joint_names.push_back("knee_right");
-    joint_names.push_back("ankle_left");
-    joint_names.push_back("ankle_right");
-    */
 
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
@@ -1401,10 +1375,6 @@ void WalkController::publishID(){
     roboyID_pub.publish(msg);
 }
 
-void WalkController::toggleWalkController(const std_msgs::Bool::ConstPtr &msg){
-    control = msg->data;
-}
-
 void WalkController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
     // only react to messages for me
     if(msg->roboyID == roboyID) {
@@ -1574,11 +1544,11 @@ void WalkController::publishCOMmsg () {
 math::Vector3 WalkController::getFilteredLinearAcceleration(const physics::LinkPtr link)
 {
     math::Vector3 lin_accel_world = link->GetWorldLinearAccel();
+    if (!filterIMUs) {
+        // Filtering disabled
+        return lin_accel_world;
+    }
     string link_name = link->GetName();
-
-    // -------------------------------------------------------
-    //               Gaussian low-pass filter
-    // -------------------------------------------------------
 
     vector<math::Vector3> &window = acceleration_windows[link_name];
     if (window.size() != ACCEL_WIN_SIZE) {
