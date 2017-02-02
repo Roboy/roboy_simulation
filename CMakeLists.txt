@@ -59,7 +59,7 @@ add_service_files(
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
-catkin_package(DEPENDS QT GAZEBO libcmaes CATKIN_DEPENDS message_runtime message_generation common_utilities flexrayusbinterface)
+catkin_package(DEPENDS QT QT_LIBRARIES QT_INCLUDE_DIRS GAZEBO libcmaes CATKIN_DEPENDS message_runtime message_generation common_utilities flexrayusbinterface)
 
 include_directories(
 		include/
@@ -127,6 +127,7 @@ install(TARGETS
         muscle_plugin
         dummy_muscle_plugin
         roboy_rviz
+        roboy_rviz_balancing
         contact_plugin
         force_torque_plugin
 	    	WalkController

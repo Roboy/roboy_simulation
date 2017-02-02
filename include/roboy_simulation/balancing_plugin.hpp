@@ -89,6 +89,19 @@ public Q_SLOTS:
 
 private:
 
+    /** Auxiliary function for publishing the new state of a checkbox when it's clicked **/
+    void publishCheckBoxState(VISUALIZATION checkbox);
+
+    const QMap<VISUALIZATION, QString> checkbox_names {
+        { COM, "visualizeCOM" },
+        { EstimatedCOM, "visualizeEstimatedCOM" },
+        { Forces, "visualizeForce" },
+        { Tendon, "visualizeTendon" },
+        { Mesh, "visualizeMesh" },
+        { ForceTorqueSensors, "visualizeForceTorqueSensors" },
+        { IMUs, "visualizeIMUs" },
+        { IMUFiltering, "IMUFiltering" }
+    };
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;

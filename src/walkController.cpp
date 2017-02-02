@@ -580,7 +580,7 @@ void WalkController::publishEstimatedCOM() {
     sphere.pose.position.y = 0.0f; // REPLACE WITH NN ESTIMATION
     sphere.pose.position.z = 0.0f; // REPLACE WITH NN ESTIMATION
 
-    // marker_visualization_pub.publish(sphere);
+    marker_visualization_pub.publish(sphere);
 }
 
 void WalkController::publishIMUs() {

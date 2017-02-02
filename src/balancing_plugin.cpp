@@ -1,7 +1,7 @@
 #include "roboy_simulation/balancing_plugin.hpp"
 
 BalancingPlugin::BalancingPlugin(QWidget *parent)
-        : rviz::Panel(parent){
+        : rviz::Panel(parent) {
     // Create the main layout
     QHBoxLayout *mainLayout = new QHBoxLayout;
 
@@ -40,37 +40,37 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     QVBoxLayout *options1 = new QVBoxLayout();
 
     QCheckBox *visualizeMesh = new QCheckBox(tr("Meshes"));
-    visualizeMesh->setObjectName("visualizeMesh");
+    visualizeMesh->setObjectName(checkbox_names[Mesh]);
     connect(visualizeMesh, SIGNAL(clicked()), this, SLOT(showMesh()));
     options0->addWidget(visualizeMesh);
 
     QCheckBox *visualizeTendon = new QCheckBox(tr("Tendons"));
-    visualizeTendon->setObjectName("visualizeTendon");
+    visualizeTendon->setObjectName(checkbox_names[Tendon]);
     connect(visualizeTendon, SIGNAL(clicked()), this, SLOT(showTendon()));
     options0->addWidget(visualizeTendon);
 
     QCheckBox *visualizeCOM = new QCheckBox(tr("COM"));
-    visualizeCOM->setObjectName("visualizeCOM");
+    visualizeCOM->setObjectName(checkbox_names[COM]);
     connect(visualizeCOM, SIGNAL(clicked()), this, SLOT(showCOM()));
     options0->addWidget(visualizeCOM);
 
     QCheckBox *visualizeForce = new QCheckBox(tr("Forces"));
-    visualizeForce->setObjectName("visualizeForce");
+    visualizeForce->setObjectName(checkbox_names[Forces]);
     connect(visualizeForce, SIGNAL(clicked()), this, SLOT(showForce()));
     options0->addWidget(visualizeForce);
 
     QCheckBox *visualizeForceTorqueSensors = new QCheckBox(tr("Force-torque sensors"));
-    visualizeForceTorqueSensors->setObjectName("visualizeForceTorqueSensors");
+    visualizeForceTorqueSensors->setObjectName(checkbox_names[ForceTorqueSensors]);
     connect(visualizeForceTorqueSensors, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
     options1->addWidget(visualizeForceTorqueSensors);
 
     QCheckBox *visualizeIMUs = new QCheckBox(tr("IMU sensors"));
-    visualizeIMUs->setObjectName("visualizeIMUs");
+    visualizeIMUs->setObjectName(checkbox_names[IMUs]);
     connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
     options1->addWidget(visualizeIMUs);
 
     QCheckBox *visualizeEstimatedCOM = new QCheckBox(tr("Estimated COM"));
-    visualizeEstimatedCOM->setObjectName("visualizeEstimatedCOM");
+    visualizeEstimatedCOM->setObjectName(checkbox_names[EstimatedCOM]);
     connect(visualizeEstimatedCOM, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
     options1->addWidget(visualizeEstimatedCOM);
 
@@ -83,10 +83,10 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     QHBoxLayout *signalOptions = new QHBoxLayout();
     QVBoxLayout *signalOptions0 = new QVBoxLayout();
 
-    QCheckBox *IMUFiltering = new QCheckBox(tr("Filter IMU data"));
-    IMUFiltering->setObjectName("IMUFiltering");
-    connect(IMUFiltering, SIGNAL(clicked()), this, SLOT(toggleIMUFiltering()));
-    signalOptions0->addWidget(IMUFiltering);
+    QCheckBox *filterIMUs = new QCheckBox(tr("Filter IMU data"));
+    filterIMUs->setObjectName(checkbox_names[IMUFiltering]);
+    connect(filterIMUs, SIGNAL(clicked()), this, SLOT(toggleIMUFiltering()));
+    signalOptions0->addWidget(filterIMUs);
 
     signalOptions->addLayout(signalOptions0);
     signalOptionsGroupBox->setLayout(signalOptions);
@@ -129,117 +129,67 @@ BalancingPlugin::~BalancingPlugin(){
 }
 
 void BalancingPlugin::save(rviz::Config config) const {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeMesh");
-    config.mapSetValue(w->objectName(), w->isChecked());
-    w = this->findChild<QCheckBox*>("visualizeTendon");
-    config.mapSetValue(w->objectName(), w->isChecked());
-    w = this->findChild<QCheckBox*>("visualizeCOM");
-    config.mapSetValue(w->objectName(), w->isChecked());
-    w = this->findChild<QCheckBox*>("visualizeForce");
-    config.mapSetValue(w->objectName(), w->isChecked());
-    w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
-    config.mapSetValue(w->objectName(), w->isChecked());
-    w = this->findChild<QCheckBox*>("visualizeIMUs");
-    config.mapSetValue(w->objectName(), w->isChecked());
+    for (auto checkbox_name : checkbox_names) {
+        QCheckBox* w = this->findChild<QCheckBox*>(checkbox_name);
+        config.mapSetValue(w->objectName(), w->isChecked());
+    }
     rviz::Panel::save(config);
 }
 
 void BalancingPlugin::load(const rviz::Config &config) {
     rviz::Panel::load(config);
     bool checked = false;
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeMesh");
-    config.mapGetBool(w->objectName(), &checked);
-    w->setChecked(checked);
-    w = this->findChild<QCheckBox*>("visualizeTendon");
-    config.mapGetBool(w->objectName(), &checked);
-    w->setChecked(checked);
-    w = this->findChild<QCheckBox*>("visualizeCOM");
-    config.mapGetBool(w->objectName(), &checked);
-    w->setChecked(checked);
-    w = this->findChild<QCheckBox*>("visualizeForce");
-    config.mapGetBool(w->objectName(), &checked);
-    w->setChecked(checked);
-    w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
-    config.mapGetBool(w->objectName(), &checked);
-    w->setChecked(checked);
-    w = this->findChild<QCheckBox*>("visualizeIMUs");
-    config.mapGetBool(w->objectName(), &checked);
-    w->setChecked(checked);
-    w = this->findChild<QCheckBox*>("IMUFiltering");
-    config.mapGetBool(w->objectName(), &checked);
-    w->setChecked(checked);
+    for (auto checkbox_name : checkbox_names) {
+        QCheckBox* w = this->findChild<QCheckBox*>(checkbox_name);
+        config.mapGetBool(w->objectName(), &checked);
+        w->setChecked(checked);
+    }
+    refresh();
+}
+
+void BalancingPlugin::publishCheckBoxState(VISUALIZATION checkbox) {
+    QCheckBox* w = this->findChild<QCheckBox*>(checkbox_names[checkbox]);
+    if (w == nullptr) {
+        ROS_WARN_STREAM(checkbox_names[checkbox].toUtf8().constData() << ": No such checkbox found!");
+        return;
+    }
+    roboy_simulation::VisualizationControl msg;
+    msg.roboyID = currentID.second;
+    msg.control = checkbox;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
 }
 
 void BalancingPlugin::showCOM() {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeCOM");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = COM;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(COM);
 }
 
 void BalancingPlugin::showEstimatedCOM() {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeEstimatedCOM");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = EstimatedCOM;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(EstimatedCOM);
 }
 
 void BalancingPlugin::showForce() {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeForce");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = Forces;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(Forces);
 }
 
 void BalancingPlugin::showTendon() {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeTendon");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = Tendon;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(Tendon);
 }
 
 void BalancingPlugin::showMesh() {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeMesh");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = Mesh;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(Mesh);
 }
 
 void BalancingPlugin::showForceTorqueSensors() {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = ForceTorqueSensors;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(ForceTorqueSensors);
 }
 
 void BalancingPlugin::showIMUs() {
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeIMUs");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = IMUs;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(IMUs);
 }
 
 void BalancingPlugin::toggleIMUFiltering() {
-    QCheckBox* w = this->findChild<QCheckBox*>("IMUFiltering");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = IMUFiltering;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+    publishCheckBoxState(IMUFiltering);
 }
 
 void BalancingPlugin::resetWorld() {
