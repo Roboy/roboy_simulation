@@ -3,7 +3,7 @@
     <name>roboy_simulation</name>
     <version>0.0.0</version>
     <description>The roboy_simulation package</description>
-    <maintainer email="aliona.kharchenko@gmail.com">Aliona Kharchenko</maintainer>
+    <maintainer email="unicorn@roboy.org">Alona Kharchenko</maintainer>
     <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
     <license>BSD</license>
 
