@@ -343,9 +343,9 @@ void WalkController::Update() {
             publishModel(parent_model->GetLink("hip"), false);
         if (visualizeStateMachineParameters)
             publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
-        if (visualizeIMUs)
-            publishIMUs();
 
+        publishIMUs();
+        publishPositionsAndMasses();
         publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
         publishSimulationState(params, gz_time_now);
         publishID();
@@ -600,72 +600,91 @@ void WalkController::publishIMUs() {
     geometry_msgs::Point end_point;
 
     roboy_simulation::IMU imu_msg;
-    roboy_simulation::BodyPart body_msg;
 
     imu_msg.roboyID = roboyID;
-    body_msg.roboyID = roboyID;
 
     for (auto link_name : link_names) {
         imu_msg.link = link_name.c_str();
-        body_msg.link = link_name.c_str();
         arrow.header.stamp = ros::Time::now();
 
         physics::LinkPtr link = parent_model->GetLink(link_name);
         math::Pose pose = link->GetWorldCoGPose();
 
-        math::Vector3 average_lin_accel = getFilteredLinearAcceleration(link);
+        math::Vector3 filtered_lin_accel = getFilteredLinearAcceleration(link);
         math::Vector3 ang_vel_world = link->GetWorldAngularVel();
-
-        // The acceleration vector starts at the center of gravity of the link
-        start_point.x = pose.pos.x;
-        start_point.y = pose.pos.y;
-        start_point.z = pose.pos.z;
-
-        arrow.id = message_counter++;
-        arrow.points.clear();
-
-        arrow.points.push_back(start_point);
-
-        // Linear world acceleration with red color
-        arrow.color.r = 1.0f;
-        arrow.color.g = 0.0f;
-        arrow.color.b = 0.0f;
-        arrow.color.a = 1.0f;
-
-        end_point.x = start_point.x + average_lin_accel.x * 0.03;
-        end_point.y = start_point.y + average_lin_accel.y * 0.03;
-        end_point.z = start_point.z + average_lin_accel.z * 0.03;
-        arrow.points.push_back(end_point);
-        marker_visualization_pub.publish(arrow);
-
-        arrow.id = message_counter++;
-        arrow.points.clear();
-
-        arrow.points.push_back(start_point);
-
-        // Angular world velocity with green color
-        arrow.color.r = 0.0f;
-        arrow.color.g = 1.0f;
-        arrow.color.b = 0.0f;
-        arrow.color.a = 1.0f;
-
-        end_point.x = start_point.x + ang_vel_world.x * 0.02;
-        end_point.y = start_point.y + ang_vel_world.y * 0.02;
-        end_point.z = start_point.z + ang_vel_world.z * 0.02;
-        arrow.points.push_back(end_point);
-        marker_visualization_pub.publish(arrow);
 
         // IMU message (not for rviz visualization)
 
-        imu_msg.lin_accel_world.x = average_lin_accel.x;
-        imu_msg.lin_accel_world.y = average_lin_accel.y;
-        imu_msg.lin_accel_world.z = average_lin_accel.z;
+        imu_msg.lin_accel_world.x = filtered_lin_accel.x;
+        imu_msg.lin_accel_world.y = filtered_lin_accel.y;
+        imu_msg.lin_accel_world.z = filtered_lin_accel.z;
 
         imu_msg.ang_vel_world.x = ang_vel_world.x;
         imu_msg.ang_vel_world.y = ang_vel_world.y;
         imu_msg.ang_vel_world.z = ang_vel_world.z;
 
-        // Link Position and Mass messages //
+        // Publish imu and link msgs //
+        imu_pub.publish(imu_msg);
+
+        SimulationControl &simcontrol = SimulationControl::getInstance();
+        if (simcontrol.isRecording()) {
+            rosbag::Bag &rosbag = simcontrol.getRosbag();
+            rosbag.write("/roboy/imu", arrow.header.stamp, imu_msg);
+        }
+
+        if (visualizeIMUs) {
+            // The acceleration vector starts at the center of gravity of the link
+            start_point.x = pose.pos.x;
+            start_point.y = pose.pos.y;
+            start_point.z = pose.pos.z;
+
+            arrow.id = message_counter++;
+            arrow.points.clear();
+
+            arrow.points.push_back(start_point);
+
+            // Linear world acceleration with red color
+            arrow.color.r = 1.0f;
+            arrow.color.g = 0.0f;
+            arrow.color.b = 0.0f;
+            arrow.color.a = 1.0f;
+
+            end_point.x = start_point.x + filtered_lin_accel.x * 0.03;
+            end_point.y = start_point.y + filtered_lin_accel.y * 0.03;
+            end_point.z = start_point.z + filtered_lin_accel.z * 0.03;
+            arrow.points.push_back(end_point);
+            marker_visualization_pub.publish(arrow);
+
+            arrow.id = message_counter++;
+            arrow.points.clear();
+
+            arrow.points.push_back(start_point);
+
+            // Angular world velocity with green color
+            arrow.color.r = 0.0f;
+            arrow.color.g = 1.0f;
+            arrow.color.b = 0.0f;
+            arrow.color.a = 1.0f;
+
+            end_point.x = start_point.x + ang_vel_world.x * 0.02;
+            end_point.y = start_point.y + ang_vel_world.y * 0.02;
+            end_point.z = start_point.z + ang_vel_world.z * 0.02;
+            arrow.points.push_back(end_point);
+            marker_visualization_pub.publish(arrow);
+        }
+    }
+}
+
+void WalkController::publishPositionsAndMasses() {
+    // Publish the position and mass of each link
+
+    roboy_simulation::BodyPart body_msg;
+    body_msg.roboyID = roboyID;
+
+    for (auto link_name : link_names) {
+        physics::LinkPtr link = parent_model->GetLink(link_name);
+        math::Pose pose = link->GetWorldCoGPose();
+        body_msg.link = link_name.c_str();
 
         body_msg.position.x = pose.pos.x;
         body_msg.position.y = pose.pos.y;
@@ -673,15 +692,7 @@ void WalkController::publishIMUs() {
 
         body_msg.mass = link->GetInertial()->GetMass();
 
-        // Publish imu and link msgs //
-        imu_pub.publish(imu_msg);
         body_pub.publish(body_msg);
-
-        SimulationControl &simcontrol = SimulationControl::getInstance();
-        if (simcontrol.isRecording()) {
-            rosbag::Bag &rosbag = simcontrol.getRosbag();
-            rosbag.write("/roboy/imu", ros::Time::now(), imu_msg);
-        }
     }
 }
 

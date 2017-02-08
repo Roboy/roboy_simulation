@@ -113,31 +113,29 @@ void WalkVisualization::publishTendon(vector<boost::shared_ptr<roboy_simulation:
 }
 
 void WalkVisualization::publishCOM(math::Vector3 *center_of_mass) {
-//    static bool add = true;
     visualization_msgs::Marker sphere;
     visualization_msgs::Marker arrow;
+
     sphere.header.frame_id = "world";
     char comnamespace[20];
     sprintf(comnamespace, "COM_%d", ID);
     sphere.ns = comnamespace;
     sphere.type = visualization_msgs::Marker::SPHERE;
+
     sphere.color.r = 0.0f;
     sphere.color.g = 0.3f;
     sphere.color.b = 1.0f;
     sphere.color.a = 0.5;
-    sphere.lifetime = ros::Duration(0);
+
     sphere.scale.x = 0.1;
     sphere.scale.y = 0.1;
     sphere.scale.z = 0.1;
-//    if (add) {
+
+    sphere.lifetime = ros::Duration(0);
     sphere.action = visualization_msgs::Marker::ADD;
-//        add = false;
-//    } else {
-//        sphere.action = visualization_msgs::Marker::MODIFY;
-//    }
     sphere.header.stamp = ros::Time::now();
-    sphere.points.clear();
     sphere.id = message_counter++;
+
     sphere.pose.position.x = center_of_mass[POSITION].x;
     sphere.pose.position.y = center_of_mass[POSITION].y;
     sphere.pose.position.z = center_of_mass[POSITION].z;
@@ -171,11 +169,11 @@ void WalkVisualization::publishCOM(math::Vector3 *center_of_mass) {
     arrow.action = visualization_msgs::Marker::ADD;
     arrow.header.stamp = ros::Time::now();
     arrow.id = message_counter++;
+
     arrow.points.clear();
     arrow.points.push_back(start_point);
     arrow.points.push_back(end_point);
     marker_visualization_pub.publish(arrow);
-
 }
 
 void WalkVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {

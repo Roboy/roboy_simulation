@@ -139,6 +139,11 @@ public:
      */
     void publishIMUs();
 
+    /**
+     * Fetches the positions and masses of each link and publishes them on a topic
+     */
+    void publishPositionsAndMasses();
+
     /** updates foot displacements and velocity of each foot wrt to hip orientation */
     void updateFootDisplacementAndVelocity();
 
