@@ -38,8 +38,6 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
 find_package(PkgConfig)
-pkg_check_modules(libcmaes REQUIRED libcmaes)
-include_directories(${libcmaes_INCLUDE_DIRS})
 
 add_message_files(
         DIRECTORY
@@ -54,10 +52,10 @@ add_message_files(
         ControllerParameters.msg
         Abortion.msg
         MotorControl.msg
-	Joint.msg
-	BodyPart.msg
-	COM.msg
-	Input.msg
+        Joint.msg
+        BodyPart.msg
+        COM.msg
+        Input.msg
 )
 
 add_service_files(
@@ -74,7 +72,6 @@ generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 catkin_package(
 	DEPENDS
 	GAZEBO
-		libcmaes
 	CATKIN_DEPENDS
 		rosbag
 		message_runtime
