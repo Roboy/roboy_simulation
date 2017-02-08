@@ -693,6 +693,12 @@ void WalkController::publishPositionsAndMasses() {
         body_msg.mass = link->GetInertial()->GetMass();
 
         body_pub.publish(body_msg);
+
+        SimulationControl &simcontrol = SimulationControl::getInstance();
+        if (simcontrol.isRecording()) {
+            rosbag::Bag &rosbag = simcontrol.getRosbag();
+            rosbag.write("/roboy/body", ros::Time::now(), body_msg);
+        }
     }
 }
 
@@ -1548,6 +1554,12 @@ void WalkController::publishCOMmsg () {
     COM_msg.Velocity.y = center_of_mass[VELOCITY].y;
     COM_msg.Velocity.z = center_of_mass[VELOCITY].z;
     COM_pub.publish(COM_msg);
+
+    SimulationControl &simcontrol = SimulationControl::getInstance();
+    if (simcontrol.isRecording()) {
+        rosbag::Bag &rosbag = simcontrol.getRosbag();
+        rosbag.write("/roboy/COM", ros::Time::now(), COM_msg);
+    }
 }
 
 math::Vector3 WalkController::getFilteredLinearAcceleration(const physics::LinkPtr link)
