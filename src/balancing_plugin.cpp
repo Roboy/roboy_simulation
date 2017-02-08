@@ -12,12 +12,15 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
 
     // Layout for reset, play, pause, slow motion
     QGroupBox *simcontrolGroupBox = new QGroupBox(tr("Simulation control"), this);
+    QVBoxLayout *simulationControls = new QVBoxLayout();
     QHBoxLayout *simcontrol = new QHBoxLayout();
+    QHBoxLayout *recordingControl = new QHBoxLayout();
 
     QPushButton *button = new QPushButton(tr("Reset"));
     connect(button, SIGNAL(clicked()), this, SLOT(resetWorld()));
     simcontrol->addWidget(button);
 
+    // Simulation control buttons
     button = new QPushButton(tr("Play"));
     connect(button, SIGNAL(clicked()), this, SLOT(play()));
     simcontrol->addWidget(button);
@@ -30,7 +33,21 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     connect(button, SIGNAL(clicked()), this, SLOT(slowMotion()));
     simcontrol->addWidget(button);
 
-    simcontrolGroupBox->setLayout(simcontrol);
+    // Recording buttons
+    startRec = new QPushButton(tr("Start recording"));
+    stopRec = new QPushButton(tr("Stop recording"));
+
+    connect(startRec, SIGNAL(clicked()), this, SLOT(startRecording()));
+    startRec->setEnabled(true);
+    recordingControl->addWidget(startRec);
+
+    connect(stopRec, SIGNAL(clicked()), this, SLOT(stopRecording()));
+    stopRec->setEnabled(false);
+    recordingControl->addWidget(stopRec);
+
+    simulationControls->addLayout(simcontrol);
+    simulationControls->addLayout(recordingControl);
+    simcontrolGroupBox->setLayout(simulationControls);
     frameLayout->addWidget(simcontrolGroupBox);
 
     // Layouts for visualization options
@@ -39,40 +56,47 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     QVBoxLayout *options0 = new QVBoxLayout();
     QVBoxLayout *options1 = new QVBoxLayout();
 
-    QCheckBox *visualizeMesh = new QCheckBox(tr("Meshes"));
-    visualizeMesh->setObjectName(checkbox_names[Mesh]);
-    connect(visualizeMesh, SIGNAL(clicked()), this, SLOT(showMesh()));
-    options0->addWidget(visualizeMesh);
+    QCheckBox *checkbox = new QCheckBox(tr("Meshes"));
+    checkbox->setObjectName(checkbox_names[Mesh]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showMesh()));
+    options0->addWidget(checkbox);
+    checkboxes[Mesh] = checkbox;
 
-    QCheckBox *visualizeTendon = new QCheckBox(tr("Tendons"));
-    visualizeTendon->setObjectName(checkbox_names[Tendon]);
-    connect(visualizeTendon, SIGNAL(clicked()), this, SLOT(showTendon()));
-    options0->addWidget(visualizeTendon);
+    checkbox = new QCheckBox(tr("Tendons"));
+    checkbox->setObjectName(checkbox_names[Tendon]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showTendon()));
+    options0->addWidget(checkbox);
+    checkboxes[Tendon] = checkbox;
 
-    QCheckBox *visualizeCOM = new QCheckBox(tr("COM"));
-    visualizeCOM->setObjectName(checkbox_names[COM]);
-    connect(visualizeCOM, SIGNAL(clicked()), this, SLOT(showCOM()));
-    options0->addWidget(visualizeCOM);
+    checkbox = new QCheckBox(tr("COM"));
+    checkbox->setObjectName(checkbox_names[COM]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showCOM()));
+    options0->addWidget(checkbox);
+    checkboxes[COM] = checkbox;
 
-    QCheckBox *visualizeForce = new QCheckBox(tr("Forces"));
-    visualizeForce->setObjectName(checkbox_names[Forces]);
-    connect(visualizeForce, SIGNAL(clicked()), this, SLOT(showForce()));
-    options0->addWidget(visualizeForce);
+    checkbox = new QCheckBox(tr("Forces"));
+    checkbox->setObjectName(checkbox_names[Forces]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showForce()));
+    options0->addWidget(checkbox);
+    checkboxes[Forces] = checkbox;
 
-    QCheckBox *visualizeForceTorqueSensors = new QCheckBox(tr("Force-torque sensors"));
-    visualizeForceTorqueSensors->setObjectName(checkbox_names[ForceTorqueSensors]);
-    connect(visualizeForceTorqueSensors, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
-    options1->addWidget(visualizeForceTorqueSensors);
+    checkbox = new QCheckBox(tr("Force-torque sensors"));
+    checkbox->setObjectName(checkbox_names[ForceTorqueSensors]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showForceTorqueSensors()));
+    options1->addWidget(checkbox);
+    checkboxes[ForceTorqueSensors] = checkbox;
 
-    QCheckBox *visualizeIMUs = new QCheckBox(tr("IMU sensors"));
-    visualizeIMUs->setObjectName(checkbox_names[IMUs]);
-    connect(visualizeIMUs, SIGNAL(clicked()), this, SLOT(showIMUs()));
-    options1->addWidget(visualizeIMUs);
+    checkbox = new QCheckBox(tr("IMU sensors"));
+    checkbox->setObjectName(checkbox_names[IMUs]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showIMUs()));
+    options1->addWidget(checkbox);
+    checkboxes[IMUs] = checkbox;
 
-    QCheckBox *visualizeEstimatedCOM = new QCheckBox(tr("Estimated COM"));
-    visualizeEstimatedCOM->setObjectName(checkbox_names[EstimatedCOM]);
-    connect(visualizeEstimatedCOM, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
-    options1->addWidget(visualizeEstimatedCOM);
+    checkbox = new QCheckBox(tr("Estimated COM"));
+    checkbox->setObjectName(checkbox_names[EstimatedCOM]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
+    options1->addWidget(checkbox);
+    checkboxes[EstimatedCOM] = checkbox;
 
     options->addLayout(options0);
     options->addLayout(options1);
@@ -83,10 +107,11 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     QHBoxLayout *signalOptions = new QHBoxLayout();
     QVBoxLayout *signalOptions0 = new QVBoxLayout();
 
-    QCheckBox *filterIMUs = new QCheckBox(tr("Filter IMU data"));
-    filterIMUs->setObjectName(checkbox_names[IMUFiltering]);
-    connect(filterIMUs, SIGNAL(clicked()), this, SLOT(toggleIMUFiltering()));
-    signalOptions0->addWidget(filterIMUs);
+    checkbox = new QCheckBox(tr("Filter IMU data"));
+    checkbox->setObjectName(checkbox_names[IMUFiltering]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(toggleIMUFiltering()));
+    signalOptions0->addWidget(checkbox);
+    checkboxes[IMUFiltering] = checkbox;
 
     signalOptions->addLayout(signalOptions0);
     signalOptionsGroupBox->setLayout(signalOptions);
@@ -129,9 +154,8 @@ BalancingPlugin::~BalancingPlugin(){
 }
 
 void BalancingPlugin::save(rviz::Config config) const {
-    for (auto checkbox_name : checkbox_names) {
-        QCheckBox* w = this->findChild<QCheckBox*>(checkbox_name);
-        config.mapSetValue(w->objectName(), w->isChecked());
+    for (auto checkbox : checkboxes) {
+        config.mapSetValue(checkbox->objectName(), checkbox->isChecked());
     }
     rviz::Panel::save(config);
 }
@@ -139,16 +163,15 @@ void BalancingPlugin::save(rviz::Config config) const {
 void BalancingPlugin::load(const rviz::Config &config) {
     rviz::Panel::load(config);
     bool checked = false;
-    for (auto checkbox_name : checkbox_names) {
-        QCheckBox* w = this->findChild<QCheckBox*>(checkbox_name);
-        config.mapGetBool(w->objectName(), &checked);
-        w->setChecked(checked);
+    for (auto checkbox : checkboxes) {
+        config.mapGetBool(checkbox->objectName(), &checked);
+        checkbox->setChecked(checked);
     }
     refresh();
 }
 
 void BalancingPlugin::publishCheckBoxState(VISUALIZATION checkbox) {
-    QCheckBox* w = this->findChild<QCheckBox*>(checkbox_names[checkbox]);
+    QCheckBox* w = checkboxes[checkbox];
     if (w == nullptr) {
         ROS_WARN_STREAM(checkbox_names[checkbox].toUtf8().constData() << ": No such checkbox found!");
         return;
@@ -158,6 +181,12 @@ void BalancingPlugin::publishCheckBoxState(VISUALIZATION checkbox) {
     msg.control = checkbox;
     msg.value = w->isChecked();
     roboy_visualization_control_pub.publish(msg);
+}
+
+void BalancingPlugin::publishControlMessage(SIMULATIONCONTROL msg) {
+    std_msgs::Int32 message;
+    message.data = msg;
+    sim_control_pub.publish(message);
 }
 
 void BalancingPlugin::showCOM() {
@@ -198,21 +227,27 @@ void BalancingPlugin::resetWorld() {
 }
 
 void BalancingPlugin::play() {
-    std_msgs::Int32 msg;
-    msg.data = Play;
-    sim_control_pub.publish(msg);
+    publishControlMessage(Play);
 }
 
 void BalancingPlugin::pause() {
-    std_msgs::Int32 msg;
-    msg.data = Pause;
-    sim_control_pub.publish(msg);
+    publishControlMessage(Pause);
 }
 
 void BalancingPlugin::slowMotion() {
-    std_msgs::Int32 msg;
-    msg.data = Slow_Motion;
-    sim_control_pub.publish(msg);
+    publishControlMessage(Slow_Motion);
+}
+
+void BalancingPlugin::startRecording() {
+    startRec->setEnabled(false);
+    stopRec->setEnabled(true);
+    publishControlMessage(StartRecording);
+}
+
+void BalancingPlugin::stopRecording() {
+    startRec->setEnabled(true);
+    stopRec->setEnabled(false);
+    publishControlMessage(StopRecording);
 }
 
 void BalancingPlugin::refresh() {

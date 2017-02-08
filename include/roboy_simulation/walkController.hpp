@@ -54,10 +54,10 @@
 #include "roboy_simulation/walkVisualization.hpp"
 #include "roboy_simulation/helperClasses.hpp"
 #include "roboy_simulation/controllerParameters.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 using namespace gazebo;
 using namespace std;
-//using namespace libcmaes;
 
 static const char * FOOT[] = { "foot_left", "foot_right" };
 
@@ -311,7 +311,4 @@ private:
 
     double outputMax = 500;
     double outputMin = -500;
-
-
-
 };

@@ -36,6 +36,11 @@ SimulationControl::SimulationControl(){
     sim_control_sub = nh->subscribe("/roboy/sim_control", 1, &SimulationControl::simulationControl, this);
 }
 
+SimulationControl& SimulationControl::getInstance() {
+    static SimulationControl instance;
+    return instance;
+}
+
 physics::WorldPtr SimulationControl::loadWorld(string worldName){
     return gazebo::loadWorld(worldName);
 }
@@ -192,7 +197,7 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
             break;
         }
         case UpdateInteractiveMarker: {
-            for (auto link:modelControl->GetLinks()) {
+            for (auto link : modelControl->GetLinks()) {
                 visualization_msgs::InteractiveMarker marker;
                 interactive_marker_server->get(link->GetName(), marker);
                 math::Pose pose = link->GetWorldPose();
@@ -208,5 +213,29 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
             interactive_marker_server->applyChanges();
             break;
         }
+        case StartRecording: {
+            if (!recording) {
+                rosbag.open(rosbag_filename.c_str(), rosbag::bagmode::Write);
+                recording = true;
+                ROS_INFO_STREAM("Started recording to " << rosbag_filename);
+            }
+            break;
+        }
+        case StopRecording: {
+            if (recording) {
+                rosbag.close();
+                recording = false;
+                ROS_INFO_STREAM("Stopped recording to " << rosbag_filename);
+            }
+            break;
+        }
     }
+}
+
+rosbag::Bag & SimulationControl::getRosbag() {
+    return rosbag;
+}
+
+bool SimulationControl::isRecording() {
+    return recording;
 }

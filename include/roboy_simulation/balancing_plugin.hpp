@@ -74,8 +74,10 @@ public Q_SLOTS:
     void showForceTorqueSensors();
     /** Sends a message that triggers publishing of IMU visualization */
     void showIMUs();
+
     /** Sends a message that triggers filtering of IMU data */
     void toggleIMUFiltering();
+
     /** Call to reset world service */
     void resetWorld();
     /** Sends a play message */
@@ -84,6 +86,12 @@ public Q_SLOTS:
     void pause();
     /** Sends a slow motion */
     void slowMotion();
+
+    /** Start recording rosbag */
+    void startRecording();
+    /** Stop recording rosbag */
+    void stopRecording();
+
     /** Refreshes visualization updates */
     void refresh();
 
@@ -91,6 +99,14 @@ private:
 
     /** Auxiliary function for publishing the new state of a checkbox when it's clicked **/
     void publishCheckBoxState(VISUALIZATION checkbox);
+    /** Auxiliary function for publishing simulation control messages */
+    void publishControlMessage(SIMULATIONCONTROL msg);
+
+    QPushButton *startRec;
+    QPushButton *stopRec;
+
+    /** Pointers to all the UI checkboxes are stored here */
+    QMap<VISUALIZATION, QCheckBox*> checkboxes;
 
     const QMap<VISUALIZATION, QString> checkbox_names {
         { COM, "visualizeCOM" },
@@ -102,6 +118,7 @@ private:
         { IMUs, "visualizeIMUs" },
         { IMUFiltering, "IMUFiltering" }
     };
+
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;

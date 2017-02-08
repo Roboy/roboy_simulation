@@ -9,9 +9,21 @@ SET(CMAKE_BUILD_TYPE Debug)
 #==============================================================================
 # Dependencies
 #==============================================================================
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs
-		geometry_msgs message_generation rviz tf interactive_markers visualization_msgs
-		common_utilities flexrayusbinterface)
+find_package(catkin REQUIRED COMPONENTS
+	roscpp
+	rosbag
+	controller_manager
+	gazebo_ros_control
+	std_msgs
+	geometry_msgs
+	message_generation
+	rviz
+	tf
+	interactive_markers
+	visualization_msgs
+	common_utilities
+	flexrayusbinterface
+)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -42,10 +54,10 @@ add_message_files(
         ControllerParameters.msg
         Abortion.msg
         MotorControl.msg
-				Joint.msg
-				BodyPart.msg
-				COM.msg
-				Input.msg
+	Joint.msg
+	BodyPart.msg
+	COM.msg
+	Input.msg
 )
 
 add_service_files(
@@ -59,7 +71,17 @@ add_service_files(
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
-catkin_package(DEPENDS QT QT_LIBRARIES QT_INCLUDE_DIRS GAZEBO libcmaes CATKIN_DEPENDS message_runtime message_generation common_utilities flexrayusbinterface)
+catkin_package(
+	DEPENDS
+	GAZEBO
+		libcmaes
+	CATKIN_DEPENDS
+		rosbag
+		message_runtime
+		message_generation
+		common_utilities
+		flexrayusbinterface
+)
 
 include_directories(
 		include/
@@ -105,10 +127,6 @@ add_library(force_compensating_halterung SHARED src/ForceCompensatingHalterung.c
 add_dependencies(force_compensating_halterung common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(force_compensating_halterung ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(walkTrainer src/walkTrainer.cpp src/helperClasses.cpp src/simulationControl.cpp)
-add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
-target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${libcmaes_LIBRARIES})
-
 add_library(WalkController SHARED src/walkController.cpp src/walkVisualization.cpp src/helperClasses.cpp)
 add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
@@ -130,12 +148,11 @@ install(TARGETS
         roboy_rviz_balancing
         contact_plugin
         force_torque_plugin
-	    	WalkController
+	WalkController
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        )
+)
 
 install(TARGETS
-	    walkTrainer
         roboySim
         VRRoboy
 	    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -148,4 +165,4 @@ install(FILES
         walking_plugin.xml
         balancing_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-        )
+)

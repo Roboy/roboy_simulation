@@ -541,9 +541,6 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
     }
 
     COM /= mass_total;
-
-
-
 }
 
 void WalkController::publishEstimatedCOM() {
@@ -679,8 +676,13 @@ void WalkController::publishIMUs() {
         // Publish imu and link msgs //
         imu_pub.publish(imu_msg);
         body_pub.publish(body_msg);
-    }
 
+        SimulationControl &simcontrol = SimulationControl::getInstance();
+        if (simcontrol.isRecording()) {
+            rosbag::Bag &rosbag = simcontrol.getRosbag();
+            rosbag.write("/roboy/imu", ros::Time::now(), imu_msg);
+        }
+    }
 }
 
 void WalkController::updateFootDisplacementAndVelocity(){
