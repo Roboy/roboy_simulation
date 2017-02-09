@@ -343,6 +343,8 @@ void WalkController::Update() {
             publishModel(parent_model->GetLink("hip"), false);
         if (visualizeStateMachineParameters)
             publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
+        if (visualizeStickFigure)
+            publishStickFigureModel();
 
         publishIMUs();
         publishPositionsAndMasses();
@@ -694,6 +696,77 @@ void WalkController::publishPositionsAndMasses() {
         SimulationControl &simcontrol = SimulationControl::getInstance();
         simcontrol.writeRosbagIfRecording("/roboy/body", body_msg);
     }
+}
+
+void WalkController::publishStickFigureModel() {
+    // Construct the stick figure visualization
+    visualization_msgs::Marker line_list;
+    line_list.header.frame_id = "world";
+    char stickfigure_namespace[20];
+    sprintf(stickfigure_namespace, "stickfigure_%d", ID);
+    line_list.ns = stickfigure_namespace;
+    line_list.type = visualization_msgs::Marker::LINE_LIST;
+
+    line_list.scale.x = 0.03; // Line width scale
+    line_list.color.r = 1.0;
+    line_list.color.g = 1.0;
+    line_list.color.b = 1.0;
+    line_list.color.a = 1.0;
+
+    line_list.lifetime = ros::Duration(2.0);
+    line_list.action = visualization_msgs::Marker::ADD;
+    line_list.header.stamp = ros::Time::now();
+    line_list.points.clear();
+
+    geometry_msgs::Point start_point;
+    geometry_msgs::Point end_point;
+
+    for (auto link_name : link_names) {
+        string pair_link_name;
+
+        // Connect legs
+        if (link_name == "foot_left") pair_link_name = "shank_left";
+        else if (link_name == "shank_left") pair_link_name = "thigh_left";
+        else if (link_name == "foot_right") pair_link_name = "shank_right";
+        else if (link_name == "shank_right") pair_link_name = "thigh_right";
+
+        // Connect hip to neck
+        else if (link_name == "hip") pair_link_name = "head";
+
+        // Connect arms
+        else if (link_name == "unterarm_left") pair_link_name = "oberarm_left";
+        else if (link_name == "unterarm_right") pair_link_name = "oberarm_right";
+
+        if (pair_link_name.empty()) {
+            continue;
+        }
+
+        physics::LinkPtr link = parent_model->GetLink(link_name);
+        physics::LinkPtr pair_link = parent_model->GetLink(pair_link_name);
+        if (link == nullptr) {
+            ROS_FATAL_STREAM("link not found: " << link_name);
+            return;
+        }
+        if (pair_link == nullptr) {
+            ROS_FATAL_STREAM("pair_link not found: " << pair_link_name);
+            return;
+        }
+        math::Pose pose = link->GetWorldPose();
+        math::Pose pair_pose = pair_link->GetWorldPose();
+
+        start_point.x = pose.pos.x;
+        start_point.y = pose.pos.y;
+        start_point.z = pose.pos.z;
+
+        end_point.x = pair_pose.pos.x;
+        end_point.y = pair_pose.pos.y;
+        end_point.z = pair_pose.pos.z;
+
+        line_list.points.push_back(start_point);
+        line_list.points.push_back(end_point);
+    }
+
+    marker_visualization_pub.publish(line_list);
 }
 
 void WalkController::updateFootDisplacementAndVelocity(){

@@ -48,6 +48,8 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     QFormLayout *recordingTimes = new QFormLayout;
     startTime = new QTimeEdit(this);
     stopTime = new QTimeEdit(this);
+    startTime->setDisplayFormat("HH:mm:ss.zzz");
+    stopTime->setDisplayFormat("HH:mm:ss.zzz");
     resetAndRecord = new QPushButton("Reset and record given timespan");
     recordingTimes->addRow(tr("Start time:"), startTime);
     recordingTimes->addRow(tr("Stop time:"), stopTime);
@@ -106,6 +108,12 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     connect(checkbox, SIGNAL(clicked()), this, SLOT(showEstimatedCOM()));
     options1->addWidget(checkbox);
     checkboxes[EstimatedCOM] = checkbox;
+
+    checkbox = new QCheckBox(tr("Stick figure model"));
+    checkbox->setObjectName(checkbox_names[EstimatedCOM]);
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showStickFigure()));
+    options1->addWidget(checkbox);
+    checkboxes[StickFigure] = checkbox;
 
     options->addLayout(options0);
     options->addLayout(options1);
@@ -204,6 +212,10 @@ void BalancingPlugin::showCOM() {
 
 void BalancingPlugin::showEstimatedCOM() {
     publishCheckBoxState(EstimatedCOM);
+}
+
+void BalancingPlugin::showStickFigure() {
+    publishCheckBoxState(StickFigure);
 }
 
 void BalancingPlugin::showForce() {

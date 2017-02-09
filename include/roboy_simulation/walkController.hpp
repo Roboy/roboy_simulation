@@ -144,6 +144,12 @@ public:
      */
     void publishPositionsAndMasses();
 
+    /**
+     * Fetches the positions of each link and publishes lines between them
+     * to visualize a stick figure Roboy
+     */
+    void publishStickFigureModel();
+
     /** updates foot displacements and velocity of each foot wrt to hip orientation */
     void updateFootDisplacementAndVelocity();
 
