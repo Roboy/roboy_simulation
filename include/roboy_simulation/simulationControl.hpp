@@ -4,6 +4,8 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+// posix
+#include <sys/stat.h>
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/msgs/msgs.hh>
@@ -59,6 +61,8 @@ public:
 
     /**
      * Writes rostopic messages to rosbag if recording is on
+     * @param topic rostopic name
+     * @param msg the message to be written to the rosbag
      */
     template <typename T>
     void writeRosbagIfRecording(string topic, T &msg) {

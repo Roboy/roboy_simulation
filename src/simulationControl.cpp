@@ -216,17 +216,12 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
         case StartRecording: {
             if (!recording) {
                 // Search for an unused filename
+                struct stat buffer;
                 static int i = 0;
-                ifstream file;
-                sprintf(rosbag_filename, rosbag_filename_template, i);
-                file.open(rosbag_filename, std::ifstream::in);
-                while (file.good()) {
-                    file.close();
-                    i++;
+                do {
                     sprintf(rosbag_filename, rosbag_filename_template, i);
-                    file.open(rosbag_filename, std::ifstream::in);
-                }
-                file.close();
+                    i++;
+                } while (stat (rosbag_filename, &buffer) == 0);
 
                 // Open the rosbag file for recording
                 lock_guard<mutex> guard(rosbag_mutex);
