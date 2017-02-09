@@ -45,8 +45,17 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     stopRec->setEnabled(false);
     recordingControl->addWidget(stopRec);
 
+    QFormLayout *recordingTimes = new QFormLayout;
+    startTime = new QTimeEdit(this);
+    stopTime = new QTimeEdit(this);
+    resetAndRecord = new QPushButton("Reset and record given timespan");
+    recordingTimes->addRow(tr("Start time:"), startTime);
+    recordingTimes->addRow(tr("Stop time:"), stopTime);
+    recordingTimes->addRow(tr(" "), resetAndRecord);
+
     simulationControls->addLayout(simcontrol);
     simulationControls->addLayout(recordingControl);
+    simulationControls->addLayout(recordingTimes);
     simcontrolGroupBox->setLayout(simulationControls);
     frameLayout->addWidget(simcontrolGroupBox);
 

@@ -215,27 +215,35 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
         }
         case StartRecording: {
             if (!recording) {
-                rosbag.open(rosbag_filename.c_str(), rosbag::bagmode::Write);
+                // Search for an unused filename
+                static int i = 0;
+                ifstream file;
+                sprintf(rosbag_filename, rosbag_filename_template, i);
+                file.open(rosbag_filename, std::ifstream::in);
+                while (file.good()) {
+                    file.close();
+                    i++;
+                    sprintf(rosbag_filename, rosbag_filename_template, i);
+                    file.open(rosbag_filename, std::ifstream::in);
+                }
+                file.close();
+
+                // Open the rosbag file for recording
+                lock_guard<mutex> guard(rosbag_mutex);
+                rosbag.open(rosbag_filename, rosbag::bagmode::Write);
                 recording = true;
                 ROS_INFO_STREAM("Started recording to " << rosbag_filename);
             }
             break;
         }
         case StopRecording: {
+            lock_guard<mutex> guard(rosbag_mutex);
             if (recording) {
-                rosbag.close();
                 recording = false;
+                rosbag.close();
                 ROS_INFO_STREAM("Stopped recording to " << rosbag_filename);
             }
             break;
         }
     }
-}
-
-rosbag::Bag & SimulationControl::getRosbag() {
-    return rosbag;
-}
-
-bool SimulationControl::isRecording() {
-    return recording;
 }

@@ -627,10 +627,7 @@ void WalkController::publishIMUs() {
         imu_pub.publish(imu_msg);
 
         SimulationControl &simcontrol = SimulationControl::getInstance();
-        if (simcontrol.isRecording()) {
-            rosbag::Bag &rosbag = simcontrol.getRosbag();
-            rosbag.write("/roboy/imu", arrow.header.stamp, imu_msg);
-        }
+        simcontrol.writeRosbagIfRecording("/roboy/imu", imu_msg);
 
         if (visualizeIMUs) {
             // The acceleration vector starts at the center of gravity of the link
@@ -695,10 +692,7 @@ void WalkController::publishPositionsAndMasses() {
         body_pub.publish(body_msg);
 
         SimulationControl &simcontrol = SimulationControl::getInstance();
-        if (simcontrol.isRecording()) {
-            rosbag::Bag &rosbag = simcontrol.getRosbag();
-            rosbag.write("/roboy/body", ros::Time::now(), body_msg);
-        }
+        simcontrol.writeRosbagIfRecording("/roboy/body", body_msg);
     }
 }
 
@@ -1556,10 +1550,7 @@ void WalkController::publishCOMmsg () {
     COM_pub.publish(COM_msg);
 
     SimulationControl &simcontrol = SimulationControl::getInstance();
-    if (simcontrol.isRecording()) {
-        rosbag::Bag &rosbag = simcontrol.getRosbag();
-        rosbag.write("/roboy/COM", ros::Time::now(), COM_msg);
-    }
+    simcontrol.writeRosbagIfRecording("/roboy/COM", COM_msg);
 }
 
 math::Vector3 WalkController::getFilteredLinearAcceleration(const physics::LinkPtr link)

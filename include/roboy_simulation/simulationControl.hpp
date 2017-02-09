@@ -1,12 +1,9 @@
 #pragma once
 
 // std
-#include <cstdlib>
 #include <iostream>
 #include <thread>
-// boost
-#include <boost/scoped_ptr.hpp>
-#include <boost/thread.hpp>
+#include <mutex>
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/msgs/msgs.hh>
@@ -61,16 +58,15 @@ public:
     void simulate(physics::WorldPtr world);
 
     /**
-     * Returns a reference to the rosbag object
-     * @return reference to the rosbag
+     * Writes rostopic messages to rosbag if recording is on
      */
-    rosbag::Bag &getRosbag();
-
-    /**
-     * Tells whether simulation control is currently recording to a rosbag file
-     * @return rosbag recording status
-     */
-    bool isRecording();
+    template <typename T>
+    void writeRosbagIfRecording(string topic, T &msg) {
+        lock_guard<mutex> guard(rosbag_mutex);
+        if (recording) {
+            rosbag.write(topic.c_str(), ros::Time::now(), msg);
+        }
+    }
 
 private:
     bool resetWorld(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
@@ -91,6 +87,12 @@ private:
     bool slow_motion = false;
 
     rosbag::Bag rosbag;
-    string rosbag_filename = "record.bag";
+    const char rosbag_filename_template[14] = "record_%i.bag";
+    char rosbag_filename[25];
     bool recording = false;
+
+    // Mutex for accessing variables 'recording' and 'rosbag'.
+    // rosbag is opened in this thread but the data is written in another,
+    // from WalkController class.
+    mutex rosbag_mutex;
 };

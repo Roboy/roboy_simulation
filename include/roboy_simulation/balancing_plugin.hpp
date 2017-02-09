@@ -2,15 +2,12 @@
 
 #ifndef Q_MOC_RUN
 // qt
-#include <QPainter>
 #include <QCheckBox>
 #include <QPushButton>
-#include <QLineEdit>
+#include <QTimeEdit>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QLabel>
-#include <QTableWidget>
-#include <QComboBox>
+#include <QFormLayout>
 #include <QTimer>
 #include <QGroupBox>
 // std
@@ -104,6 +101,10 @@ private:
 
     QPushButton *startRec;
     QPushButton *stopRec;
+
+    QTimeEdit *startTime;
+    QTimeEdit *stopTime;
+    QPushButton *resetAndRecord;
 
     /** Pointers to all the UI checkboxes are stored here */
     QMap<VISUALIZATION, QCheckBox*> checkboxes;
