@@ -713,7 +713,7 @@ void WalkController::publishStickFigureModel() {
     line_list.color.b = 1.0;
     line_list.color.a = 1.0;
 
-    line_list.lifetime = ros::Duration(2.0);
+    line_list.lifetime = ros::Duration();
     line_list.action = visualization_msgs::Marker::ADD;
     line_list.header.stamp = ros::Time::now();
     line_list.points.clear();
@@ -721,38 +721,42 @@ void WalkController::publishStickFigureModel() {
     geometry_msgs::Point start_point;
     geometry_msgs::Point end_point;
 
-    for (auto link_name : link_names) {
-        string pair_link_name;
+    for (auto joint_name : joint_names) {
+        string pair_joint_name;
 
         // Connect legs
-        if (link_name == "foot_left") pair_link_name = "shank_left";
-        else if (link_name == "shank_left") pair_link_name = "thigh_left";
-        else if (link_name == "foot_right") pair_link_name = "shank_right";
-        else if (link_name == "shank_right") pair_link_name = "thigh_right";
+        if (joint_name == "ankle_left") pair_joint_name = "knee_left";
+        else if (joint_name == "knee_left") pair_joint_name = "groin_left";
+        else if (joint_name == "groin_left") pair_joint_name = "spine";
+        else if (joint_name == "ankle_right") pair_joint_name = "knee_right";
+        else if (joint_name == "knee_right") pair_joint_name = "groin_right";
+        else if (joint_name == "groin_right") pair_joint_name = "spine";
 
         // Connect hip to neck
-        else if (link_name == "hip") pair_link_name = "head";
+        else if (joint_name == "spine") pair_joint_name = "neck";
 
         // Connect arms
-        else if (link_name == "unterarm_left") pair_link_name = "oberarm_left";
-        else if (link_name == "unterarm_right") pair_link_name = "oberarm_right";
+        else if (joint_name == "elbow_left") pair_joint_name = "shoulder_left";
+        else if (joint_name == "shoulder_left") pair_joint_name = "neck";
+        else if (joint_name == "elbow_right") pair_joint_name = "shoulder_right";
+        else if (joint_name == "shoulder_right") pair_joint_name = "neck";
 
-        if (pair_link_name.empty()) {
+        if (pair_joint_name.empty()) {
             continue;
         }
 
-        physics::LinkPtr link = parent_model->GetLink(link_name);
-        physics::LinkPtr pair_link = parent_model->GetLink(pair_link_name);
-        if (link == nullptr) {
-            ROS_FATAL_STREAM("link not found: " << link_name);
+        physics::JointPtr joint = parent_model->GetJoint(joint_name);
+        physics::JointPtr pair_joint = parent_model->GetJoint(pair_joint_name);
+        if (joint == nullptr) {
+            ROS_FATAL_STREAM("joint not found: " << joint_name);
             return;
         }
-        if (pair_link == nullptr) {
-            ROS_FATAL_STREAM("pair_link not found: " << pair_link_name);
+        if (pair_joint == nullptr) {
+            ROS_FATAL_STREAM("pair_joint not found: " << pair_joint_name);
             return;
         }
-        math::Pose pose = link->GetWorldPose();
-        math::Pose pair_pose = pair_link->GetWorldPose();
+        math::Pose pose = joint->GetWorldPose();
+        math::Pose pair_pose = pair_joint->GetWorldPose();
 
         start_point.x = pose.pos.x;
         start_point.y = pose.pos.y;
