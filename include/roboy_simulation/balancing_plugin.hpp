@@ -71,8 +71,8 @@ public Q_SLOTS:
     void showForceTorqueSensors();
     /** Sends a message that triggers publishing of IMU visualization */
     void showIMUs();
-    /** Sends a message that triggers publishing of stick figure model visualization */
-    void showStickFigure();
+    /** Sends a message that triggers publishing of collision model visualization */
+    void showCollisions();
 
     /** Sends a message that triggers filtering of IMU data */
     void toggleIMUFiltering();
@@ -119,7 +119,7 @@ private:
         { Mesh, "visualizeMesh" },
         { ForceTorqueSensors, "visualizeForceTorqueSensors" },
         { IMUs, "visualizeIMUs" },
-        { StickFigure, "visualizeStickFigure" },
+        { CollisionModel, "visualizeCollisions" },
         { IMUFiltering, "IMUFiltering" }
     };
 

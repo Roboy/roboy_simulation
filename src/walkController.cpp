@@ -292,7 +292,6 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
 }
 
 void WalkController::Update() {
-    static long unsigned int counter = 0;
     // Get the simulation time and period
     gz_time_now = parent_model->GetWorld()->GetSimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
@@ -326,35 +325,32 @@ void WalkController::Update() {
     writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
     last_write_sim_time_ros = sim_time_ros;
 
-    // publish every now and then
-    if (counter % 100 == 0) {
-        message_counter = 1000;
-        if (visualizeTendon)
-            publishTendon(&sim_muscles);
-        if (visualizeForce)
-            publishForce(&sim_muscles);
-        if (visualizeCOM)
-            publishCOM(center_of_mass);
-        if (visualizeEstimatedCOM)
-            publishEstimatedCOM();
-        if (visualizeMomentArm)
-            publishMomentArm(&sim_muscles);
-        if (visualizeMesh)
-            publishModel(parent_model->GetLink("hip"), false);
-        if (visualizeStateMachineParameters)
-            publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
-        if (visualizeStickFigure)
-            publishStickFigureModel();
+    message_counter = 1000;
+    if (visualizeTendon)
+        publishTendon(&sim_muscles);
+    if (visualizeForce)
+        publishForce(&sim_muscles);
+    if (visualizeCOM)
+        publishCOM(center_of_mass);
+    if (visualizeEstimatedCOM)
+        publishEstimatedCOM();
+    if (visualizeMomentArm)
+        publishMomentArm(&sim_muscles);
+    if (visualizeMesh)
+        publishModel(parent_model->GetLink("hip"), false);
+    if (visualizeStateMachineParameters)
+        publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
+    if (visualizeCollisions)
+        publishCollisionModel();
 
-        publishIMUs();
-        publishPositionsAndMasses();
-        publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
-        publishSimulationState(params, gz_time_now);
-        publishID();
-        publishLegState(leg_state);
-        publishCOMmsg();
-        controlJoints();
-    }
+    publishIMUs();
+    publishPositionsAndMasses();
+    publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
+    publishSimulationState(params, gz_time_now);
+    publishID();
+    publishLegState(leg_state);
+    publishCOMmsg();
+    controlJoints();
 
     checkAbort();
 }
@@ -698,79 +694,63 @@ void WalkController::publishPositionsAndMasses() {
     }
 }
 
-void WalkController::publishStickFigureModel() {
-    // Construct the stick figure visualization
-    visualization_msgs::Marker line_list;
-    line_list.header.frame_id = "world";
+void WalkController::publishCollisionModel() {
+    // Construct the collision visualization messages
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "world";
     char stickfigure_namespace[20];
     sprintf(stickfigure_namespace, "stickfigure_%d", ID);
-    line_list.ns = stickfigure_namespace;
-    line_list.type = visualization_msgs::Marker::LINE_LIST;
+    marker.ns = stickfigure_namespace;
+    marker.color.r = 1.0f;
+    marker.color.g = 1.0f;
+    marker.color.b = 1.0f;
+    marker.color.a = 0.5;
+    marker.lifetime = ros::Duration();
+    marker.header.stamp = ros::Time::now();
+    marker.action = visualization_msgs::Marker::ADD;
 
-    line_list.scale.x = 0.03; // Line width scale
-    line_list.color.r = 1.0;
-    line_list.color.g = 1.0;
-    line_list.color.b = 1.0;
-    line_list.color.a = 1.0;
+    for (auto link_name : link_names) {
+        physics::LinkPtr link = parent_model->GetLink(link_name);
 
-    line_list.lifetime = ros::Duration();
-    line_list.action = visualization_msgs::Marker::ADD;
-    line_list.header.stamp = ros::Time::now();
-    line_list.points.clear();
+        marker.id = message_counter++;
 
-    geometry_msgs::Point start_point;
-    geometry_msgs::Point end_point;
+        gazebo::physics::Collision_V collisions = link->GetCollisions();
+        for (auto collision : collisions) {
+            // Setting the world pose 'dirty' is necessary for the collision
+            // world pose to update correctly on each iteration.
+            collision->SetWorldPoseDirty();
+            math::Pose pose = collision->GetWorldPose();
+            marker.pose.position.x = pose.pos.x;
+            marker.pose.position.y = pose.pos.y;
+            marker.pose.position.z = pose.pos.z;
+            marker.pose.orientation.x = pose.rot.x;
+            marker.pose.orientation.y = pose.rot.y;
+            marker.pose.orientation.z = pose.rot.z;
+            marker.pose.orientation.w = pose.rot.w;
 
-    for (auto joint_name : joint_names) {
-        string pair_joint_name;
-
-        // Connect legs
-        if (joint_name == "ankle_left") pair_joint_name = "knee_left";
-        else if (joint_name == "knee_left") pair_joint_name = "groin_left";
-        else if (joint_name == "groin_left") pair_joint_name = "spine";
-        else if (joint_name == "ankle_right") pair_joint_name = "knee_right";
-        else if (joint_name == "knee_right") pair_joint_name = "groin_right";
-        else if (joint_name == "groin_right") pair_joint_name = "spine";
-
-        // Connect hip to neck
-        else if (joint_name == "spine") pair_joint_name = "neck";
-
-        // Connect arms
-        else if (joint_name == "elbow_left") pair_joint_name = "shoulder_left";
-        else if (joint_name == "shoulder_left") pair_joint_name = "neck";
-        else if (joint_name == "elbow_right") pair_joint_name = "shoulder_right";
-        else if (joint_name == "shoulder_right") pair_joint_name = "neck";
-
-        if (pair_joint_name.empty()) {
-            continue;
+            gazebo::physics::ShapePtr shape(collision->GetShape());
+            if (shape->HasType(gazebo::physics::Base::BOX_SHAPE)) {
+                // The collision shape is box
+                marker.type = visualization_msgs::Marker::CUBE;
+                gazebo::physics::BoxShape *box = static_cast<gazebo::physics::BoxShape*>(shape.get());
+                math::Vector3 shape_size = box->GetSize();
+                marker.scale.x = shape_size.x;
+                marker.scale.y = shape_size.y;
+                marker.scale.z = shape_size.z;
+            }
+            else if (shape->HasType(gazebo::physics::Base::SPHERE_SHAPE)) {
+                // The collision shape is sphere
+                marker.type = visualization_msgs::Marker::SPHERE;
+                gazebo::physics::SphereShape *sphere = static_cast<gazebo::physics::SphereShape*>(shape.get());
+                double diameter = sphere->GetRadius()*2;
+                marker.scale.x = diameter;
+                marker.scale.y = diameter;
+                marker.scale.z = diameter;
+            }
         }
 
-        physics::JointPtr joint = parent_model->GetJoint(joint_name);
-        physics::JointPtr pair_joint = parent_model->GetJoint(pair_joint_name);
-        if (joint == nullptr) {
-            ROS_FATAL_STREAM("joint not found: " << joint_name);
-            return;
-        }
-        if (pair_joint == nullptr) {
-            ROS_FATAL_STREAM("pair_joint not found: " << pair_joint_name);
-            return;
-        }
-        math::Pose pose = joint->GetWorldPose();
-        math::Pose pair_pose = pair_joint->GetWorldPose();
-
-        start_point.x = pose.pos.x;
-        start_point.y = pose.pos.y;
-        start_point.z = pose.pos.z;
-
-        end_point.x = pair_pose.pos.x;
-        end_point.y = pair_pose.pos.y;
-        end_point.z = pair_pose.pos.z;
-
-        line_list.points.push_back(start_point);
-        line_list.points.push_back(end_point);
+        marker_visualization_pub.publish(marker);
     }
-
-    marker_visualization_pub.publish(line_list);
 }
 
 void WalkController::updateFootDisplacementAndVelocity(){

@@ -60,7 +60,7 @@ protected:
     uint message_counter;
     bool visualizeTendon = false, visualizeCOM = false, visualizeEstimatedCOM = false, visualizeForce = false,
             visualizeMomentArm = false, visualizeMesh = false, visualizeStateMachineParameters = false,
-            visualizeForceTorqueSensors = false, visualizeIMUs = false, filterIMUs = false, visualizeStickFigure = false;
+            visualizeForceTorqueSensors = false, visualizeIMUs = false, filterIMUs = false, visualizeCollisions = false;
     ros::Publisher marker_visualization_pub;
 private:
     ros::Publisher leg_state_pub, simulation_state_pub;

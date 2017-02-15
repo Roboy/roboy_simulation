@@ -145,10 +145,10 @@ public:
     void publishPositionsAndMasses();
 
     /**
-     * Fetches the positions of each link and publishes lines between them
-     * to visualize a stick figure Roboy
+     * Fetches the poses of each link's collision and publishes the collision shapes
+     * to visualize a "stick figure Roboy"
      */
-    void publishStickFigureModel();
+    void publishCollisionModel();
 
     /** updates foot displacements and velocity of each foot wrt to hip orientation */
     void updateFootDisplacementAndVelocity();

@@ -59,14 +59,14 @@ void WalkVisualization::visualization_control(const roboy_simulation::Visualizat
                 filterIMUs = msg->value;
                 break;
             }
-            case StickFigure: {
-                visualizeStickFigure = msg->value;
+            case CollisionModel: {
+                visualizeCollisions = msg->value;
                 break;
             }
         }
         if(!visualizeTendon || !visualizeCOM || !visualizeForce || !visualizeMomentArm ||
            !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors ||
-           !visualizeIMUs || !visualizeStickFigure) {
+           !visualizeIMUs || !visualizeCollisions) {
             visualization_msgs::Marker marker;
             marker.header.frame_id = "world";
             marker.id = message_counter++;

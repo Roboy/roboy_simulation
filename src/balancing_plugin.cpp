@@ -109,11 +109,11 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     options1->addWidget(checkbox);
     checkboxes[EstimatedCOM] = checkbox;
 
-    checkbox = new QCheckBox(tr("Stick figure model"));
+    checkbox = new QCheckBox(tr("Collision model"));
     checkbox->setObjectName(checkbox_names[EstimatedCOM]);
-    connect(checkbox, SIGNAL(clicked()), this, SLOT(showStickFigure()));
+    connect(checkbox, SIGNAL(clicked()), this, SLOT(showCollisions()));
     options1->addWidget(checkbox);
-    checkboxes[StickFigure] = checkbox;
+    checkboxes[CollisionModel] = checkbox;
 
     options->addLayout(options0);
     options->addLayout(options1);
@@ -214,8 +214,8 @@ void BalancingPlugin::showEstimatedCOM() {
     publishCheckBoxState(EstimatedCOM);
 }
 
-void BalancingPlugin::showStickFigure() {
-    publishCheckBoxState(StickFigure);
+void BalancingPlugin::showCollisions() {
+    publishCheckBoxState(CollisionModel);
 }
 
 void BalancingPlugin::showForce() {
