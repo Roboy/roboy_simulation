@@ -50,7 +50,10 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     stopTime = new QTimeEdit(this);
     startTime->setDisplayFormat("HH:mm:ss.zzz");
     stopTime->setDisplayFormat("HH:mm:ss.zzz");
+
     resetAndRecord = new QPushButton("Reset and record given timespan");
+    connect(resetAndRecord, SIGNAL(clicked()), this, SLOT(resetAndStartRecording()));
+
     recordingTimes->addRow(tr("Start time:"), startTime);
     recordingTimes->addRow(tr("Stop time:"), stopTime);
     recordingTimes->addRow(tr(" "), resetAndRecord);
@@ -271,6 +274,22 @@ void BalancingPlugin::stopRecording() {
     publishControlMessage(StopRecording);
 }
 
+void BalancingPlugin::resetAndStartRecording() {
+    if (startTime->time() >= stopTime->time()) {
+        // Invalid negative timespan
+        QMessageBox msgBox;
+        msgBox.setWindowTitle("Invalid negative timespan!");
+        msgBox.setText("The <b>stop time</b> needs to be greater than the <b>start time</b>.");
+        msgBox.exec();
+    }
+    else {
+        QTime zero(0, 0, 0);
+        int start_time = zero.msecsTo(startTime->time());
+        int stop_time = zero.msecsTo(stopTime->time());
+        publishControlMessage(ResetAndStartRecording);
+    }
+}
+
 void BalancingPlugin::refresh() {
     showCOM();
     showEstimatedCOM();
@@ -279,6 +298,7 @@ void BalancingPlugin::refresh() {
     showIMUs();
     showMesh();
     showTendon();
+    showCollisions();
     toggleIMUFiltering();
 }
 

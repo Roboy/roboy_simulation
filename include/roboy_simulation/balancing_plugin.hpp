@@ -10,6 +10,7 @@
 #include <QFormLayout>
 #include <QTimer>
 #include <QGroupBox>
+#include <QMessageBox>
 // std
 #include <map>
 // ros
@@ -90,6 +91,8 @@ public Q_SLOTS:
     void startRecording();
     /** Stop recording rosbag */
     void stopRecording();
+    /** Resets the simulation and records the indicated timespan to rosbag */
+    void resetAndStartRecording();
 
     /** Refreshes visualization updates */
     void refresh();
