@@ -14,6 +14,7 @@
 #include "roboy_simulation/ForceTorque.h"
 #include "roboy_simulation/LegState.h"
 #include "roboy_simulation/ControllerParameters.h"
+#include "roboy_simulation/COM.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
@@ -52,12 +53,14 @@ public:
     void publishLegState(LEG_STATE *leg_state);
 
     void publishCoordinateSystems(physics::LinkPtr parent_link, ros::Time time, bool child_link=false);
+
 protected:
     ros::NodeHandlePtr nh;
     int ID;
     uint message_counter;
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeForceTorqueSensors = false;
+    bool visualizeTendon = false, visualizeCOM = false, visualizeEstimatedCOM = false, visualizeForce = false,
+            visualizeMomentArm = false, visualizeMesh = false, visualizeStateMachineParameters = false,
+            visualizeForceTorqueSensors = false, visualizeIMUs = false, filterIMUs = false, visualizeCollisions = false;
     ros::Publisher marker_visualization_pub;
 private:
     ros::Publisher leg_state_pub, simulation_state_pub;

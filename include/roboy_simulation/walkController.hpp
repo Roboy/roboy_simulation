@@ -45,20 +45,27 @@
 #include "common_utilities/RoboyState.h"
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
+#include "roboy_simulation/IMU.h"
+#include "roboy_simulation/Joint.h"
+#include "roboy_simulation/BodyPart.h"
+#include "roboy_simulation/COM.h"
+#include "roboy_simulation/Input.h"
 
 #include "roboy_simulation/walkVisualization.hpp"
 #include "roboy_simulation/helperClasses.hpp"
 #include "roboy_simulation/controllerParameters.hpp"
+#include "roboy_simulation/simulationControl.hpp"
 
 using namespace gazebo;
 using namespace std;
-//using namespace libcmaes;
 
 static const char * FOOT[] = { "foot_left", "foot_right" };
 
 static const char * LEG_STATE_STRING[] = { "Stance", "Lift_off", "Swing", "Stance_Preparation" };
 
 static const char * LEG_NAMES_STRING[] = { "left leg", "right leg" };
+
+static const uint ACCEL_WIN_SIZE = 20;
 
 class WalkController : public gazebo::ModelPlugin, public WalkVisualization{
 public:
@@ -120,6 +127,29 @@ public:
      */
     void calculateCOM(int type, math::Vector3 &COM);
 
+    /**
+     * Publishes the estimated position of COM based on the neural network
+     * interpretation of sensor data
+     */
+    void publishEstimatedCOM();
+
+    /**
+     * Fetches the accelerations and the positions of the IMUs and
+     * publishes them on a topic
+     */
+    void publishIMUs();
+
+    /**
+     * Fetches the positions and masses of each link and publishes them on a topic
+     */
+    void publishPositionsAndMasses();
+
+    /**
+     * Fetches the poses of each link's collision and publishes the collision shapes
+     * to visualize a "stick figure Roboy"
+     */
+    void publishCollisionModel();
+
     /** updates foot displacements and velocity of each foot wrt to hip orientation */
     void updateFootDisplacementAndVelocity();
 
@@ -153,11 +183,6 @@ public:
     /** Publishes the roboyID of this instantiation */
     void publishID();
 
-    /** Callback for toggle of walkControl
-     * @param msg containing the trigger (true/false)
-     * */
-    void toggleWalkController(const std_msgs::Bool::ConstPtr &msg);
-
     /** Callback for manual motor control
      * @param msg contains vector with voltage values for every motor
      * */
@@ -181,6 +206,12 @@ public:
     bool energiesService(roboy_simulation::Energies::Request  &req,
                          roboy_simulation::Energies::Response &res);
 
+    void publishCOMmsg ();
+
+    void controlJoints ();
+
+    void publishJoints (gazebo::physics::JointPtr thisJoint);
+
 
 private:
     static int roboyID_generator;
@@ -188,7 +219,7 @@ private:
     ros::NodeHandlePtr nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
             steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;
-    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub;
+    ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub, joint_pub, body_pub, COM_pub, input_pub;
     ros::ServiceServer roboyID_srv, control_parameters_srv, energies_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
@@ -196,6 +227,7 @@ private:
 
     // Timing
     gazebo::common::Time gz_time_now;
+
     ros::Duration control_period;
     ros::Time last_update_sim_time_ros;
     ros::Time last_write_sim_time_ros;
@@ -205,7 +237,19 @@ private:
     sdf::ElementPtr sdf;
 
     vector<string> link_names;
+    vector<string> joint_names;
     map<string,vector<uint>> muscles_spanning_joint;
+
+    // Acceleration "windows" for calculating the filtered accelerations to be published as IMU sensor data.
+    // This is done to make the IMU data less noisy.
+    // key: link name, value: array of accelerations
+    map<string, vector<math::Vector3>> acceleration_windows;
+
+    // Gaussian kernel for filtering the IMU data
+    vector<double> gaussian_kernel;
+
+    // Returns the filtered linear acceleration for a link
+    math::Vector3 getFilteredLinearAcceleration(const physics::LinkPtr link);
 
     double gazebo_max_step_size = 0.003;
 
@@ -266,4 +310,16 @@ private:
     boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
     vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
     vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
+
+    map<string, double> desiredAngles;
+    //Mapping of joint's name and its own pid
+    map<string, gazebo::common::PID> jointPIDs;
+
+    gazebo::common::Time currentTime;
+    gazebo::common::Time previousTime;
+    gazebo::common::Time deltaTime;
+    bool firstLoop = true;
+
+    double outputMax = 500;
+    double outputMin = -500;
 };

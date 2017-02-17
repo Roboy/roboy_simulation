@@ -1,0 +1,9 @@
+<library path="libroboy_rviz_balancing">
+  <class name="BalancingPlugin"
+         type="BalancingPlugin"
+         base_class_type="rviz::Panel">
+    <description>
+      A panel widget for controlling Roboy simulation and visualization
+    </description>
+  </class>
+</library>

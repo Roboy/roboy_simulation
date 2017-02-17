@@ -27,6 +27,10 @@ void WalkVisualization::visualization_control(const roboy_simulation::Visualizat
                 visualizeCOM = msg->value;
                 break;
             }
+            case EstimatedCOM: {
+                visualizeEstimatedCOM = msg->value;
+                break;
+            }
             case Forces: {
                 visualizeForce = msg->value;
                 break;
@@ -47,9 +51,22 @@ void WalkVisualization::visualization_control(const roboy_simulation::Visualizat
                 visualizeForceTorqueSensors = msg->value;
                 break;
             }
+            case IMUs: {
+                visualizeIMUs = msg->value;
+                break;
+            }
+            case IMUFiltering: {
+                filterIMUs = msg->value;
+                break;
+            }
+            case CollisionModel: {
+                visualizeCollisions = msg->value;
+                break;
+            }
         }
         if(!visualizeTendon || !visualizeCOM || !visualizeForce || !visualizeMomentArm ||
-           !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors){
+           !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors ||
+           !visualizeIMUs || !visualizeCollisions) {
             visualization_msgs::Marker marker;
             marker.header.frame_id = "world";
             marker.id = message_counter++;
@@ -100,34 +117,67 @@ void WalkVisualization::publishTendon(vector<boost::shared_ptr<roboy_simulation:
 }
 
 void WalkVisualization::publishCOM(math::Vector3 *center_of_mass) {
-//    static bool add = true;
     visualization_msgs::Marker sphere;
+    visualization_msgs::Marker arrow;
+
     sphere.header.frame_id = "world";
     char comnamespace[20];
     sprintf(comnamespace, "COM_%d", ID);
     sphere.ns = comnamespace;
     sphere.type = visualization_msgs::Marker::SPHERE;
+
     sphere.color.r = 0.0f;
-    sphere.color.g = 0.0f;
+    sphere.color.g = 0.3f;
     sphere.color.b = 1.0f;
-    sphere.color.a = 1.0;
-    sphere.lifetime = ros::Duration(0);
+    sphere.color.a = 0.5;
+
     sphere.scale.x = 0.1;
     sphere.scale.y = 0.1;
     sphere.scale.z = 0.1;
-//    if (add) {
+
+    sphere.lifetime = ros::Duration(0);
     sphere.action = visualization_msgs::Marker::ADD;
-//        add = false;
-//    } else {
-//        sphere.action = visualization_msgs::Marker::MODIFY;
-//    }
     sphere.header.stamp = ros::Time::now();
-    sphere.points.clear();
     sphere.id = message_counter++;
+
     sphere.pose.position.x = center_of_mass[POSITION].x;
     sphere.pose.position.y = center_of_mass[POSITION].y;
     sphere.pose.position.z = center_of_mass[POSITION].z;
     marker_visualization_pub.publish(sphere);
+
+    // An arrow of COM will be described below:
+    geometry_msgs::Point start_point;
+    geometry_msgs::Point end_point;
+
+    start_point.x = center_of_mass[POSITION].x;
+    start_point.y = center_of_mass[POSITION].y;
+    start_point.z = center_of_mass[POSITION].z;
+    end_point.x = start_point.x + center_of_mass[VELOCITY].x * 0.02;
+    end_point.y = start_point.y + center_of_mass[VELOCITY].y * 0.02;
+    end_point.z = start_point.z + center_of_mass[VELOCITY].z * 0.02;
+
+    arrow.header.frame_id = "world";
+    arrow.ns = comnamespace;
+    arrow.type = visualization_msgs::Marker::ARROW;
+
+    arrow.scale.x = 0.01;
+    arrow.scale.y = 0.03;
+    arrow.scale.z = 0.03;
+
+    arrow.color.r = 1.0f;
+    arrow.color.g = 1.0f;
+    arrow.color.b = 0.0f;
+    arrow.color.a = 1.0f;
+
+    arrow.lifetime = ros::Duration(0);
+    arrow.action = visualization_msgs::Marker::ADD;
+    arrow.header.stamp = ros::Time::now();
+    arrow.id = message_counter++;
+
+    arrow.points.clear();
+    arrow.points.push_back(start_point);
+    arrow.points.push_back(end_point);
+    marker_visualization_pub.publish(arrow);
 }
 
 void WalkVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {

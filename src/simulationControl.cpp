@@ -36,6 +36,11 @@ SimulationControl::SimulationControl(){
     sim_control_sub = nh->subscribe("/roboy/sim_control", 1, &SimulationControl::simulationControl, this);
 }
 
+SimulationControl& SimulationControl::getInstance() {
+    static SimulationControl instance;
+    return instance;
+}
+
 physics::WorldPtr SimulationControl::loadWorld(string worldName){
     return gazebo::loadWorld(worldName);
 }
@@ -192,7 +197,7 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
             break;
         }
         case UpdateInteractiveMarker: {
-            for (auto link:modelControl->GetLinks()) {
+            for (auto link : modelControl->GetLinks()) {
                 visualization_msgs::InteractiveMarker marker;
                 interactive_marker_server->get(link->GetName(), marker);
                 math::Pose pose = link->GetWorldPose();
@@ -206,6 +211,33 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
                 interactive_marker_server->setPose(marker.name, marker.pose);
             }
             interactive_marker_server->applyChanges();
+            break;
+        }
+        case StartRecording: {
+            if (!recording) {
+                // Search for an unused filename
+                struct stat buffer;
+                static int i = 0;
+                do {
+                    sprintf(rosbag_filename, rosbag_filename_template, i);
+                    i++;
+                } while (stat (rosbag_filename, &buffer) == 0);
+
+                // Open the rosbag file for recording
+                lock_guard<mutex> guard(rosbag_mutex);
+                rosbag.open(rosbag_filename, rosbag::bagmode::Write);
+                recording = true;
+                ROS_INFO_STREAM("Started recording to " << rosbag_filename);
+            }
+            break;
+        }
+        case StopRecording: {
+            lock_guard<mutex> guard(rosbag_mutex);
+            if (recording) {
+                recording = false;
+                rosbag.close();
+                ROS_INFO_STREAM("Stopped recording to " << rosbag_filename);
+            }
             break;
         }
     }

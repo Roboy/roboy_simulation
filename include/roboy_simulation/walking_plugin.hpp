@@ -105,6 +105,8 @@ public Q_SLOTS:
     void toggleWalkController();
     /** Sends a message that triggers publishing of COM visualization */
     void showCOM();
+    /** Sends a message that triggers publishing of estimated COM visualization */
+    void showEstimatedCOM();
     /** Sends a message that triggers publishing of forces from the muscles visualization*/
     void showForce();
     /** Sends a message that triggers publishing of Tenodon visualization */
@@ -117,6 +119,8 @@ public Q_SLOTS:
     void showStateMachineParameters();
     /** Sends a message that triggers publishing of ankle force visualization */
     void showForceTorqueSensors();
+    /** Sends a message that triggers publishing of IMU visualization */
+    void showIMUs();
     /** Changes the current roboyID and requests update for all visualizations
      * @param index new roboyID
     */
