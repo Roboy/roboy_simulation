@@ -93,10 +93,11 @@ void VRRoboy::publishMotorStates(uint modelNr){
         msg.x.push_back(p.pos.x);
         msg.y.push_back(p.pos.y);
         msg.z.push_back(p.pos.z);
-        math::Vector3 rot = p.rot.GetAsEuler();
-        msg.roll.push_back(rot.x);
-        msg.pitch.push_back(rot.y);
-        msg.yaw.push_back(rot.z);
+        p.rot.Normalize();
+        msg.qx.push_back(p.rot.x);
+        msg.qy.push_back(p.rot.y);
+        msg.qz.push_back(p.rot.z);
+        msg.qw.push_back(p.rot.w);;
         msg.motor_status.jointPos.push_back((rand()/RAND_MAX)*5.0);
         msg.motor_status.actuatorPos.push_back((rand()/RAND_MAX)*5.0);
         msg.motor_status.actuatorVel.push_back((rand()/RAND_MAX)*5.0);
