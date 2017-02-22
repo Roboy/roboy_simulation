@@ -18,6 +18,7 @@
 #include <rosbag/bag.h>
 // ros messages
 #include <std_msgs/Int32.h>
+#include "roboy_simulation/RecordingControl.h"
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
 
@@ -77,15 +78,37 @@ private:
 
     void simulationControl(const std_msgs::Int32::ConstPtr &msg);
 
+    /**
+     * Parses the message sent by clicking "Reset and start recording".
+     * Resets the simulation and initiates recording for the given timespan.
+     */
+    void recordingControl(const roboy_simulation::RecordingControl::ConstPtr &msg);
+
     void initializeInterActiveMarkers(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,
                                       physics::ModelPtr model, int roboyID);
+
+    /**
+     * Opens a new rosbag file for recording. Searches for filenames
+     * rosbag_0, rosbag_1, etc. and when a free name is found, open that file.
+     */
+    void startRecording();
+
+    /**
+     * Closes the rosbag file.
+     */
+    void stopRecording();
+
+    /**
+     * Resets start_time and stop_time to 0.
+     */
+    void resetRecordingTime();
 
     transport::NodePtr node;
     transport::PublisherPtr serverControlPub, resetPub;
 
     ros::NodeHandlePtr nh;
     ros::ServiceServer reset_world_srv;
-    ros::Subscriber sim_control_sub;
+    ros::Subscriber sim_control_sub, recording_control_sub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     bool paused = false;
     bool slow_motion = false;
@@ -93,6 +116,10 @@ private:
     rosbag::Bag rosbag;
     const char rosbag_filename_template[14] = "record_%i.bag";
     char rosbag_filename[25];
+
+    // Recording times received from balancing_plugin
+    uint32_t start_time = 0;
+    uint32_t stop_time = 0;
     bool recording = false;
 
     // Mutex for accessing variables 'recording' and 'rosbag'.

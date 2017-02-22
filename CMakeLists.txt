@@ -46,6 +46,7 @@ add_message_files(
         FILES
         Tendon.msg
         VisualizationControl.msg
+        RecordingControl.msg
         ForceTorque.msg
         IMU.msg
         LegState.msg

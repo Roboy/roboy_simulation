@@ -166,6 +166,7 @@ BalancingPlugin::BalancingPlugin(QWidget *parent)
     reset_world_srv = nh->serviceClient<std_srvs::Trigger>("/roboy/reset_world");
     sim_control_pub = nh->advertise<std_msgs::Int32>("/roboy/sim_control", 1);
     motor_control_pub = nh->advertise<roboy_simulation::MotorControl>("/roboy/motor_control", 100);
+    recording_control_pub = nh->advertise<roboy_simulation::RecordingControl>("/roboy/recording_control", 1);
 }
 
 BalancingPlugin::~BalancingPlugin(){
@@ -284,9 +285,14 @@ void BalancingPlugin::resetAndStartRecording() {
     }
     else {
         QTime zero(0, 0, 0);
-        int start_time = zero.msecsTo(startTime->time());
-        int stop_time = zero.msecsTo(stopTime->time());
-        publishControlMessage(ResetAndStartRecording);
+        uint32_t start_time = zero.msecsTo(startTime->time());
+        uint32_t stop_time = zero.msecsTo(stopTime->time());
+
+        roboy_simulation::RecordingControl msg;
+        msg.roboyID = currentID.second;
+        msg.start_time = start_time;
+        msg.stop_time = stop_time;
+        recording_control_pub.publish(msg);
     }
 }
 

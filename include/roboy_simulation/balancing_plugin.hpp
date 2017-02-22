@@ -22,6 +22,7 @@
 #include <tf/tf.h>
 //messages
 #include "roboy_simulation/VisualizationControl.h"
+#include "roboy_simulation/RecordingControl.h"
 #include "roboy_simulation/LegState.h"
 #include "roboy_simulation/ControllerParameters.h"
 #include <std_srvs/Trigger.h>
@@ -130,7 +131,7 @@ private:
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
     ros::AsyncSpinner *spinner;
-    ros::Publisher roboy_visualization_control_pub, sim_control_pub, motor_control_pub;
+    ros::Publisher roboy_visualization_control_pub, sim_control_pub, motor_control_pub, recording_control_pub;
     ros::Subscriber simulation_state_sub;
     ros::ServiceClient reset_world_srv;
 
