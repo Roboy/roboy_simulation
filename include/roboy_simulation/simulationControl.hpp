@@ -81,6 +81,7 @@ private:
     /**
      * Parses the message sent by clicking "Reset and start recording".
      * Resets the simulation and initiates recording for the given timespan.
+     * @param msg The message that contains time for recording
      */
     void recordingControl(const roboy_simulation::RecordingControl::ConstPtr &msg);
 
