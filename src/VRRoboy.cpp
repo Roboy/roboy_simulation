@@ -97,12 +97,12 @@ void VRRoboy::publishMotorStates(uint modelNr){
         msg.qx.push_back(p.rot.x);
         msg.qy.push_back(p.rot.y);
         msg.qz.push_back(p.rot.z);
-        msg.qw.push_back(p.rot.w);;
-        msg.motor_status.jointPos.push_back((rand()/RAND_MAX)*5.0);
-        msg.motor_status.actuatorPos.push_back((rand()/RAND_MAX)*5.0);
-        msg.motor_status.actuatorVel.push_back((rand()/RAND_MAX)*5.0);
-        msg.motor_status.actuatorCurrent.push_back((rand()/RAND_MAX)*5.0);
-        msg.motor_status.tendonDisplacement.push_back((rand()/RAND_MAX)*5.0);
+        msg.qw.push_back(p.rot.w);
+        msg.motor_status.pwmRef.push_back((rand()/RAND_MAX));
+        msg.motor_status.position.push_back((rand()/RAND_MAX));
+        msg.motor_status.velocity.push_back((rand()/RAND_MAX));
+        msg.motor_status.displacement.push_back((rand()/RAND_MAX));
+        msg.motor_status.current.push_back((rand()/RAND_MAX));
     }
     muscle_state_pub.publish(msg);
 }

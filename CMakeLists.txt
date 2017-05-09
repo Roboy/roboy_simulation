@@ -22,7 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 	interactive_markers
 	visualization_msgs
 	common_utilities
-	flexrayusbinterface
 )
 
 # Find includes in corresponding build directories
