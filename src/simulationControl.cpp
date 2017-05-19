@@ -34,6 +34,12 @@ SimulationControl::SimulationControl(){
 
     reset_world_srv = nh->advertiseService("/roboy/reset_world", &SimulationControl::resetWorld, this);
     sim_control_sub = nh->subscribe("/roboy/sim_control", 1, &SimulationControl::simulationControl, this);
+    recording_control_sub = nh->subscribe("/roboy/recording_control", 1, &SimulationControl::recordingControl, this);
+}
+
+SimulationControl& SimulationControl::getInstance() {
+    static SimulationControl instance;
+    return instance;
 }
 
 physics::WorldPtr SimulationControl::loadWorld(string worldName){
@@ -74,6 +80,18 @@ void SimulationControl::simulate(physics::WorldPtr world) {
             gazebo::runWorld(world, 100);
         }
     }
+
+    if (start_time != 0 && stop_time != 0) {
+        // If there are start_time and stop_time defined (not 0),
+        // it means rosbag recording should start and stop at those times.
+        uint32_t now = static_cast<uint32_t>(world->GetSimTime().Double() * 1000.0);
+        if (!recording && now >= start_time) {
+            startRecording();
+        }
+        else if (recording && now >= stop_time) {
+            stopRecording();
+        }
+    }
 }
 
 bool SimulationControl::resetWorld(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res) {
@@ -82,6 +100,7 @@ bool SimulationControl::resetWorld(std_srvs::Trigger::Request &req, std_srvs::Tr
     resetPub->Publish(w_ctrl);
     res.success = true;
     res.message = "resetting worlds";
+    resetRecordingTime();
     return true;
 }
 
@@ -185,6 +204,7 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
             gazebo::msgs::WorldControl w_ctrl;
             w_ctrl.mutable_reset()->set_all(true);
             resetPub->Publish(w_ctrl);
+            resetRecordingTime();
             break;
         }
         case Slow_Motion: {
@@ -192,7 +212,7 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
             break;
         }
         case UpdateInteractiveMarker: {
-            for (auto link:modelControl->GetLinks()) {
+            for (auto link : modelControl->GetLinks()) {
                 visualization_msgs::InteractiveMarker marker;
                 interactive_marker_server->get(link->GetName(), marker);
                 math::Pose pose = link->GetWorldPose();
@@ -208,5 +228,71 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
             interactive_marker_server->applyChanges();
             break;
         }
+        case StartRecording: {
+            if (start_time == 0 && stop_time == 0) {
+                startRecording();
+            }
+            else {
+                ROS_FATAL_STREAM("Timed recording in progress. Can't record two rosbags simultaneously.");
+            }
+            break;
+        }
+        case StopRecording: {
+            stopRecording();
+            break;
+        }
     }
+}
+
+void SimulationControl::recordingControl(const roboy_communication_simulation::RecordingControl::ConstPtr &msg) {
+    {
+        lock_guard<mutex> guard(rosbag_mutex);
+        if (recording) {
+            ROS_FATAL_STREAM("Already recording to file " << rosbag_filename << ". Can't record two rosbags simultaneously.");
+            return;
+        }
+    }
+
+    ROS_INFO_STREAM("Resetting");
+    // Reset world
+    gazebo::msgs::WorldControl w_ctrl;
+    w_ctrl.mutable_reset()->set_all(true);
+    resetPub->Publish(w_ctrl);
+
+    // Initiate recording
+    start_time = msg->start_time;
+    stop_time = msg->stop_time;
+    ROS_INFO_STREAM("Recording will start after " << start_time << "ms and stop after " << stop_time << "ms");
+}
+
+void SimulationControl::startRecording() {
+    if (!recording) {
+        // Search for an unused filename
+        struct stat buffer;
+        static int i = 0;
+        do {
+            sprintf(rosbag_filename, rosbag_filename_template, i);
+            i++;
+        } while (stat (rosbag_filename, &buffer) == 0);
+
+        // Open the rosbag file for recording
+        lock_guard<mutex> guard(rosbag_mutex);
+        rosbag.open(rosbag_filename, rosbag::bagmode::Write);
+        recording = true;
+        ROS_INFO_STREAM("Started recording to " << rosbag_filename);
+    }
+}
+
+void SimulationControl::stopRecording() {
+    lock_guard<mutex> guard(rosbag_mutex);
+    if (recording) {
+        recording = false;
+        rosbag.close();
+        ROS_INFO_STREAM("Stopped recording to " << rosbag_filename);
+    }
+    resetRecordingTime();
+}
+
+void SimulationControl::resetRecordingTime() {
+    start_time = stop_time = 0;
 }

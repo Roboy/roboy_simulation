@@ -9,6 +9,16 @@
             <uri>model://asphalt_plane</uri>
         </include>
 
+        <physics type="ode">
+          <simbody>
+            <contact>
+              <static_friction> 0.8 </static_friction>
+              <dynamic_friction> 0.4 </dynamic_friction>
+            </contact>
+          </simbody>
+        </physics>
+
+
         <!-- Focus camera on tall pendulum -->
         <gui fullscreen='0'>
             <camera name='user_camera'>

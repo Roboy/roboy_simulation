@@ -9,6 +9,7 @@
 
     <buildtool_depend>catkin</buildtool_depend>
     <build_depend>roscpp</build_depend>
+    <build_depend>rosbag</build_depend>
     <build_depend>std_msgs</build_depend>
 
     <build_depend>message_generation</build_depend>
@@ -22,10 +23,10 @@
     <build_depend>geometry_msgs</build_depend>
     <build_depend>visualization_msgs</build_depend>
     <build_depend>tf</build_depend>
-    <build_depend>common_utilities</build_depend>
-    <build_depend>flexrayusbinterface</build_depend>
+    <build_depend>roboy_communication_middleware</build_depend>
 
     <run_depend>roscpp</run_depend>
+    <run_depend>rosbag</run_depend>
     <run_depend>std_msgs</run_depend>
     <run_depend>geometry_msgs</run_depend>
     <run_depend>message_runtime</run_depend>
@@ -41,12 +42,12 @@
     <run_depend>visualization_msgs</run_depend>
     <run_depend>tf</run_depend>
     <run_depend>rviz</run_depend>
-    <run_depend>common_utilities</run_depend>
-    <run_depend>flexrayusbinterface</run_depend>
+    <run_depend>roboy_communication_middleware</run_depend>
 
     <export>
         <roboy_simulation plugin="${prefix}/muscle_plugin.xml"/>
         <roboy_simulation plugin="${prefix}/dummy_muscle_plugin.xml"/>
+        <rviz plugin="${prefix}/balancing_plugin.xml"/>
         <rviz plugin="${prefix}/walking_plugin.xml"/>
     </export>
 </package>

@@ -8,7 +8,7 @@
 #include <gazebo/msgs/msgs.hh>
 #include <gazebo/transport/transport.hh>
 // ros messages
-#include "roboy_simulation/ForceTorque.h"
+#include "roboy_communication_simulation/ForceTorque.h"
 #include "std_msgs/Int32.h"
 
 using namespace gazebo;
@@ -31,7 +31,7 @@ public:
 
 private:
     void updateID(const std_msgs::Int32::ConstPtr &msg);
-    void updateForce(const roboy_simulation::ForceTorque::ConstPtr &msg);
+    void updateForce(const roboy_communication_simulation::ForceTorque::ConstPtr &msg);
 
     int roboyID = 0;
     ros::NodeHandlePtr nh;

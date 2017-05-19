@@ -18,7 +18,7 @@ void CoordinateSystem::UpdateHeading(){
     Z = q.RotateVector(gazebo::math::Vector3::UnitZ);
 }
 
-void controllerParametersToMessage(vector<double> &params, roboy_simulation::ControllerParameters &msg){
+void controllerParametersToMessage(vector<double> &params, roboy_communication_simulation::ControllerParameters &msg){
 
     msg.F_contact = params[F_contact];
     msg.d_lift = params[d_lift];
@@ -54,7 +54,7 @@ void controllerParametersToMessage(vector<double> &params, roboy_simulation::Con
     msg.v_c.assign(params.begin()+v_c, params.begin()+v_c+2);
 }
 
-void messageTocontrollerParameters(const roboy_simulation::ControllerParameters::ConstPtr &msg,
+void messageTocontrollerParameters(const roboy_communication_simulation::ControllerParameters::ConstPtr &msg,
                                    vector<double> &params){
     params[F_contact] = msg->F_contact;
     params[d_lift] = msg->d_lift;
@@ -90,7 +90,7 @@ void messageTocontrollerParameters(const roboy_simulation::ControllerParameters:
     memcpy(&params[v_c], msg->v_c.data(), 2*sizeof(double));
 }
 
-void messageTocontrollerParameters(roboy_simulation::ControllerParameters &msg,
+void messageTocontrollerParameters(roboy_communication_simulation::ControllerParameters &msg,
                                    vector<double> &params){
     params[F_contact] = msg.F_contact;
     params[d_lift] = msg.d_lift;

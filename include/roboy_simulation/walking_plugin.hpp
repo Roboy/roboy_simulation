@@ -22,14 +22,14 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
 //messages
-#include "roboy_simulation/VisualizationControl.h"
-#include "roboy_simulation/LegState.h"
-#include "roboy_simulation/ControllerParameters.h"
+#include "roboy_communication_simulation/VisualizationControl.h"
+#include "roboy_communication_simulation/LegState.h"
+#include "roboy_communication_simulation/ControllerParameters.h"
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Bool.h>
-#include "roboy_simulation/Abortion.h"
-#include "roboy_simulation/MotorControl.h"
+#include "roboy_communication_simulation/Abortion.h"
+#include "roboy_communication_simulation/MotorControl.h"
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
 #endif
@@ -105,6 +105,8 @@ public Q_SLOTS:
     void toggleWalkController();
     /** Sends a message that triggers publishing of COM visualization */
     void showCOM();
+    /** Sends a message that triggers publishing of estimated COM visualization */
+    void showEstimatedCOM();
     /** Sends a message that triggers publishing of forces from the muscles visualization*/
     void showForce();
     /** Sends a message that triggers publishing of Tenodon visualization */
@@ -117,6 +119,8 @@ public Q_SLOTS:
     void showStateMachineParameters();
     /** Sends a message that triggers publishing of ankle force visualization */
     void showForceTorqueSensors();
+    /** Sends a message that triggers publishing of IMU visualization */
+    void showIMUs();
     /** Changes the current roboyID and requests update for all visualizations
      * @param index new roboyID
     */
@@ -124,7 +128,7 @@ public Q_SLOTS:
     /** Callback for ControllerParameters, draws them in the table
      * @param msg controller parameters
     */
-    void updateSimulationState(const roboy_simulation::ControllerParameters::ConstPtr &msg);
+    void updateSimulationState(const roboy_communication_simulation::ControllerParameters::ConstPtr &msg);
     /** Call to reset world service */
     void resetWorld();
     /** Sends a play message */
@@ -144,7 +148,7 @@ private:
     /** Callback for the leg state, visualization for each leg
      * @param msg leg state (Stance, Lift-off, Swing, Stance-Preparation)
     */
-    void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
+    void updateLegStates(const roboy_communication_simulation::LegState::ConstPtr &msg);
     /** Callback for roboyID, adds a new entry when roboyID hasnt been seen before
      * @param msg roboyID
     */
@@ -152,7 +156,7 @@ private:
     /** Callback for abortion criterias
      * @param msg reason for abortion
     */
-    void abortion(const roboy_simulation::Abortion::ConstPtr &msg);
+    void abortion(const roboy_communication_simulation::Abortion::ConstPtr &msg);
 
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;

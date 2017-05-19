@@ -39,7 +39,7 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
     // Make sure the parent sensor is active.
     parentSensor->SetActive(true);
 
-    force_torque_pub = nh->advertise<roboy_simulation::ForceTorque>("/roboy/"+sdf->GetAttribute("name")->GetAsString(),
+    force_torque_pub = nh->advertise<roboy_communication_simulation::ForceTorque>("/roboy/"+sdf->GetAttribute("name")->GetAsString(),
                                                                   1);
     roboyID_sub = nh->subscribe("/roboy/id", 1, &ForceTorquePlugin::updateID, this);
 
@@ -53,7 +53,7 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
 
 void ForceTorquePlugin::OnUpdate() {
     // Get all the contacts.
-    roboy_simulation::ForceTorque msg;
+    roboy_communication_simulation::ForceTorque msg;
     msg.roboyID = roboyID;
     msg.leg = leg;
 #if GAZEBO_MAJOR_VERSION < 7

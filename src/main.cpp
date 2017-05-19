@@ -8,7 +8,7 @@ int main(int _argc, char **_argv) {
         std::cout << "Gazebo server setup failed!\n";
     }
 
-    SimulationControl sim_control;
+    SimulationControl &sim_control = SimulationControl::getInstance();
     physics::WorldPtr world = sim_control.loadWorld("worlds/empty.world");
     gazebo::sensors::run_once(true);
     gazebo::sensors::run_threads();

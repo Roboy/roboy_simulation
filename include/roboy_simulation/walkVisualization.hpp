@@ -9,11 +9,12 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
-#include "roboy_simulation/Tendon.h"
-#include "roboy_simulation/VisualizationControl.h"
-#include "roboy_simulation/ForceTorque.h"
-#include "roboy_simulation/LegState.h"
-#include "roboy_simulation/ControllerParameters.h"
+#include "roboy_communication_simulation/Tendon.h"
+#include "roboy_communication_simulation/VisualizationControl.h"
+#include "roboy_communication_simulation/ForceTorque.h"
+#include "roboy_communication_simulation/LegState.h"
+#include "roboy_communication_simulation/ControllerParameters.h"
+#include "roboy_communication_simulation/COM.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
@@ -31,7 +32,7 @@ class WalkVisualization{
 public:
     WalkVisualization();
 
-    void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
+    void visualization_control(const roboy_communication_simulation::VisualizationControl::ConstPtr &msg);
 
     void publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles);
 
@@ -52,12 +53,14 @@ public:
     void publishLegState(LEG_STATE *leg_state);
 
     void publishCoordinateSystems(physics::LinkPtr parent_link, ros::Time time, bool child_link=false);
+
 protected:
     ros::NodeHandlePtr nh;
     int ID;
     uint message_counter;
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeForceTorqueSensors = false;
+    bool visualizeTendon = false, visualizeCOM = false, visualizeEstimatedCOM = false, visualizeForce = false,
+            visualizeMomentArm = false, visualizeMesh = false, visualizeStateMachineParameters = false,
+            visualizeForceTorqueSensors = false, visualizeIMUs = false, filterIMUs = false, visualizeCollisions = false;
     ros::Publisher marker_visualization_pub;
 private:
     ros::Publisher leg_state_pub, simulation_state_pub;

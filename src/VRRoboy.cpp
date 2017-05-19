@@ -11,10 +11,11 @@ VRRoboy::VRRoboy(){
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    pose_pub = nh->advertise<common_utilities::Pose>("/roboy/pose", 100);
+    pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/pose", 100);
     pose_sub = nh->subscribe("/roboy/pose_test", 1000, &VRRoboy::publishTestPose, this);
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
-
+    muscle_state_pub = nh->advertise<roboy_communication_middleware::MuscleState>("/roboy/muscle_state", 100);
+    external_force_sub = nh->subscribe("/roboy/external_force", 1, &VRRoboy::applyExternalForce, this);
 }
 
 VRRoboy::~VRRoboy(){
@@ -39,7 +40,7 @@ void VRRoboy::initializeWorlds(uint numberOfWorlds){
 }
 
 void VRRoboy::publishPose(uint modelNr){
-    common_utilities::Pose msg;
+    roboy_communication_middleware::Pose msg;
     for(auto link:model[modelNr]->GetLinks()){
         msg.name.push_back(link->GetName());
         math::Pose p = link->GetWorldPose();
@@ -84,6 +85,39 @@ void VRRoboy::publishTestPose( const geometry_msgs::Pose::ConstPtr& msg ){
     marker_visualization_pub.publish(mesh);
 }
 
+void VRRoboy::publishMotorStates(uint modelNr){
+    roboy_communication_middleware::MuscleState msg;
+    for(auto link:model[modelNr]->GetLinks()){
+        msg.name.push_back(link->GetName());
+        math::Pose p = link->GetWorldPose();
+        msg.x.push_back(p.pos.x);
+        msg.y.push_back(p.pos.y);
+        msg.z.push_back(p.pos.z);
+        p.rot.Normalize();
+        msg.qx.push_back(p.rot.x);
+        msg.qy.push_back(p.rot.y);
+        msg.qz.push_back(p.rot.z);
+        msg.qw.push_back(p.rot.w);
+        msg.motor_status.pwmRef.push_back((rand()/RAND_MAX));
+        msg.motor_status.position.push_back((rand()/RAND_MAX));
+        msg.motor_status.velocity.push_back((rand()/RAND_MAX));
+        msg.motor_status.displacement.push_back((rand()/RAND_MAX));
+        msg.motor_status.current.push_back((rand()/RAND_MAX));
+    }
+    muscle_state_pub.publish(msg);
+}
+
+void VRRoboy::applyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg) {
+    for(uint i=0; i<model.size(); i++){
+        physics::LinkPtr link = model[i]->GetChildLink(msg->name);
+        math::Vector3 force(msg->f_x, msg->f_y, msg->f_z);
+        math::Vector3 relative_pos(msg->x, msg->y, msg->z);
+        link->AddForceAtRelativePosition(force,relative_pos);
+        duration_in_milliseconds = msg->duration;
+        apply_external_force = true;
+    }
+}
+
 int main(int _argc, char **_argv){
     // setup Gazebo server
     if (gazebo::setupServer()) {
@@ -98,5 +132,12 @@ int main(int _argc, char **_argv){
     while(ros::ok()){
         vrRoboy.simulate(vrRoboy.world[0]);
         vrRoboy.publishPose(0);
+        vrRoboy.publishMotorStates(0);
+        if(vrRoboy.apply_external_force){
+            common::Time start = vrRoboy.world[0]->GetSimTime();
+            while(((vrRoboy.world[0]->GetSimTime()-start).nsec*common::Time::nsInMs) <= vrRoboy.duration_in_milliseconds){
+                vrRoboy.simulate(vrRoboy.world[0]);
+            }
+        }
     }
 }

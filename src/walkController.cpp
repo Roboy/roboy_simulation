@@ -20,10 +20,20 @@ WalkController::WalkController() {
                                                  &WalkController::finite_state_machine, this);
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
-    abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
-    toggle_walk_controller_sub = nh->subscribe("/roboy/toggle_walk_controller", 10,
-                                               &WalkController::toggleWalkController, this);
+    abort_pub = nh->advertise<roboy_communication_simulation::Abortion>("/roboy/abort", 1000);
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &WalkController::motorControl, this);
+
+    imu_pub = nh->advertise<roboy_communication_simulation::IMU>("/roboy/imu", 100);
+
+    joint_pub = nh->advertise<roboy_communication_simulation::Joint>("/roboy/joint", 12);
+
+    body_pub = nh->advertise<roboy_communication_simulation::BodyPart>("/roboy/body",13);
+
+    COM_pub = nh->advertise<roboy_communication_simulation::COM>("/roboy/COM",1);
+
+    body_pub = nh->advertise<roboy_communication_simulation::BodyPart>("/roboy/body", 13);
+
+    input_pub = nh->advertise<roboy_communication_simulation::Input>("/roboy/inputV", 12);
 
     roboyID = roboyID_generator++;
     ID = roboyID;
@@ -36,23 +46,42 @@ WalkController::WalkController() {
 
     params.resize(TOTAL_NUMBER_CONTROLLER_PARAMETERS);
 
-    // the following links are part of my robot (this is useful if the model.sdf contains additional links)
-    link_names.push_back("hip");
-    link_names.push_back("thigh_left");
-    link_names.push_back("thigh_right");
-    link_names.push_back("shank_left");
-    link_names.push_back("shank_right");
-    link_names.push_back("foot_left");
-    link_names.push_back("foot_right");
-    link_names.push_back("torso");
-    link_names.push_back("head");
-    link_names.push_back("oberarm_left");
-    link_names.push_back("oberarm_right");
-    link_names.push_back("unterarm_left");
-    link_names.push_back("unterarm_right");
-
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
+
+    // Generate the Gaussian kernel for IMU data low-pass filtering
+    ROS_INFO_STREAM("gaussian_kernel size and shape:");
+
+    // Set standard deviation to 3.0
+    double sigma = 3.0;
+    double r, s = 2.0 * sigma * sigma;
+
+    double sum = 0.0;
+    int half_size = ACCEL_WIN_SIZE / 2.0;
+    // If ACCEL_WIN_SIZE is odd, add one extra coefficient in the kernel
+    int add_coeff = (ACCEL_WIN_SIZE % 2 == 0 ? 0 : 1);
+
+    // Generate kernel
+    for(int i = -half_size; i < half_size + add_coeff; i++)
+    {
+        r = abs(i);
+        double coeff = (exp(-(r*r)/s))/(M_PI * s);
+        gaussian_kernel.push_back(coeff);
+        sum += coeff;
+    }
+
+    // Normalize the kernel
+    for(int i = 0; i < gaussian_kernel.size(); i++)
+    {
+        gaussian_kernel[i] /= sum;
+        // Visualize the shape of the kernel
+        ROS_INFO_STREAM(std::string(200 * gaussian_kernel[i], '#'));
+    }
+
+    if (gaussian_kernel.size() != ACCEL_WIN_SIZE) {
+        // This should never happen, but if it happens, give a warning
+        ROS_WARN_STREAM("gaussian_kernel size doesn't match ACCEL_WIN_SIZE!");
+    }
 }
 
 WalkController::~WalkController() {
@@ -90,7 +119,72 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         robot_description = "robot_description"; // default
     }
 
-    gazebo_max_step_size = parent_model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize();
+    // Get all link and joint names
+    physics::Link_V links = parent_model->GetLinks();
+    for (auto link : links) {
+        string link_name = link->GetName();
+        link_names.push_back(link_name);
+        acceleration_windows[link_name] = vector<math::Vector3>(ACCEL_WIN_SIZE, math::Vector3(0, 0, 0));
+    }
+
+    physics::Joint_V joints = parent_model->GetJoints();
+    for (auto joint : joints) {
+        joint_names.push_back(joint->GetName());
+    }
+
+    physics::PhysicsEnginePtr physics_engine = parent_model->GetWorld()->GetPhysicsEngine();
+
+    // Get the Gazebo solver type
+    std::string solver_type = boost::any_cast<std::string>(physics_engine->GetParam("solver_type"));
+
+    // Give the global CFM (Constraint Force Mixing) a positive value (default 0) making the model a bit less stiff to avoid jittering
+    // Positive CFM allows links to overlap each other so the collisions aren't that hard
+    physics_engine->SetParam("cfm", 0.005);
+    double cfm = boost::any_cast<double>(physics_engine->GetParam("cfm"));
+
+    // Get the global ERP (Error Reduction Parameter) which is similar to CFM but is about joints
+    double erp = boost::any_cast<double>(physics_engine->GetParam("erp"));
+
+    ROS_INFO_STREAM("Simulation max_step_size: " << gazebo_max_step_size << " s");
+    ROS_INFO_STREAM("Solver type: " << solver_type);
+    ROS_INFO_STREAM("Global ERP: " << erp);
+    ROS_INFO_STREAM("Global CFM: " << cfm);
+
+    // List all models in the world
+    ROS_INFO_STREAM("List of models in the world:");
+    physics::Model_V models = parent_model->GetWorld()->GetModels();
+    for (auto model : models) {
+        std::string model_name = model->GetName();
+        ROS_INFO_STREAM("Model \"" << model_name << "\" links:");
+        physics::Link_V links = model->GetLinks();
+        // List all links of the model
+        for (auto link : links) {
+            std::string link_name = link->GetName();
+            ROS_INFO_STREAM("  " << link_name);
+
+            // Modify and list the friction parameters of the link
+            physics::Collision_V collisions = link->GetCollisions();
+            for (auto collision : collisions) {
+                physics::FrictionPyramidPtr friction = collision->GetSurface()->FrictionPyramid();
+                friction->SetMuPrimary(100);
+                friction->SetMuSecondary(50);
+                friction->SetMuTorsion(10);
+                friction->SetPatchRadius(10);
+                friction->SetUsePatchRadius(true);
+                friction->SetElasticModulus(0.01);
+                //friction->SetPoissonsRatio(5);
+
+                ROS_INFO_STREAM("    Mu_1:            " << friction->MuPrimary());
+                ROS_INFO_STREAM("    Mu_2:            " << friction->MuSecondary());
+                ROS_INFO_STREAM("    Mu_Torsion:      " << friction->MuTorsion());
+                ROS_INFO_STREAM("    Patch radius:    " << friction->PatchRadius());
+                ROS_INFO_STREAM("    Elastic modulus: " << friction->ElasticModulus());
+                ROS_INFO_STREAM("    Poisson's ratio: " << friction->PoissonsRatio());
+            }
+        }
+    }
+
+    gazebo_max_step_size = physics_engine->GetMaxStepSize();
 
     // Get the Gazebo simulation period
     ros::Duration gazebo_period = ros::Duration(gazebo_max_step_size);
@@ -185,11 +279,19 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&WalkController::Update, this));
 
+    desiredAngles.clear();
+    jointPIDs.clear();
+
+    for (auto joint_name : joint_names) {
+      physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
+      desiredAngles[joint_name] = 0;
+      jointPIDs[joint_name] = gazebo::common::PID(15,0,10,outputMax,outputMin,outputMax,outputMin);
+    }
+
     ROS_INFO("WalkController ready");
 }
 
 void WalkController::Update() {
-    static long unsigned int counter = 0;
     // Get the simulation time and period
     gz_time_now = parent_model->GetWorld()->GetSimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
@@ -223,27 +325,32 @@ void WalkController::Update() {
     writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
     last_write_sim_time_ros = sim_time_ros;
 
-    // publish every now and then
-    if(counter%100==0){
-        message_counter = 1000;
-        if (visualizeTendon)
-            publishTendon(&sim_muscles);
-        if (visualizeForce)
-            publishForce(&sim_muscles);
-        if (visualizeCOM)
-            publishCOM(center_of_mass);
-        if (visualizeMomentArm)
-            publishMomentArm(&sim_muscles);
-        if(visualizeMesh)
-            publishModel(parent_model->GetLink("hip"), false);
-        if(visualizeStateMachineParameters)
-            publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
+    message_counter = 1000;
+    if (visualizeTendon)
+        publishTendon(&sim_muscles);
+    if (visualizeForce)
+        publishForce(&sim_muscles);
+    if (visualizeCOM)
+        publishCOM(center_of_mass);
+    if (visualizeEstimatedCOM)
+        publishEstimatedCOM();
+    if (visualizeMomentArm)
+        publishMomentArm(&sim_muscles);
+    if (visualizeMesh)
+        publishModel(parent_model->GetLink("hip"), false);
+    if (visualizeStateMachineParameters)
+        publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
+    if (visualizeCollisions)
+        publishCollisionModel();
 
-        publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
-        publishSimulationState(params, gz_time_now);
-        publishID();
-        publishLegState(leg_state);
-    }
+    publishIMUs();
+    publishPositionsAndMasses();
+    publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
+    publishSimulationState(params, gz_time_now);
+    publishID();
+    publishLegState(leg_state);
+    publishCOMmsg();
+    controlJoints();
 
     checkAbort();
 }
@@ -279,9 +386,15 @@ void WalkController::Reset() {
     // Reset timing variables to not pass negative update periods to controllers on world reset
     last_update_sim_time_ros = ros::Time();
     last_write_sim_time_ros = ros::Time();
+
+    // Reset the recorded acceleration data
+    for (auto it = acceleration_windows.begin(); it != acceleration_windows.end(); it++) {
+        it->second.clear();
+        it->second.resize(ACCEL_WIN_SIZE, math::Vector3(0.0, 0.0, 0.0));
+    }
 }
 
-void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg) {
+void WalkController::finite_state_machine(const roboy_communication_simulation::ForceTorque::ConstPtr &msg) {
     // check what state the leg is currently in
     bool state_transition = false;
 
@@ -424,7 +537,220 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
             }
         }
     }
+
     COM /= mass_total;
+}
+
+void WalkController::publishEstimatedCOM() {
+    // Construct the visualization message for the estimated position of COM
+    // illustrated by a sphere
+    visualization_msgs::Marker sphere;
+    sphere.header.frame_id = "world";
+    char estimatedcomnamespace[40];
+    sprintf(estimatedcomnamespace, "EstCOM_%d", ID);
+    sphere.ns = estimatedcomnamespace;
+    sphere.type = visualization_msgs::Marker::SPHERE;
+
+    // The sphere is transparent light blue
+    sphere.color.r = 0.5f;
+    sphere.color.g = 0.5f;
+    sphere.color.b = 1.0f;
+    sphere.color.a = 0.5f;
+
+    sphere.lifetime = ros::Duration(0);
+
+    sphere.scale.x = 0.1;
+    sphere.scale.y = 0.1;
+    sphere.scale.z = 0.1;
+
+    sphere.action = visualization_msgs::Marker::ADD;
+
+    sphere.header.stamp = ros::Time::now();
+    sphere.points.clear();
+    sphere.id = message_counter++;
+
+    // TODO: Fetch the estimation of the position of COM from the neural network
+
+    sphere.pose.position.x = 0.0f; // REPLACE WITH NN ESTIMATION
+    sphere.pose.position.y = 0.0f; // REPLACE WITH NN ESTIMATION
+    sphere.pose.position.z = 0.0f; // REPLACE WITH NN ESTIMATION
+
+    marker_visualization_pub.publish(sphere);
+}
+
+void WalkController::publishIMUs() {
+    // Construct the arrow visualization and /roboy/imu messages illustrating the accelerations
+    visualization_msgs::Marker arrow;
+    arrow.header.frame_id = "world";
+    char imunamespace[20];
+    sprintf(imunamespace, "imu_%d", ID);
+    arrow.ns = imunamespace;
+    arrow.type = visualization_msgs::Marker::ARROW;
+
+    arrow.scale.x = 0.01; // Shaft diameter scale
+    arrow.scale.y = 0.03; // Head diameter scale
+    arrow.scale.z = 0.03; // Head length scale
+
+    arrow.lifetime = ros::Duration();
+    arrow.action = visualization_msgs::Marker::ADD;
+
+    geometry_msgs::Point start_point;
+    geometry_msgs::Point end_point;
+
+    roboy_communication_simulation::IMU imu_msg;
+
+    imu_msg.roboyID = roboyID;
+
+    for (auto link_name : link_names) {
+        imu_msg.link = link_name.c_str();
+        arrow.header.stamp = ros::Time::now();
+
+        physics::LinkPtr link = parent_model->GetLink(link_name);
+        math::Pose pose = link->GetWorldCoGPose();
+
+        math::Vector3 filtered_lin_accel = getFilteredLinearAcceleration(link);
+        math::Vector3 ang_vel_world = link->GetWorldAngularVel();
+
+        // IMU message (not for rviz visualization)
+
+        imu_msg.lin_accel_world.x = filtered_lin_accel.x;
+        imu_msg.lin_accel_world.y = filtered_lin_accel.y;
+        imu_msg.lin_accel_world.z = filtered_lin_accel.z;
+
+        imu_msg.ang_vel_world.x = ang_vel_world.x;
+        imu_msg.ang_vel_world.y = ang_vel_world.y;
+        imu_msg.ang_vel_world.z = ang_vel_world.z;
+
+        // Publish imu and link msgs //
+        imu_pub.publish(imu_msg);
+
+        SimulationControl &simcontrol = SimulationControl::getInstance();
+        simcontrol.writeRosbagIfRecording("/roboy/imu", imu_msg);
+
+        if (visualizeIMUs) {
+            // The acceleration vector starts at the center of gravity of the link
+            start_point.x = pose.pos.x;
+            start_point.y = pose.pos.y;
+            start_point.z = pose.pos.z;
+
+            arrow.id = message_counter++;
+            arrow.points.clear();
+
+            arrow.points.push_back(start_point);
+
+            // Linear world acceleration with red color
+            arrow.color.r = 1.0f;
+            arrow.color.g = 0.0f;
+            arrow.color.b = 0.0f;
+            arrow.color.a = 1.0f;
+
+            end_point.x = start_point.x + filtered_lin_accel.x * 0.03;
+            end_point.y = start_point.y + filtered_lin_accel.y * 0.03;
+            end_point.z = start_point.z + filtered_lin_accel.z * 0.03;
+            arrow.points.push_back(end_point);
+            marker_visualization_pub.publish(arrow);
+
+            arrow.id = message_counter++;
+            arrow.points.clear();
+
+            arrow.points.push_back(start_point);
+
+            // Angular world velocity with green color
+            arrow.color.r = 0.0f;
+            arrow.color.g = 1.0f;
+            arrow.color.b = 0.0f;
+            arrow.color.a = 1.0f;
+
+            end_point.x = start_point.x + ang_vel_world.x * 0.02;
+            end_point.y = start_point.y + ang_vel_world.y * 0.02;
+            end_point.z = start_point.z + ang_vel_world.z * 0.02;
+            arrow.points.push_back(end_point);
+            marker_visualization_pub.publish(arrow);
+        }
+    }
+}
+
+void WalkController::publishPositionsAndMasses() {
+    // Publish the position and mass of each link
+
+    roboy_communication_simulation::BodyPart body_msg;
+    body_msg.roboyID = roboyID;
+
+    for (auto link_name : link_names) {
+        physics::LinkPtr link = parent_model->GetLink(link_name);
+        math::Pose pose = link->GetWorldCoGPose();
+        body_msg.link = link_name.c_str();
+
+        body_msg.position.x = pose.pos.x;
+        body_msg.position.y = pose.pos.y;
+        body_msg.position.z = pose.pos.z;
+
+        body_msg.mass = link->GetInertial()->GetMass();
+
+        body_pub.publish(body_msg);
+
+        SimulationControl &simcontrol = SimulationControl::getInstance();
+        simcontrol.writeRosbagIfRecording("/roboy/body", body_msg);
+    }
+}
+
+void WalkController::publishCollisionModel() {
+    // Construct the collision visualization messages
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "world";
+    char stickfigure_namespace[20];
+    sprintf(stickfigure_namespace, "stickfigure_%d", ID);
+    marker.ns = stickfigure_namespace;
+    marker.color.r = 1.0f;
+    marker.color.g = 1.0f;
+    marker.color.b = 1.0f;
+    marker.color.a = 0.5;
+    marker.lifetime = ros::Duration();
+    marker.header.stamp = ros::Time::now();
+    marker.action = visualization_msgs::Marker::ADD;
+
+    for (auto link_name : link_names) {
+        physics::LinkPtr link = parent_model->GetLink(link_name);
+
+        marker.id = message_counter++;
+
+        gazebo::physics::Collision_V collisions = link->GetCollisions();
+        for (auto collision : collisions) {
+            // Setting the world pose 'dirty' is necessary for the collision
+            // world pose to update correctly on each iteration.
+            collision->SetWorldPoseDirty();
+            math::Pose pose = collision->GetWorldPose();
+            marker.pose.position.x = pose.pos.x;
+            marker.pose.position.y = pose.pos.y;
+            marker.pose.position.z = pose.pos.z;
+            marker.pose.orientation.x = pose.rot.x;
+            marker.pose.orientation.y = pose.rot.y;
+            marker.pose.orientation.z = pose.rot.z;
+            marker.pose.orientation.w = pose.rot.w;
+
+            gazebo::physics::ShapePtr shape(collision->GetShape());
+            if (shape->HasType(gazebo::physics::Base::BOX_SHAPE)) {
+                // The collision shape is box
+                marker.type = visualization_msgs::Marker::CUBE;
+                gazebo::physics::BoxShape *box = static_cast<gazebo::physics::BoxShape*>(shape.get());
+                math::Vector3 shape_size = box->GetSize();
+                marker.scale.x = shape_size.x;
+                marker.scale.y = shape_size.y;
+                marker.scale.z = shape_size.z;
+            }
+            else if (shape->HasType(gazebo::physics::Base::SPHERE_SHAPE)) {
+                // The collision shape is sphere
+                marker.type = visualization_msgs::Marker::SPHERE;
+                gazebo::physics::SphereShape *sphere = static_cast<gazebo::physics::SphereShape*>(shape.get());
+                double diameter = sphere->GetRadius()*2;
+                marker.scale.x = diameter;
+                marker.scale.y = diameter;
+                marker.scale.z = diameter;
+            }
+        }
+
+        marker_visualization_pub.publish(marker);
+    }
 }
 
 void WalkController::updateFootDisplacementAndVelocity(){
@@ -749,7 +1075,7 @@ void WalkController::updateEnergies(){
 
 bool WalkController::checkAbort(){
     if(center_of_mass[POSITION].z<0.1*initial_center_of_mass_height.z) {
-        roboy_simulation::Abortion msg;
+        roboy_communication_simulation::Abortion msg;
         msg.roboyID = roboyID;
         msg.reason = COMheight;
         abort_pub.publish(msg);
@@ -757,7 +1083,7 @@ bool WalkController::checkAbort(){
         return true;
     }
     if(radiansToDegrees(fabs(hip_CS->rot.GetYaw())-fabs(psi_heading)) > 45.0f) {
-        roboy_simulation::Abortion msg;
+        roboy_communication_simulation::Abortion msg;
         msg.roboyID = roboyID;
         msg.reason = headingDeviation;
         abort_pub.publish(msg);
@@ -772,7 +1098,7 @@ bool WalkController::checkAbort(){
                 // the feed are ok or hip?!
                 continue;
             else {
-                roboy_simulation::Abortion msg;
+                roboy_communication_simulation::Abortion msg;
                 msg.roboyID = roboyID;
                 msg.reason = selfCollision;
                 abort_pub.publish(msg);
@@ -1115,11 +1441,7 @@ void WalkController::publishID(){
     roboyID_pub.publish(msg);
 }
 
-void WalkController::toggleWalkController(const std_msgs::Bool::ConstPtr &msg){
-    control = msg->data;
-}
-
-void WalkController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
+void WalkController::motorControl(const roboy_communication_simulation::MotorControl::ConstPtr &msg){
     // only react to messages for me
     if(msg->roboyID == roboyID) {
         // switch to manual control
@@ -1133,20 +1455,192 @@ void WalkController::motorControl(const roboy_simulation::MotorControl::ConstPtr
     }
 }
 
-bool WalkController::updateControllerParameters(roboy_simulation::UpdateControllerParameters::Request  &req,
-                                                roboy_simulation::UpdateControllerParameters::Response &res){
+bool WalkController::updateControllerParameters(roboy_communication_simulation::UpdateControllerParameters::Request  &req,
+                                                roboy_communication_simulation::UpdateControllerParameters::Response &res){
     messageTocontrollerParameters(req.params, params);
     return true;
 }
 
-bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
-                     roboy_simulation::Energies::Response &res){
+bool WalkController::energiesService(roboy_communication_simulation::Energies::Request  &req,
+                                     roboy_communication_simulation::Energies::Response &res){
     res.E_speed = E_speed_int;
     res.E_headvel = E_headvel_int;
     res.E_headori = E_headori_int;
     res.E_slide = E_slide_int;
     res.E_effort = E_effort_int;
     return true;
+}
+//Basic PID joint control system described below...
+void WalkController::controlJoints(){
+    roboy_communication_simulation::Input input_msg;
+  input_msg.roboyID = roboyID;
+
+  if(firstLoop) {
+    currentTime = parent_model->GetWorld()->GetSimTime();
+    firstLoop = false;
+    return;
+  }
+  else {
+    previousTime = currentTime;
+    currentTime = parent_model->GetWorld()->GetSimTime();
+    deltaTime = currentTime - previousTime;
+
+    bool IsPositive = false;
+    for (auto joint_name : joint_names) {
+        physics::JointPtr thisJoint = parent_model->GetJoint(joint_name);
+        publishJoints(thisJoint);
+        double currentAngle = thisJoint->GetAngle(0).Radian();
+        double deltaAngle = currentAngle -desiredAngles[joint_name];
+        jointPIDs[joint_name].Update(deltaAngle, deltaTime);
+        double inputVoltage = jointPIDs[joint_name].GetCmd();
+        if (inputVoltage>0) {IsPositive = true;}
+        double effectiveVoltage = abs (inputVoltage);
+
+
+        if(joint_name == "neck") {
+          // No motors existing...
+        }
+        if(joint_name == "shoulder_left") {
+          // No motors existing...
+        }
+        if(joint_name == "shoulder_right") {
+          // No motors existing...
+        }
+        if(joint_name == "elbow_left") {
+          // No motors existing...
+        }
+        if(joint_name == "elbow_right") {
+          // No motors existing...
+        }
+        if(joint_name == "spine") {
+          // No motors existing...
+        }
+        if(joint_name == "groin_left") {
+          if(IsPositive){
+            sim_muscles[0]->cmd = effectiveVoltage;
+            sim_muscles[2]->cmd = 0;
+          }
+          else {
+            sim_muscles[0]->cmd = 0;
+            sim_muscles[2]->cmd = effectiveVoltage;
+          }
+        }
+        if(joint_name == "groin_right") {
+          if(IsPositive){
+            sim_muscles[8]->cmd = 0;
+            sim_muscles[10]->cmd = effectiveVoltage;
+          }
+          else {
+            sim_muscles[8]->cmd = effectiveVoltage;
+            sim_muscles[10]->cmd = 0;
+          }
+        }
+        if(joint_name == "knee_left") {
+          if(IsPositive){
+            sim_muscles[4]->cmd = 0;
+            sim_muscles[5]->cmd = effectiveVoltage;
+          }
+          else {
+            sim_muscles[4]->cmd = effectiveVoltage;
+            sim_muscles[5]->cmd = 0;
+          }
+        }
+        if(joint_name == "knee_right") {
+          if(IsPositive){
+            sim_muscles[12]->cmd = 0;
+            sim_muscles[13]->cmd = effectiveVoltage;
+          }
+          else {
+            sim_muscles[12]->cmd = effectiveVoltage;
+            sim_muscles[13]->cmd = 0;
+          }
+        }
+        if(joint_name == "ankle_left") {
+          if(IsPositive){
+            sim_muscles[6]->cmd = 0;
+            sim_muscles[7]->cmd = effectiveVoltage;
+          }
+          else {
+            sim_muscles[6]->cmd = effectiveVoltage;
+            sim_muscles[7]->cmd = 0;
+          }
+        }
+        if(joint_name == "ankle_right") {
+          if(IsPositive){
+            sim_muscles[14]->cmd = effectiveVoltage;
+            sim_muscles[15]->cmd = 0;
+          }
+          else {
+            sim_muscles[14]->cmd = 0;
+            sim_muscles[15]->cmd = effectiveVoltage;
+          }
+        }
+
+        // input voltages for motors are being published here...
+        input_msg.name = joint_name;
+        input_msg.inputVoltage = inputVoltage;
+        input_pub.publish(input_msg);
+    }
+}
+
+}
+
+
+void WalkController::publishJoints(const physics::JointPtr thisJoint){
+    roboy_communication_simulation::Joint joint_msg;
+    joint_msg.roboyID = roboyID;
+    joint_msg.name = thisJoint->GetName();
+    joint_msg.radian = thisJoint->GetAngle(0).Radian();
+    joint_pub.publish(joint_msg);
+    return;
+}
+
+void WalkController::publishCOMmsg () {
+    roboy_communication_simulation::COM COM_msg;
+    COM_msg.roboyID = roboyID;
+    COM_msg.Position.x = center_of_mass[POSITION].x;
+    COM_msg.Position.y = center_of_mass[POSITION].y;
+    COM_msg.Position.z = center_of_mass[POSITION].z;
+    COM_msg.Velocity.x = center_of_mass[VELOCITY].x;
+    COM_msg.Velocity.y = center_of_mass[VELOCITY].y;
+    COM_msg.Velocity.z = center_of_mass[VELOCITY].z;
+    COM_pub.publish(COM_msg);
+
+    SimulationControl &simcontrol = SimulationControl::getInstance();
+    simcontrol.writeRosbagIfRecording("/roboy/COM", COM_msg);
+}
+
+math::Vector3 WalkController::getFilteredLinearAcceleration(const physics::LinkPtr link)
+{
+    math::Vector3 lin_accel_world = link->GetWorldLinearAccel();
+    if (!filterIMUs) {
+        // Filtering disabled
+        return lin_accel_world;
+    }
+    string link_name = link->GetName();
+
+    vector<math::Vector3> &window = acceleration_windows[link_name];
+    if (window.size() != ACCEL_WIN_SIZE) {
+        // This should never happen, but if it happens, give a warning
+        ROS_WARN_STREAM(link_name << ": Acceleration window size doesn't match ACCEL_WIN_SIZE!");
+    }
+
+    // Remove the oldest measurement from the time window of earlier
+    // acceleration measurements.
+    for (uint i = 0; i < ACCEL_WIN_SIZE-1; i++) {
+        window[i] = window[i+1];
+    }
+
+    // Add the new measurement to the time window
+    window[ACCEL_WIN_SIZE-1] = lin_accel_world;
+
+    // Calculate the low-pass filtered vector
+    math::Vector3 filtered_lin_accel;
+    for (uint i = 0; i < ACCEL_WIN_SIZE; i++) {
+        filtered_lin_accel += window[i] * gaussian_kernel[i];
+    }
+
+    return filtered_lin_accel;
 }
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)

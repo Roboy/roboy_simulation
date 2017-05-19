@@ -39,7 +39,7 @@ void ForceTorquePluginHalterung::Load(sensors::SensorPtr sensor, sdf::ElementPtr
     // Make sure the parent sensor is active.
     parentSensor->SetActive(true);
 
-    force_torque_pub = nh->advertise<roboy_simulation::ForceTorque>("/roboy/"+sdf->GetAttribute("name")->GetAsString(),1);
+    force_torque_pub = nh->advertise<roboy_communication_simulation::ForceTorque>("/roboy/"+sdf->GetAttribute("name")->GetAsString(),1);
     roboyID_sub = nh->subscribe("/roboy/id", 1, &ForceTorquePluginHalterung::updateID, this);
 
     ROS_INFO_NAMED("force_torque_sensor","%s loaded", sdf->GetAttribute("name")->GetAsString().c_str());
@@ -47,7 +47,7 @@ void ForceTorquePluginHalterung::Load(sensors::SensorPtr sensor, sdf::ElementPtr
 
 void ForceTorquePluginHalterung::OnUpdate() {
     // Get all the contacts.
-    roboy_simulation::ForceTorque msg;
+    roboy_communication_simulation::ForceTorque msg;
     msg.roboyID = roboyID;
 #if GAZEBO_MAJOR_VERSION < 7
     math::Vector3 force = parentSensor->GetForce();
