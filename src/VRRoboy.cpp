@@ -11,10 +11,10 @@ VRRoboy::VRRoboy(){
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    pose_pub = nh->advertise<common_utilities::Pose>("/roboy/pose", 100);
+    pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/pose", 100);
     pose_sub = nh->subscribe("/roboy/pose_test", 1000, &VRRoboy::publishTestPose, this);
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
-    muscle_state_pub = nh->advertise<common_utilities::MuscleState>("/roboy/muscle_state", 100);
+    muscle_state_pub = nh->advertise<roboy_communication_middleware::MuscleState>("/roboy/muscle_state", 100);
     external_force_sub = nh->subscribe("/roboy/external_force", 1, &VRRoboy::applyExternalForce, this);
 }
 
@@ -40,7 +40,7 @@ void VRRoboy::initializeWorlds(uint numberOfWorlds){
 }
 
 void VRRoboy::publishPose(uint modelNr){
-    common_utilities::Pose msg;
+    roboy_communication_middleware::Pose msg;
     for(auto link:model[modelNr]->GetLinks()){
         msg.name.push_back(link->GetName());
         math::Pose p = link->GetWorldPose();
@@ -86,7 +86,7 @@ void VRRoboy::publishTestPose( const geometry_msgs::Pose::ConstPtr& msg ){
 }
 
 void VRRoboy::publishMotorStates(uint modelNr){
-    common_utilities::MuscleState msg;
+    roboy_communication_middleware::MuscleState msg;
     for(auto link:model[modelNr]->GetLinks()){
         msg.name.push_back(link->GetName());
         math::Pose p = link->GetWorldPose();
@@ -107,7 +107,7 @@ void VRRoboy::publishMotorStates(uint modelNr){
     muscle_state_pub.publish(msg);
 }
 
-void VRRoboy::applyExternalForce(const common_utilities::ExternalForce::ConstPtr &msg) {
+void VRRoboy::applyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg) {
     for(uint i=0; i<model.size(); i++){
         physics::LinkPtr link = model[i]->GetChildLink(msg->name);
         math::Vector3 force(msg->f_x, msg->f_y, msg->f_z);

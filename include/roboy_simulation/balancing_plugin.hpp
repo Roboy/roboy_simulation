@@ -21,15 +21,15 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
 //messages
-#include "roboy_simulation/VisualizationControl.h"
-#include "roboy_simulation/RecordingControl.h"
-#include "roboy_simulation/LegState.h"
-#include "roboy_simulation/ControllerParameters.h"
+#include "roboy_communication_simulation/VisualizationControl.h"
+#include "roboy_communication_simulation/RecordingControl.h"
+#include "roboy_communication_simulation/LegState.h"
+#include "roboy_communication_simulation/ControllerParameters.h"
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Bool.h>
-#include "roboy_simulation/Abortion.h"
-#include "roboy_simulation/MotorControl.h"
+#include "roboy_communication_simulation/Abortion.h"
+#include "roboy_communication_simulation/MotorControl.h"
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
 #endif

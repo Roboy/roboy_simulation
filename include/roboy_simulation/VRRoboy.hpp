@@ -15,9 +15,9 @@
 // ros messages
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Pose.h>
-#include "common_utilities/Pose.h"
-#include "common_utilities/MuscleState.h"
-#include "common_utilities/ExternalForce.h"
+#include "roboy_communication_middleware/Pose.h"
+#include "roboy_communication_middleware/MuscleState.h"
+#include "roboy_communication_simulation/ExternalForce.h"
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
 #include "roboy_simulation/helperClasses.hpp"
@@ -50,7 +50,7 @@ public:
      * Applies the external force to all roboys
      * @param msg the external force
      */
-    void applyExternalForce(const common_utilities::ExternalForce::ConstPtr &msg);
+    void applyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg);
     vector<physics::WorldPtr> world;
     bool apply_external_force = false;
     int32_t duration_in_milliseconds = 0;

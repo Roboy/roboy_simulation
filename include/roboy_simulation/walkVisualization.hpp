@@ -9,12 +9,12 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
-#include "roboy_simulation/Tendon.h"
-#include "roboy_simulation/VisualizationControl.h"
-#include "roboy_simulation/ForceTorque.h"
-#include "roboy_simulation/LegState.h"
-#include "roboy_simulation/ControllerParameters.h"
-#include "roboy_simulation/COM.h"
+#include "roboy_communication_simulation/Tendon.h"
+#include "roboy_communication_simulation/VisualizationControl.h"
+#include "roboy_communication_simulation/ForceTorque.h"
+#include "roboy_communication_simulation/LegState.h"
+#include "roboy_communication_simulation/ControllerParameters.h"
+#include "roboy_communication_simulation/COM.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
@@ -32,7 +32,7 @@ class WalkVisualization{
 public:
     WalkVisualization();
 
-    void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
+    void visualization_control(const roboy_communication_simulation::VisualizationControl::ConstPtr &msg);
 
     void publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles);
 

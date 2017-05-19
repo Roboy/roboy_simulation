@@ -12,11 +12,11 @@ WalkVisualization::WalkVisualization(){
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
     visualization_control_sub = nh->subscribe("/roboy/visualization_control", 10,
                                               &WalkVisualization::visualization_control, this);
-    leg_state_pub = nh->advertise<roboy_simulation::LegState>("/roboy/leg_state", 2);
-    simulation_state_pub = nh->advertise<roboy_simulation::ControllerParameters>("/roboy/simulationState", 1);
+    leg_state_pub = nh->advertise<roboy_communication_simulation::LegState>("/roboy/leg_state", 2);
+    simulation_state_pub = nh->advertise<roboy_communication_simulation::ControllerParameters>("/roboy/simulationState", 1);
 }
 
-void WalkVisualization::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg) {
+void WalkVisualization::visualization_control(const roboy_communication_simulation::VisualizationControl::ConstPtr &msg) {
     if(msg->roboyID == ID) { // only react to messages with my ID
         switch (msg->control) {
             case Tendon: {
@@ -340,7 +340,7 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
 }
 
 void WalkVisualization::publishSimulationState(ControllerParameters &params, gazebo::common::Time gz_time_now){
-    roboy_simulation::ControllerParameters msg;
+    roboy_communication_simulation::ControllerParameters msg;
     msg.roboyID = ID;
     controllerParametersToMessage(params, msg);
     msg.sim_time = gz_time_now.Float();
@@ -349,12 +349,12 @@ void WalkVisualization::publishSimulationState(ControllerParameters &params, gaz
 
 
 void WalkVisualization::publishLegState(LEG_STATE *leg_state){
-    roboy_simulation::LegState msgLeft;
+    roboy_communication_simulation::LegState msgLeft;
     msgLeft.roboyID = ID;
     msgLeft.leg = LEG::LEFT;
     msgLeft.state = leg_state[LEG::LEFT];
     leg_state_pub.publish(msgLeft);
-    roboy_simulation::LegState msgRight;
+    roboy_communication_simulation::LegState msgRight;
     msgRight.roboyID = ID;
     msgRight.leg = LEG::RIGHT;
     msgRight.state = leg_state[LEG::RIGHT];

@@ -30,26 +30,26 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
-#include "roboy_simulation/Tendon.h"
-#include "roboy_simulation/VisualizationControl.h"
-#include "roboy_simulation/ForceTorque.h"
-#include "roboy_simulation/LegState.h"
-#include "roboy_simulation/ControllerParameters.h"
-#include "roboy_simulation/UpdateControllerParameters.h"
-#include "roboy_simulation/Energies.h"
-#include "common_utilities/Initialize.h"
-#include "common_utilities/EmergencyStop.h"
-#include "common_utilities/Record.h"
-#include "common_utilities/Steer.h"
-#include "common_utilities/Trajectory.h"
-#include "common_utilities/RoboyState.h"
-#include "roboy_simulation/Abortion.h"
-#include "roboy_simulation/MotorControl.h"
-#include "roboy_simulation/IMU.h"
-#include "roboy_simulation/Joint.h"
-#include "roboy_simulation/BodyPart.h"
-#include "roboy_simulation/COM.h"
-#include "roboy_simulation/Input.h"
+#include "roboy_communication_simulation/Tendon.h"
+#include "roboy_communication_simulation/VisualizationControl.h"
+#include "roboy_communication_simulation/ForceTorque.h"
+#include "roboy_communication_simulation/LegState.h"
+#include "roboy_communication_simulation/ControllerParameters.h"
+#include "roboy_communication_simulation/UpdateControllerParameters.h"
+#include "roboy_communication_simulation/Energies.h"
+#include "roboy_communication_middleware/Initialize.h"
+#include "roboy_communication_middleware/EmergencyStop.h"
+#include "roboy_communication_middleware/Record.h"
+#include "roboy_communication_middleware/Steer.h"
+#include "roboy_communication_middleware/Trajectory.h"
+#include "roboy_communication_middleware/RoboyState.h"
+#include "roboy_communication_simulation/Abortion.h"
+#include "roboy_communication_simulation/MotorControl.h"
+#include "roboy_communication_simulation/IMU.h"
+#include "roboy_communication_simulation/Joint.h"
+#include "roboy_communication_simulation/BodyPart.h"
+#include "roboy_communication_simulation/COM.h"
+#include "roboy_communication_simulation/Input.h"
 
 #include "roboy_simulation/walkVisualization.hpp"
 #include "roboy_simulation/helperClasses.hpp"
@@ -104,7 +104,7 @@ public:
      * Callback function for force torque sensors, defines the state of eaach leg
      * @param msg values from force torque sensor
      */
-    void finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg);
+    void finite_state_machine(const roboy_communication_simulation::ForceTorque::ConstPtr &msg);
 
     /**
      * Function used by finite_state_machine, defines the state order
@@ -186,7 +186,7 @@ public:
     /** Callback for manual motor control
      * @param msg contains vector with voltage values for every motor
      * */
-    void motorControl(const roboy_simulation::MotorControl::ConstPtr &msg);
+    void motorControl(const roboy_communication_simulation::MotorControl::ConstPtr &msg);
 
 
     /**
@@ -195,16 +195,16 @@ public:
      * @param res not used
      * @return success
      */
-    bool updateControllerParameters(roboy_simulation::UpdateControllerParameters::Request  &req,
-                                    roboy_simulation::UpdateControllerParameters::Response &res);
+    bool updateControllerParameters(roboy_communication_simulation::UpdateControllerParameters::Request  &req,
+                                    roboy_communication_simulation::UpdateControllerParameters::Response &res);
     /**
      * Service for retrieving current energies, typically sent by walkTrainer
      * @param req not used
      * @param res energies
      * @return success
      */
-    bool energiesService(roboy_simulation::Energies::Request  &req,
-                         roboy_simulation::Energies::Response &res);
+    bool energiesService(roboy_communication_simulation::Energies::Request  &req,
+                         roboy_communication_simulation::Energies::Response &res);
 
     void publishCOMmsg ();
 

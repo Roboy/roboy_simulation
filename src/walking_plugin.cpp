@@ -329,14 +329,14 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
 
     spinner = new ros::AsyncSpinner(1);
 
-    roboy_visualization_control_pub = nh->advertise<roboy_simulation::VisualizationControl>("/roboy/visualization_control", 1);
+    roboy_visualization_control_pub = nh->advertise<roboy_communication_simulation::VisualizationControl>("/roboy/visualization_control", 1);
     toggle_walk_controller_pub = nh->advertise<std_msgs::Bool>("/roboy/toggle_walk_controller", 1);
     id_sub = nh->subscribe("/roboy/id", 1, &WalkingPlugin::updateId, this);
     simulation_state_sub = nh->subscribe("/roboy/simulationState", 1, &WalkingPlugin::updateSimulationState, this);
     reset_world_srv = nh->serviceClient<std_srvs::Trigger>("/roboy/reset_world");
     abort_sub = nh->subscribe("/roboy/abort", 1, &WalkingPlugin::abortion, this);
     sim_control_pub = nh->advertise<std_msgs::Int32>("/roboy/sim_control", 1);
-    motor_control_pub = nh->advertise<roboy_simulation::MotorControl>("/roboy/motor_control", 100);
+    motor_control_pub = nh->advertise<roboy_communication_simulation::MotorControl>("/roboy/motor_control", 100);
 }
 
 WalkingPlugin::~WalkingPlugin(){
@@ -417,7 +417,7 @@ void WalkingPlugin::toggleWalkController(){
 
 void WalkingPlugin::showCOM() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeCOM");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = COM;
     msg.value = w->isChecked();
@@ -426,7 +426,7 @@ void WalkingPlugin::showCOM() {
 
 void WalkingPlugin::showEstimatedCOM() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeEstimatedCOM");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = EstimatedCOM;
     msg.value = w->isChecked();
@@ -435,7 +435,7 @@ void WalkingPlugin::showEstimatedCOM() {
 
 void WalkingPlugin::showForce() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeForce");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = Forces;
     msg.value = w->isChecked();
@@ -444,7 +444,7 @@ void WalkingPlugin::showForce() {
 
 void WalkingPlugin::showTendon() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeTendon");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = Tendon;
     msg.value = w->isChecked();
@@ -453,7 +453,7 @@ void WalkingPlugin::showTendon() {
 
 void WalkingPlugin::showMesh() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeMesh");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = Mesh;
     msg.value = w->isChecked();
@@ -462,7 +462,7 @@ void WalkingPlugin::showMesh() {
 
 void WalkingPlugin::showMomentArm() {
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeMomentArm");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = MomentArm;
     msg.value = w->isChecked();
@@ -471,7 +471,7 @@ void WalkingPlugin::showMomentArm() {
 
 void WalkingPlugin::showStateMachineParameters(){
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeStateMachineParameters");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = StateMachineParameters;
     msg.value = w->isChecked();
@@ -480,7 +480,7 @@ void WalkingPlugin::showStateMachineParameters(){
 
 void WalkingPlugin::showForceTorqueSensors(){
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = ForceTorqueSensors;
     msg.value = w->isChecked();
@@ -489,7 +489,7 @@ void WalkingPlugin::showForceTorqueSensors(){
 
 void WalkingPlugin::showIMUs(){
     QCheckBox* w = this->findChild<QCheckBox*>("visualizeIMUs");
-    roboy_simulation::VisualizationControl msg;
+    roboy_communication_simulation::VisualizationControl msg;
     msg.roboyID = currentID.second;
     msg.control = IMUs;
     msg.value = w->isChecked();
@@ -512,7 +512,7 @@ void WalkingPlugin::changeID(int index){
     showIMUs();
 }
 
-void WalkingPlugin::updateSimulationState(const roboy_simulation::ControllerParameters::ConstPtr &msg){
+void WalkingPlugin::updateSimulationState(const roboy_communication_simulation::ControllerParameters::ConstPtr &msg){
     if(msg->roboyID == currentID.second) {
         QTableWidgetItem *item0 = new QTableWidgetItem(QString::number(msg->F_contact));
         QTableWidgetItem *item1 = new QTableWidgetItem(QString::number(msg->d_lift));
@@ -644,7 +644,7 @@ void WalkingPlugin::updateInteractiveMarker(){
 }
 
 void WalkingPlugin::sendMotorControl(){
-    roboy_simulation::MotorControl msg;
+    roboy_communication_simulation::MotorControl msg;
     msg.roboyID = currentID.second;
     QString m("motor");
     for(uint i=0; i<16; i++){
@@ -669,7 +669,7 @@ void WalkingPlugin::refresh(){
     showTendon();
 }
 
-void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &msg){
+void WalkingPlugin::updateLegStates(const roboy_communication_simulation::LegState::ConstPtr &msg){
     if(msg->roboyID == currentID.second) {
         LightWidget *stance;
         LightWidget *lift;
@@ -749,7 +749,7 @@ void WalkingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
     }
 }
 
-void WalkingPlugin::abortion(const roboy_simulation::Abortion::ConstPtr &msg){
+void WalkingPlugin::abortion(const roboy_communication_simulation::Abortion::ConstPtr &msg){
     if(msg->roboyID==currentID.second) {
         LightWidget *status;
         QLineEdit *statusString;

@@ -9,7 +9,7 @@
 //std
 #include <string>
 // messages
-#include "roboy_simulation/ForceTorque.h"
+#include "roboy_communication_simulation/ForceTorque.h"
 #include <std_msgs/Int32.h>
 
 using namespace gazebo;

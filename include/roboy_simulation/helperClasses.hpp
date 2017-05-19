@@ -4,7 +4,7 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 // ros messages
-#include "roboy_simulation/ControllerParameters.h"
+#include "roboy_communication_simulation/ControllerParameters.h"
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
 #include "roboy_simulation/controllerParameters.hpp"
@@ -25,8 +25,8 @@ private:
 typedef boost::shared_ptr<CoordinateSystem> CoordSys;
 
 void controllerParametersToMessage(ControllerParameters &params,
-                                   roboy_simulation::ControllerParameters &msg);
-void messageTocontrollerParameters(const roboy_simulation::ControllerParameters::ConstPtr &msg,
+                                   roboy_communication_simulation::ControllerParameters &msg);
+void messageTocontrollerParameters(const roboy_communication_simulation::ControllerParameters::ConstPtr &msg,
                                    ControllerParameters &params);
-void messageTocontrollerParameters(roboy_simulation::ControllerParameters &msg,
+void messageTocontrollerParameters(roboy_communication_simulation::ControllerParameters &msg,
                                    ControllerParameters &params);

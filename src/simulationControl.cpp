@@ -244,7 +244,7 @@ void SimulationControl::simulationControl(const std_msgs::Int32::ConstPtr &msg) 
     }
 }
 
-void SimulationControl::recordingControl(const roboy_simulation::RecordingControl::ConstPtr &msg) {
+void SimulationControl::recordingControl(const roboy_communication_simulation::RecordingControl::ConstPtr &msg) {
     {
         lock_guard<mutex> guard(rosbag_mutex);
         if (recording) {

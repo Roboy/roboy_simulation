@@ -20,20 +20,20 @@ WalkController::WalkController() {
                                                  &WalkController::finite_state_machine, this);
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
-    abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
+    abort_pub = nh->advertise<roboy_communication_simulation::Abortion>("/roboy/abort", 1000);
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &WalkController::motorControl, this);
 
-    imu_pub = nh->advertise<roboy_simulation::IMU>("/roboy/imu", 100);
+    imu_pub = nh->advertise<roboy_communication_simulation::IMU>("/roboy/imu", 100);
 
-    joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 12);
+    joint_pub = nh->advertise<roboy_communication_simulation::Joint>("/roboy/joint", 12);
 
-    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body",13);
+    body_pub = nh->advertise<roboy_communication_simulation::BodyPart>("/roboy/body",13);
 
-    COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",1);
+    COM_pub = nh->advertise<roboy_communication_simulation::COM>("/roboy/COM",1);
 
-    body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body", 13);
+    body_pub = nh->advertise<roboy_communication_simulation::BodyPart>("/roboy/body", 13);
 
-    input_pub = nh->advertise<roboy_simulation::Input>("/roboy/inputV", 12);
+    input_pub = nh->advertise<roboy_communication_simulation::Input>("/roboy/inputV", 12);
 
     roboyID = roboyID_generator++;
     ID = roboyID;
@@ -394,7 +394,7 @@ void WalkController::Reset() {
     }
 }
 
-void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg) {
+void WalkController::finite_state_machine(const roboy_communication_simulation::ForceTorque::ConstPtr &msg) {
     // check what state the leg is currently in
     bool state_transition = false;
 
@@ -597,7 +597,7 @@ void WalkController::publishIMUs() {
     geometry_msgs::Point start_point;
     geometry_msgs::Point end_point;
 
-    roboy_simulation::IMU imu_msg;
+    roboy_communication_simulation::IMU imu_msg;
 
     imu_msg.roboyID = roboyID;
 
@@ -673,7 +673,7 @@ void WalkController::publishIMUs() {
 void WalkController::publishPositionsAndMasses() {
     // Publish the position and mass of each link
 
-    roboy_simulation::BodyPart body_msg;
+    roboy_communication_simulation::BodyPart body_msg;
     body_msg.roboyID = roboyID;
 
     for (auto link_name : link_names) {
@@ -1075,7 +1075,7 @@ void WalkController::updateEnergies(){
 
 bool WalkController::checkAbort(){
     if(center_of_mass[POSITION].z<0.1*initial_center_of_mass_height.z) {
-        roboy_simulation::Abortion msg;
+        roboy_communication_simulation::Abortion msg;
         msg.roboyID = roboyID;
         msg.reason = COMheight;
         abort_pub.publish(msg);
@@ -1083,7 +1083,7 @@ bool WalkController::checkAbort(){
         return true;
     }
     if(radiansToDegrees(fabs(hip_CS->rot.GetYaw())-fabs(psi_heading)) > 45.0f) {
-        roboy_simulation::Abortion msg;
+        roboy_communication_simulation::Abortion msg;
         msg.roboyID = roboyID;
         msg.reason = headingDeviation;
         abort_pub.publish(msg);
@@ -1098,7 +1098,7 @@ bool WalkController::checkAbort(){
                 // the feed are ok or hip?!
                 continue;
             else {
-                roboy_simulation::Abortion msg;
+                roboy_communication_simulation::Abortion msg;
                 msg.roboyID = roboyID;
                 msg.reason = selfCollision;
                 abort_pub.publish(msg);
@@ -1441,7 +1441,7 @@ void WalkController::publishID(){
     roboyID_pub.publish(msg);
 }
 
-void WalkController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
+void WalkController::motorControl(const roboy_communication_simulation::MotorControl::ConstPtr &msg){
     // only react to messages for me
     if(msg->roboyID == roboyID) {
         // switch to manual control
@@ -1455,14 +1455,14 @@ void WalkController::motorControl(const roboy_simulation::MotorControl::ConstPtr
     }
 }
 
-bool WalkController::updateControllerParameters(roboy_simulation::UpdateControllerParameters::Request  &req,
-                                                roboy_simulation::UpdateControllerParameters::Response &res){
+bool WalkController::updateControllerParameters(roboy_communication_simulation::UpdateControllerParameters::Request  &req,
+                                                roboy_communication_simulation::UpdateControllerParameters::Response &res){
     messageTocontrollerParameters(req.params, params);
     return true;
 }
 
-bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
-                     roboy_simulation::Energies::Response &res){
+bool WalkController::energiesService(roboy_communication_simulation::Energies::Request  &req,
+                                     roboy_communication_simulation::Energies::Response &res){
     res.E_speed = E_speed_int;
     res.E_headvel = E_headvel_int;
     res.E_headori = E_headori_int;
@@ -1472,7 +1472,7 @@ bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
 }
 //Basic PID joint control system described below...
 void WalkController::controlJoints(){
-  roboy_simulation::Input input_msg;
+    roboy_communication_simulation::Input input_msg;
   input_msg.roboyID = roboyID;
 
   if(firstLoop) {
@@ -1587,7 +1587,7 @@ void WalkController::controlJoints(){
 
 
 void WalkController::publishJoints(const physics::JointPtr thisJoint){
-    roboy_simulation::Joint joint_msg;
+    roboy_communication_simulation::Joint joint_msg;
     joint_msg.roboyID = roboyID;
     joint_msg.name = thisJoint->GetName();
     joint_msg.radian = thisJoint->GetAngle(0).Radian();
@@ -1596,7 +1596,7 @@ void WalkController::publishJoints(const physics::JointPtr thisJoint){
 }
 
 void WalkController::publishCOMmsg () {
-    roboy_simulation::COM COM_msg;
+    roboy_communication_simulation::COM COM_msg;
     COM_msg.roboyID = roboyID;
     COM_msg.Position.x = center_of_mass[POSITION].x;
     COM_msg.Position.y = center_of_mass[POSITION].y;

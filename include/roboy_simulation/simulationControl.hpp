@@ -18,7 +18,7 @@
 #include <rosbag/bag.h>
 // ros messages
 #include <std_msgs/Int32.h>
-#include "roboy_simulation/RecordingControl.h"
+#include "roboy_communication_simulation/RecordingControl.h"
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
 
@@ -83,7 +83,7 @@ private:
      * Resets the simulation and initiates recording for the given timespan.
      * @param msg The message that contains time for recording
      */
-    void recordingControl(const roboy_simulation::RecordingControl::ConstPtr &msg);
+    void recordingControl(const roboy_communication_simulation::RecordingControl::ConstPtr &msg);
 
     void initializeInterActiveMarkers(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,
                                       physics::ModelPtr model, int roboyID);

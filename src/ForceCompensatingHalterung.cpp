@@ -61,7 +61,7 @@ void ForceCompensatingHalterung::updateID(const std_msgs::Int32::ConstPtr &msg){
     roboyID = msg->data;
 }
 
-void ForceCompensatingHalterung::updateForce(const roboy_simulation::ForceTorque::ConstPtr &msg){
+void ForceCompensatingHalterung::updateForce(const roboy_communication_simulation::ForceTorque::ConstPtr &msg){
     compensation_force.x = msg->force.x;
     compensation_force.y = msg->force.y;
     compensation_force.z = 0;
