@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 	interactive_markers
 	visualization_msgs
 	roboy_communication_middleware
+	roboy_communication_simulation
 )
 
 # Find includes in corresponding build directories
@@ -37,14 +38,8 @@ message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
 find_package(PkgConfig)
 
-catkin_package(
-	DEPENDS
-	GAZEBO
-	CATKIN_DEPENDS
-		rosbag
-		message_runtime
-		message_generation
-		roboy_communication_middleware
+catkin_package( DEPENDS GAZEBO CATKIN_DEPENDS rosbag message_runtime message_generation roboy_communication_middleware
+		roboy_communication_simulation INCLUDE_DIRS include
 )
 
 include_directories(
@@ -112,7 +107,7 @@ install(TARGETS
         roboy_rviz_balancing
         contact_plugin
         force_torque_plugin
-	WalkController
+		WalkController
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
