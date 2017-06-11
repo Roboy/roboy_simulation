@@ -1,0 +1,11 @@
+<launch>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+	<arg name="world_name" value="$(find roboy_simulation)/worlds/pabi.world"/>
+	<arg name="paused" value="false"/>
+	<arg name="use_sim_time" value="true"/>
+	<arg name="gui" value="true"/>
+	<arg name="headless" value="false"/>
+    	<arg name="debug" value="false"/>
+    </include>
+    <node name="PaBiDanceSimulator" pkg="roboy_simulation" type="PaBiDanceSimulator"/>
+</launch>

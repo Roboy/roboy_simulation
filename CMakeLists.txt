@@ -90,6 +90,9 @@ add_library(WalkController SHARED src/walkController.cpp src/walkVisualization.c
 add_dependencies(WalkController roboy_communication_middleware_gencpp roboy_communication_simulation_gencpp)
 target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
+add_library(ForceJointPlugin SHARED src/ForceJointPlugin.cpp)
+target_link_libraries(ForceJointPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
 add_executable(roboySim src/main.cpp src/simulationControl.cpp)
 add_dependencies(roboySim roboy_communication_middleware_gencpp roboy_communication_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
@@ -97,6 +100,10 @@ target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_L
 add_executable(VRRoboy src/VRRoboy.cpp src/simulationControl.cpp)
 add_dependencies(VRRoboy roboy_communication_middleware_gencpp roboy_communication_simulation_gencpp)
 target_link_libraries(VRRoboy ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
+
+add_executable(PaBiDanceSimulator src/PaBiDanceSimulator.cpp)
+target_link_libraries(PaBiDanceSimulator ${catkin_LIBRARIES})
+
 #==============================================================================
 # Installation
 #==============================================================================
