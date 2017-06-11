@@ -103,7 +103,7 @@ namespace roboy_simulation {
 
         if (firstUpdate) {
             ROS_INFO("Calculated musclelength is %f m", muscleLength);
-            tendonLength = initialTendonLength = muscleLength + internalLength;
+            tendonLength = initialTendonLength = muscleLength + see.internalLength;
             firstUpdate = false;
         }
 
@@ -158,13 +158,10 @@ namespace roboy_simulation {
         // ROS_INFO( "1 / %f * (-%f * %f - %f * %f * %f + %f)", actuator.motor.inductance, actuator.motor.resistance,x[0],  actuator.motor.BEMFConst, actuator.gear.ratio,x[1],  actuator.motor.voltage);
         // ROS_INFO( "x[0] = %f;   x[1] = %f",x[0], x[1]);
 //____________________________________________________________________________________________________________________________________
-      if(actuator.motor.voltage != 0.0){
         ROS_INFO("=====================================");
         ROS_INFO("Voltage: %f", actuator.motor.voltage);
         //ROS_INFO("________Pre-Stepper__________________");
         //ROS_INFO("x[0]: %f;     x[1]: %f", x[0], x[1]);
-
-      }
 //____________________________________________________________________________________________________________________________________
         // do 1 step of integration of DiffModel() at current time        
         actuator.stepper.do_step([this](const IActuator::state_type &x, IActuator::state_type &dxdt, const double ) {
@@ -193,7 +190,10 @@ namespace roboy_simulation {
 */
         
         actuator.motor.current = x[0];
-        actuator.spindle.angVel = x[1];
+        if( see.see.force >= actuator.motor.stallTorque*actuator.gear.ratio ){
+            actuator.spindle.angVel = x[1] = 0;
+        }else{actuator.spindle.angVel = x[1];}
+        
         //calculate motor force
         actuatorForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
                                                     actuator.spindle.radius);
@@ -207,7 +207,6 @@ namespace roboy_simulation {
         // tendon length can go negative if motor keeps turnings
         tendonLength = initialTendonLength - actuator.spindle.radius * actuator.gear.position;
 
-        if(actuator.motor.voltage != 0.0){        
             std_msgs::Float32 msg;
             msg.data = actuatorForce;
             actuatorForce_pub.publish(msg);
@@ -234,7 +233,7 @@ namespace roboy_simulation {
             ROS_INFO("electric current: %.5f, angVel: %.5f, actuator.force %.5f, see.force: %f", actuator.motor.current,
                             actuator.spindle.angVel, actuatorForce, see.see.force);
             ROS_INFO("tendonLength: %f ", tendonLength ); 
-        }
+    
     }
 }
 // make it a plugin loadable via pluginlib

@@ -59,7 +59,7 @@ using namespace roboy_simulation;
 		
         if (deltaX >= 0)
         {
-            see.force=deltaX*see.stiffness;
+            see.force= deltaX*see.stiffness;
         }
         else
         {
