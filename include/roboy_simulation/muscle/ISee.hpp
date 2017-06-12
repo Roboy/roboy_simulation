@@ -58,7 +58,7 @@ namespace roboy_simulation
 	    void ElasticElementModel(SEE &see, const double &length);
 
 
-		void ElasticElementModel(const double &tendonLength, const double &muscleLength, const double &initTendLength);
+		void ElasticElementModel(const double &tendonLength, const double &muscleLength);
 
 		//static void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);
 /*

@@ -53,9 +53,14 @@ using namespace roboy_simulation;
         }
     }
 
-	void ISee::ElasticElementModel( const double &tendonLength, const double &muscleLength, const double &initTendLength)
+	void ISee::ElasticElementModel( const double &tendonLength, const double &muscleLength )
     {
 		deltaX = (muscleLength+internalLength - tendonLength) / 2.0;
+		//if( deltaX > 0.02 ){ deltaX = 0.02; }
+		//initial internal length = 0.1
+		internalLength = 0.1 - 2* deltaX;
+
+		ROS_INFO("deltaX: %f", deltaX);
 		
         if (deltaX >= 0)
         {

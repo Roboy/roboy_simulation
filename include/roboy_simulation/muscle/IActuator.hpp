@@ -13,6 +13,7 @@ namespace gazebo{
         double voltage = 0.0; // [V]
         double BEMFConst = 14.2e-03; // [V/s]
         double inertiaMoment = 4.09e-07; // [kgm^2]
+		double continuousTorque = 0.0476; //Nm
 		double stallTorque	= 0.857; // Nm
 	};
 

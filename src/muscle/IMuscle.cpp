@@ -110,22 +110,16 @@ namespace roboy_simulation {
         //calculate elastic force
         //see.see.length = muscleLength - tendonLength;
         //see.ElasticElementModel(see.see, see.see.length);
-        see.ElasticElementModel( tendonLength, muscleLength, initialTendonLength );
+        see.ElasticElementModel( tendonLength, muscleLength );
         actuator.elasticForce = see.see.force;
         //set elastic force zero to compare with old plugin functionality
         //actuator.elasticForce = 0;
         for (int i = 0; i < viaPoints.size(); i++) {
-#ifdef DUMMYMUSCLE
-            //ROS_INFO("DUMMYMUSCLE is defined");
-            viaPoints[i]->fa = cmd;
-            viaPoints[i]->fb = cmd;
-#else
             
             if (viaPoints[i]->prevPoint && viaPoints[i]->nextPoint) {
                 viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
-//____________________________________________________________________________________________________________________________________
                 viaPoints[i]->fb = viaPoints[i]->prevPoint->fb; // viaPoints[i]->fa; 
-//____________________________________________________________________________________________________________________________________
+
                
             } else if (!viaPoints[i]->prevPoint) {
                 viaPoints[i]->fa = 0;
@@ -136,7 +130,7 @@ namespace roboy_simulation {
                 viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
                 viaPoints[i]->fb = 0;
             }
-#endif
+
             viaPoints[i]->CalculateForce();
             if(i>0) {
                 if (viaPoints[i-1]->link != viaPoints[i]->link) {
@@ -158,8 +152,8 @@ namespace roboy_simulation {
         // ROS_INFO( "1 / %f * (-%f * %f - %f * %f * %f + %f)", actuator.motor.inductance, actuator.motor.resistance,x[0],  actuator.motor.BEMFConst, actuator.gear.ratio,x[1],  actuator.motor.voltage);
         // ROS_INFO( "x[0] = %f;   x[1] = %f",x[0], x[1]);
 //____________________________________________________________________________________________________________________________________
-        ROS_INFO("=====================================");
-        ROS_INFO("Voltage: %f", actuator.motor.voltage);
+        //ROS_INFO("=====================================");
+        //ROS_INFO("Voltage: %f", actuator.motor.voltage);
         //ROS_INFO("________Pre-Stepper__________________");
         //ROS_INFO("x[0]: %f;     x[1]: %f", x[0], x[1]);
 //____________________________________________________________________________________________________________________________________
@@ -188,11 +182,20 @@ namespace roboy_simulation {
             dxdt[1] = sin( sinParm );
         }, x, time.toSec(), period.toSec());
 */
-        
-        actuator.motor.current = x[0];
-        if( see.see.force >= actuator.motor.stallTorque*actuator.gear.ratio ){
-            actuator.spindle.angVel = x[1] = 0;
-        }else{actuator.spindle.angVel = x[1];}
+
+        //Motor hase a max current it can handle while spinning
+        //if( x[0] > 3.45 ){
+        //    actuator.motor.current = x[0] = 3.45 ;
+        //}else{
+                actuator.motor.current = x[0];
+        //}
+        //der mottor kann sich nur solange drehen wie sich die kraft gegen die dreht unter der stallforce liegt. Da der moter über eine feder zeiht 
+        //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.
+          if( x[1] > 0 && see.see.force >= actuator.motor.stallTorque*actuator.gear.ratio * 2){
+              actuator.spindle.angVel = x[1] = 0;
+          }else{
+            actuator.spindle.angVel = x[1];
+          }
         
         //calculate motor force
         actuatorForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
@@ -205,6 +208,7 @@ namespace roboy_simulation {
 
         actuator.gear.position += actuator.spindle.angVel * period.toSec();
         // tendon length can go negative if motor keeps turnings
+        // TODO
         tendonLength = initialTendonLength - actuator.spindle.radius * actuator.gear.position;
 
             std_msgs::Float32 msg;
@@ -220,10 +224,10 @@ namespace roboy_simulation {
             msg.data = actuator.spindle.angVel;
             spindleAngVel_pub.publish(msg);
                     
-            msg.data = muscleLength;
+            msg.data = (muscleLength + see.internalLength) * 100;
             muscleLength_pub.publish(msg);
 
-            msg.data = tendonLength;
+            msg.data = tendonLength *100 ;
             tendonLength_pub.publish(msg);
         //    ROS_INFO("________Post-Stepper__________________");
         // ROS_INFO("x[0]: %f;     x[1]: %f", x[0], x[1]);
@@ -232,7 +236,7 @@ namespace roboy_simulation {
         
             ROS_INFO("electric current: %.5f, angVel: %.5f, actuator.force %.5f, see.force: %f", actuator.motor.current,
                             actuator.spindle.angVel, actuatorForce, see.see.force);
-            ROS_INFO("tendonLength: %f ", tendonLength ); 
+            ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength ); 
     
     }
 }

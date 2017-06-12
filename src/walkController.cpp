@@ -321,7 +321,7 @@ void WalkController::Update() {
 
         //updateTargetFeatures();
 
-        //updateMuscleForces();
+    updateMuscleForces();
 
         //updateMuscleActivities();
 
@@ -947,8 +947,8 @@ void WalkController::updateMuscleForces() {
             }
         }
     }
-    ROS_INFO_STREAM("\nF_tilde: " << F_tilde["motor0"] << "\ntau: " << tau["motor0"] << "\nF: " <<
-             F["motor0"] << "\nT: " <<  T["motor0"]);
+    //ROS_INFO_STREAM("\nF_tilde: " << F_tilde["motor0"] << "\ntau: " << tau["motor0"] << "\nF: " <<
+    //         F["motor0"] << "\nT: " <<  T["motor0"]);
 }
 
 void WalkController::updateMuscleActivities(){
