@@ -321,7 +321,7 @@ void WalkController::Update() {
 
         //updateTargetFeatures();
 
-    updateMuscleForces();
+        //updateMuscleForces();
 
         //updateMuscleActivities();
 

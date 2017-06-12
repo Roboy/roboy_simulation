@@ -14,17 +14,17 @@ namespace roboy_simulation {
         x.resize(2);
         char topic[100];
         //snprintf(topic, 100, "/roboy%d/%s/actuatorForce", roboyID, name.c_str());
-        snprintf(topic, 100, "/roboy/test/actuatorForce");
+        snprintf(topic, 100, "/roboy/motor/actuatorForce");
         actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/test/seeForce");
+        snprintf(topic, 100, "/roboy/motor/seeForce");
         seeForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/test/motorCurrent");
+        snprintf(topic, 100, "/roboy/motor/motorCurrent");
         motorCurrent_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/test/spindleAngVel");
+        snprintf(topic, 100, "/roboy/motor/spindleAngVel");
         spindleAngVel_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/test/muscleLength");
+        snprintf(topic, 100, "/roboy/motor/muscleLength");
         muscleLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/test/tendonLength");
+        snprintf(topic, 100, "/roboy/motor/tendonLength");
         tendonLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
     }
 
