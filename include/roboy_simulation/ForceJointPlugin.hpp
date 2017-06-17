@@ -1,8 +1,6 @@
 #pragma once
 #include <ros/ros.h>
-#include "ros/callback_queue.h"
-#include "ros/subscribe_options.h"
-#include "std_msgs/Float32.h"
+#include <roboy_communication_middleware/JointCommand.h>
 
 #include <gazebo/gazebo.hh>
 #include <boost/bind.hpp>
@@ -27,31 +25,26 @@ namespace gazebo
          */
         void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
         /**
-         * Updates the joint angles vector
-         */
-        void OnRosMsg(const std_msgs::Float32ConstPtr &_msg, std::string jointName);
-        /**
          * Is called every gazebo update frame. Makes the model stationary and sets the joint angles of the model
          * to the joint angles in the vector
          */
         void OnUpdate(const common::UpdateInfo &_info);
-        void publishPose();
     private:
-        void QueueThread();
+        void publishPose();
+        void JointCommand(const roboy_communication_middleware::JointCommandConstPtr &_msg);
         physics::ModelPtr model;
         /**
          * Binded event for the OnUpdate function
          */
         event::ConnectionPtr updateConnection;
-        std::unique_ptr<ros::NodeHandle> nh;
+        ros::NodeHandlePtr nh;
+        boost::shared_ptr<ros::AsyncSpinner> spinner;
         /**
          * List of all joint subsribers
          */
-        std::list<ros::Subscriber> rosSubList;
         ros::Publisher pose_pub;
+        ros::Subscriber jointCommand_sub;
         std::list<std::string> joints;
-        ros::CallbackQueue rosQueue;
-        std::thread rosQueueThread;
         /**
          * Map for storing the current joint angles, is updated in OnRosMsg
          */

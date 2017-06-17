@@ -11,23 +11,32 @@ PaBiDanceSimulator::PaBiDanceSimulator()
     }
     // use NodeHandlePtr instead of NodeHandle so we can use it before ros::init() in the definition of the class
     nh = ros::NodeHandlePtr(new ros::NodeHandle());
-    hip1_pub = nh->advertise<std_msgs::Float32>("/roboy/pabi_angle/hip_1", 100);
-    hip2_pub = nh->advertise<std_msgs::Float32>("/roboy/pabi_angle/hip_2", 100);
-    knee1_pub = nh->advertise<std_msgs::Float32>("/roboy/pabi_angle/knee_1", 100);
-    knee2_pub = nh->advertise<std_msgs::Float32>("/roboy/pabi_angle/knee_2", 100);
+    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
+    spinner->start();
+    jointCommand_pub = nh->advertise<roboy_communication_middleware::JointCommand>("/roboy/middleware/JointCommand", 1);
+
+    // link names
+    msg.link_name.push_back("hip_1");
+    msg.link_name.push_back("hip_2");
+    msg.link_name.push_back("knee_1");
+    msg.link_name.push_back("knee_2");
+
+    // publish the same angle for all joints
+    msg.angle.push_back(0);
+    msg.angle.push_back(0);
+    msg.angle.push_back(0);
+    msg.angle.push_back(0);
 }
 
 PaBiDanceSimulator::~PaBiDanceSimulator(){}
 
 void PaBiDanceSimulator::publishAngles(float angle)
 {
-    // publish the same angle for all joints
-    std_msgs::Float32 msg;
-    msg.data = angle * Degree2Radian;
-    hip1_pub.publish(msg);
-    hip2_pub.publish(msg);
-    knee1_pub.publish(msg);
-    knee2_pub.publish(msg);
+    msg.angle[0] = degreesToRadians(angle);
+    msg.angle[1] = degreesToRadians(angle);
+    msg.angle[2] = degreesToRadians(angle);
+    msg.angle[3] = degreesToRadians(angle);
+    jointCommand_pub.publish(msg);
 }
 
 bool PaBiDanceSimulator::adjustPoseGradually(bool goUp)

@@ -1,14 +1,11 @@
 #include <stdlib.h>
 #include "ros/ros.h"
-#include <std_msgs/Float32.h>
+#include <roboy_communication_middleware/JointCommand.h>
+#include <common_utilities/CommonDefinitions.h>
 #include <unistd.h>
 #include <chrono>
 
 using namespace std;
-/**
- * Constant to convert angles from degrees to radian via multiplication
- */
-const double Degree2Radian = 3.14159265359 / 180;
 
 class PaBiDanceSimulator
 {
@@ -25,10 +22,9 @@ class PaBiDanceSimulator
         void startDanceAnimation();
     private:
         ros::NodeHandlePtr nh;
-        ros::Publisher hip1_pub;
-        ros::Publisher hip2_pub;
-        ros::Publisher knee1_pub;
-        ros::Publisher knee2_pub;
+        boost::shared_ptr<ros::AsyncSpinner> spinner;
+        ros::Publisher jointCommand_pub;
+        roboy_communication_middleware::JointCommand msg;
         /**
          * Adjusts the joint angles gradually to -90° or to 0° depending on the boolean
          */

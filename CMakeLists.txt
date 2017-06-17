@@ -102,6 +102,7 @@ add_dependencies(VRRoboy roboy_communication_middleware_gencpp roboy_communicati
 target_link_libraries(VRRoboy ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
 
 add_executable(PaBiDanceSimulator src/PaBiDanceSimulator.cpp)
+add_dependencies(roboy_rviz_balancing roboy_communication_middleware_gencpp)
 target_link_libraries(PaBiDanceSimulator ${catkin_LIBRARIES})
 
 #==============================================================================

@@ -24,13 +24,17 @@ void ForceJointPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "gazebo_client" , ros::init_options::NoSigintHandler);
+        ros::init(argc, argv, "PaBiRoboy");
     }
 
     // Create ros node
-    nh.reset(new ros::NodeHandle("roboy"));
+    nh = ros::NodeHandlePtr(new ros::NodeHandle("roboy"));
+    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
+    spinner->start();
 
-    // Create a named topic, and subscribe to it for every joint
+    jointCommand_sub = nh->subscribe("/roboy/middleware/JointCommand", 1, &ForceJointPlugin::JointCommand, this);
+    pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/simulation/pabi_pose", 1);
+
     for(auto joint = jointVector.begin(); joint != jointVector.end(); joint++)
     {
         // Test if joint type is revolute
@@ -42,25 +46,9 @@ void ForceJointPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
         string _jointName = jointName;
         boost::algorithm::replace_all(_modelName, " ", "_");
         boost::algorithm::replace_all(_jointName, " ", "_");
-        string subPath = "pabi_angle/" + _jointName;
-        ros::SubscribeOptions so = ros::SubscribeOptions::create<std_msgs::Float32>(subPath,
-                                                                                    1,
-                                                                                    boost::bind(&ForceJointPlugin::OnRosMsg, this, _1, jointName),
-                                                                                    ros::VoidPtr(), &this->rosQueue);
-        rosSubList.push_back(nh->subscribe(so));
         joints.push_back(jointName);
         jointAngles[jointName] = (*joint)->GetAngle(0).Radian();
-        pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/pabi_pose", 100);
     }
-
-    // spin the queue helper thread
-    rosQueueThread = thread(bind(&ForceJointPlugin::QueueThread, this));
-}
-
-void ForceJointPlugin::OnRosMsg(const std_msgs::Float32ConstPtr &_msg, string jointName)
-{
-    jointAngles[jointName] = _msg->data;
-    publishPose();
 }
 
 void ForceJointPlugin::publishPose()
@@ -81,6 +69,13 @@ void ForceJointPlugin::publishPose()
     pose_pub.publish(msg);
 }
 
+void ForceJointPlugin::JointCommand(const roboy_communication_middleware::JointCommandConstPtr &msg){
+    for(uint i=0;i<msg->link_name.size();i++){
+        jointAngles[msg->link_name[i]] = msg->angle[i];
+    }
+    publishPose();
+}
+
 void ForceJointPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
     // make the model stationary
@@ -93,14 +88,3 @@ void ForceJointPlugin::OnUpdate(const common::UpdateInfo &_info)
         model->GetJoint(*it)->SetPosition(0, jointAngles[*it]);
     }
 }
-
-void ForceJointPlugin::QueueThread()
-{
-    static const double timeout = 0.01;
-    while(nh->ok())
-    {
-        rosQueue.callAvailable(ros::WallDuration(timeout));
-    }
-}
-
-
