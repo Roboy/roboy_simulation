@@ -42,7 +42,7 @@ using namespace roboy_simulation;
 		if( see.expansion > -0.02 ){
         see.expansion = length - see.length0;
 		}
-		ROS_INFO("expansion: %f", see.expansion);
+		//ROS_INFO("expansion: %f", see.expansion);
         if (see.expansion >= 0)
         {
             see.force=see.expansion*see.stiffness;
@@ -55,12 +55,11 @@ using namespace roboy_simulation;
 
 	void ISee::ElasticElementModel( const double &tendonLength, const double &muscleLength )
     {
+		//this is a simple simulation of the internal Length
 		deltaX = (muscleLength+internalLength - tendonLength) / 2.0;
-		//if( deltaX > 0.02 ){ deltaX = 0.02; }
-		//initial internal length = 0.1
 		internalLength = 0.1 - 2* deltaX;
 
-		ROS_INFO("deltaX: %f", deltaX);
+		//ROS_INFO("deltaX: %f", deltaX);
 		
         if (deltaX >= 0)
         {

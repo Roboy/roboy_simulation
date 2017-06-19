@@ -11,27 +11,9 @@ WalkController::WalkController() {
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
-    //spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
-    //spinner->start();
-
-    //force_torque_ankle_left_sub = nh->subscribe("/roboy/force_torque_ankle_left", 1,
-    //                                            &WalkController::finite_state_machine, this);
-    //force_torque_ankle_right_sub = nh->subscribe("/roboy/force_torque_ankle_right", 1,
-    //                                             &WalkController::finite_state_machine, this);
-
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
     abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &WalkController::motorControl, this);
-
-    //imu_pub = nh->advertise<roboy_simulation::IMU>("/roboy/imu", 100);
-
-    //joint_pub = nh->advertise<roboy_simulation::Joint>("/roboy/joint", 12);
-
-    //body_pub = nh->advertise<roboy_simulation::BodyPart>("/roboy/body",13);
-
-    //COM_pub = nh->advertise<roboy_simulation::COM>("/roboy/COM",1);
-
-    //input_pub = nh->advertise<roboy_simulation::Input>("/roboy/inputV", 12);
 
     roboyID = roboyID_generator++;
     ID = roboyID;
@@ -43,44 +25,6 @@ WalkController::WalkController() {
     energies_srv = nh->advertiseService(topic, &WalkController::energiesService, this);
 
     params.resize(TOTAL_NUMBER_CONTROLLER_PARAMETERS);
-
-    //leg_state[LEG::LEFT] = Stance;
-    //leg_state[LEG::RIGHT] = Swing;
-/*
-    // Generate the Gaussian kernel for IMU data low-pass filtering
-    ROS_INFO_STREAM("gaussian_kernel size and shape:");
-
-    // Set standard deviation to 3.0
-    double sigma = 3.0;
-    double r, s = 2.0 * sigma * sigma;
-
-    double sum = 0.0;
-    int half_size = ACCEL_WIN_SIZE / 2.0;
-    // If ACCEL_WIN_SIZE is odd, add one extra coefficient in the kernel
-    int add_coeff = (ACCEL_WIN_SIZE % 2 == 0 ? 0 : 1);
-
-    // Generate kernel
-    for(int i = -half_size; i < half_size + add_coeff; i++)
-    {
-        r = abs(i);
-        double coeff = (exp(-(r*r)/s))/(M_PI * s);
-        gaussian_kernel.push_back(coeff);
-        sum += coeff;
-    }
-
-    // Normalize the kernel
-    for(int i = 0; i < gaussian_kernel.size(); i++)
-    {
-        gaussian_kernel[i] /= sum;
-        // Visualize the shape of the kernel
-        ROS_INFO_STREAM(std::string(200 * gaussian_kernel[i], '#'));
-    }
-
-    if (gaussian_kernel.size() != ACCEL_WIN_SIZE) {
-        // This should never happen, but if it happens, give a warning
-        ROS_WARN_STREAM("gaussian_kernel size doesn't match ACCEL_WIN_SIZE!");
-    }
-    */
 }
 
 WalkController::~WalkController() {
@@ -213,10 +157,6 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         //                         << control_period);
     }
 
-    // Create the controller manager
-//    ROS_INFO_STREAM_NAMED("ros_control_plugin", "Loading controller_manager");
-//        cm = new controller_manager::ControllerManager(this, *nh);
-
     // Initialize the emergency stop code.
     e_stop_active = false;
     last_e_stop_active = false;
@@ -244,11 +184,11 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
             sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
             sim_muscles.back()->Init(myoMuscles[muscle]);
 
-            muscles_spanning_joint[sim_muscles[muscle]->spanningJoint->GetName()].push_back(muscle);
+            //muscles_spanning_joint[sim_muscles[muscle]->spanningJoint->GetName()].push_back(muscle);
             
             // initialize the queue for delayed activities depending on the spanning joint
             // hip muscles: 5ms, knee muscles 10ms, ankle muscles 20ms
-            if(sim_muscles[muscle]->spanningJoint->GetName().find("groin")!=string::npos){
+            /*if(sim_muscles[muscle]->spanningJoint->GetName().find("groin")!=string::npos){
                 for(uint i=0;i<5e-03/gazebo_max_step_size;i++){
                     activity[sim_muscles[muscle]->name].push_back(0.0);
                 }
@@ -261,7 +201,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
                     activity[sim_muscles[muscle]->name].push_back(0.0);
                 }
             }
-            
+            */
             a[sim_muscles[muscle]->name] = 0.0;
         }
         catch (pluginlib::PluginlibException &ex) {
@@ -270,11 +210,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         }
     }
 
-    hip_CS = CoordSys(new CoordinateSystem(parent_model->GetLink("hip")));
-
-    //updateFootDisplacementAndVelocity();
-
-//    calculateCOM(POSITION, initial_center_of_mass_height);
+    hip_CS = CoordSys(new CoordinateSystem(parent_model->GetLink(link_names[0] + "")));
 
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&WalkController::Update, this));
@@ -308,25 +244,36 @@ void WalkController::Update() {
     ROS_INFO("sim_period:  %f s" , sim_period.toSec());
     ROS_INFO("control_period:  %f s ", control_period.toSec());
     */
-
-
     //updateFootDisplacementAndVelocity();
-
     //if(getLegInState(Stance)==LEG::NONE) {
     //    ROS_WARN_THROTTLE(1.0, "legs are not touching the ground");
     //}
-
     //if(control) {
         // Compute the controller commands
-
         //updateTargetFeatures();
-
         //updateMuscleForces();
-
         //updateMuscleActivities();
+        //updateEnergies();   
+    //}
+    // Check if we should update the controllers
+    /*
+    if (sim_period >= control_period) {
+        // Store this simulation time
+        last_update_sim_time_ros = sim_time_ros;
 
+        // Update the robot simulation with the state of the gazebo model
+        readSim(sim_time_ros, sim_period);
+    }*/
+    //updateFootDisplacementAndVelocity();
+    //if(getLegInState(Stance)==LEG::NONE) {
+    //    ROS_WARN_THROTTLE(1.0, "legs are not touching the ground");
+    //}
+    //if(control) {
+        // Compute the controller commands
+        //updateTargetFeatures();
+        //updateMuscleForces();
+        //updateMuscleActivities();
         //updateEnergies();
-            
     //}
     // Check if we should update the controllers
     /*
@@ -343,31 +290,14 @@ void WalkController::Update() {
     writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
     last_write_sim_time_ros = sim_time_ros;
     message_counter = 1000;
-    //if (visualizeTendon)
-    //    publishTendon(&sim_muscles);
-    //if (visualizeForce)
-    //    publishForce(&sim_muscles);
-    //if (visualizeCOM)
-    //    publishCOM(center_of_mass);
-    //if (visualizeEstimatedCOM)
-    //    publishEstimatedCOM();
-    //if (visualizeMomentArm)
-    //    publishMomentArm(&sim_muscles);
-    //if (visualizeMesh)
-    //    publishModel(parent_model->GetLink("hip"), false);
-    //if (visualizeStateMachineParameters)
-    //    publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
-    //if (visualizeCollisions)
-    //    publishCollisionModel();
-    
-    //publishIMUs();
-    //publishPositionsAndMasses();
-    publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
-    publishSimulationState(params, gz_time_now);
+
+
     publishID();
-    //publishLegState(leg_state);
-    //publishCOMmsg();
-    //controlJoints();
+    publishForce(&sim_muscles);
+    publishTendon(&sim_muscles);
+    publishModel(parent_model->GetLink(link_names[0] + ""), false);
+    
+
     checkAbort();
 }
 

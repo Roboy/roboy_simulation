@@ -33,8 +33,9 @@ namespace roboy_simulation
 		
 
         public:
-		
+		//deltaX is the dispöacement of the spring inside the motor
 		double deltaX = 0.0; //m
+		// the Length of the tendon inside the motor. the internal length changes depending on the displacement of the spring.
 		double internalLength = 0.1; //m
         SEE see;
 
@@ -57,7 +58,10 @@ namespace roboy_simulation
 	    /// \param[in] _length Current length of the spring
 	    void ElasticElementModel(SEE &see, const double &length);
 
-
+		///////////////////////////////////////
+		/// \brief Calculate elastic force of the series elastic element
+		/// \param[in] The tandonLength represents the length of the entire tendon.from the motor to the last viapoint.
+		/// \param[in] The muscleLength representes the length of the tendon forn the outside of the motor to the last viapoint.
 		void ElasticElementModel(const double &tendonLength, const double &muscleLength);
 
 		//static void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);

@@ -29,6 +29,7 @@ namespace roboy_simulation {
     }
 
     void IMuscle::Init(MyoMuscleInfo &myoMuscle) {
+        
         //state initialization
         x[0] = 0.0;
         x[1] = 0.0;
@@ -151,7 +152,6 @@ namespace roboy_simulation {
         // ROS_INFO("%f V -> dxdt[0] = %f", actuator.motor.voltage, test);
         // ROS_INFO( "1 / %f * (-%f * %f - %f * %f * %f + %f)", actuator.motor.inductance, actuator.motor.resistance,x[0],  actuator.motor.BEMFConst, actuator.gear.ratio,x[1],  actuator.motor.voltage);
         // ROS_INFO( "x[0] = %f;   x[1] = %f",x[0], x[1]);
-//____________________________________________________________________________________________________________________________________
         //ROS_INFO("=====================================");
         //ROS_INFO("Voltage: %f", actuator.motor.voltage);
         //ROS_INFO("________Pre-Stepper__________________");
@@ -173,16 +173,6 @@ namespace roboy_simulation {
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
             //ROS_INFO("dxdt[0]: %f;     dxdt[1]: %f", dxdt[0], dxdt[1]);
         }, x, time.toSec(), (period.toSec()/1000) );  
-
-/*        
-        sinParm += 10/180 * 3.141;      
-        // Test integration Input -> sinus    
-        actuator.stepper.do_step([this](const IActuator::state_type &x, IActuator::state_type &dxdt, const double) {
-            dxdt[0] = sin( sinParm );
-            dxdt[1] = sin( sinParm );
-        }, x, time.toSec(), period.toSec());
-*/
-
         //Motor hase a max current it can handle while spinning
         //if( x[0] > 3.45 ){
         //    actuator.motor.current = x[0] = 3.45 ;
@@ -190,13 +180,14 @@ namespace roboy_simulation {
                 actuator.motor.current = x[0];
         //}
         //der mottor kann sich nur solange drehen wie sich die kraft gegen die dreht unter der stallforce liegt. Da der moter über eine feder zeiht 
-        //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.
-          if( x[1] > 0 && see.see.force >= actuator.motor.stallTorque*actuator.gear.ratio * 2){
-              actuator.spindle.angVel = x[1] = 0;
-          }else{
-            actuator.spindle.angVel = x[1];
-          }
-        
+        //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.   
+            if( x[1] > 0 && see.see.force >= actuator.motor.continuousTorque*actuator.gear.ratio / actuator.spindle.radius * 2){
+                actuator.spindle.angVel = x[1] = 0;
+            //}else if( x[1] < 0 && see.see.force <= actuator.motor.stallTorque*actuator.gear.ratio / actuator.spindle.radius ){
+            //    actuator.spindle.angVel = x[1] = 0;
+            }else{
+                actuator.spindle.angVel = x[1];
+            }
         //calculate motor force
         actuatorForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
                                                     actuator.spindle.radius);
@@ -210,7 +201,6 @@ namespace roboy_simulation {
         // tendon length can go negative if motor keeps turnings
         // TODO
         tendonLength = initialTendonLength - actuator.spindle.radius * actuator.gear.position;
-
             std_msgs::Float32 msg;
             msg.data = actuatorForce;
             actuatorForce_pub.publish(msg);
@@ -236,7 +226,7 @@ namespace roboy_simulation {
         
             ROS_INFO("electric current: %.5f, angVel: %.5f, actuator.force %.5f, see.force: %f", actuator.motor.current,
                             actuator.spindle.angVel, actuatorForce, see.see.force);
-            ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength ); 
+        //    ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength ); 
     
     }
 }

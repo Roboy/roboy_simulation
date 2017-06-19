@@ -191,8 +191,8 @@ void WalkVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::
     arrow.color.a = 1.0;
     arrow.lifetime = ros::Duration(0);
     arrow.scale.x = 0.005;
-    arrow.scale.y = 0.03;
-    arrow.scale.z = 0.03;
+    arrow.scale.y = 0.01;
+    arrow.scale.z = 0.01;
 //    if (add) {
     arrow.action = visualization_msgs::Marker::ADD;
 //        add = false;
@@ -214,9 +214,9 @@ void WalkVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::
             p.y = (*sim_muscles)[muscle]->viaPoints[i]->prevForcePoint.y;
             p.z = (*sim_muscles)[muscle]->viaPoints[i]->prevForcePoint.z;
             arrow.points.push_back(p);
-            p.x += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.x * 0.01; // show fraction of force
-            p.y += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.y * 0.01;
-            p.z += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.z * 0.01;
+            p.x += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.x * 0.001; // show fraction of force
+            p.y += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.y * 0.001;
+            p.z += (*sim_muscles)[muscle]->viaPoints[i]->prevForce.z * 0.001;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
             // reactio
@@ -230,9 +230,9 @@ void WalkVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::
             p.y = (*sim_muscles)[muscle]->viaPoints[i]->nextForcePoint.y;
             p.z = (*sim_muscles)[muscle]->viaPoints[i]->nextForcePoint.z;
             arrow.points.push_back(p);
-            p.x += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.x * 0.01;
-            p.y += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.y * 0.01;
-            p.z += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.z * 0.01;
+            p.x += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.x * 0.001;
+            p.y += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.y * 0.001;
+            p.z += (*sim_muscles)[muscle]->viaPoints[i]->nextForce.z * 0.001;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
         }
@@ -290,9 +290,9 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
     mesh.color.g = 1.0f;
     mesh.color.b = 1.0f;
     mesh.color.a = 0.5;
-    mesh.scale.x = 1.0;
-    mesh.scale.y = 1.0;
-    mesh.scale.z = 1.0;
+    mesh.scale.x = 0.001;
+    mesh.scale.y = 0.001;
+    mesh.scale.z = 0.001;
     mesh.lifetime = ros::Duration(0);
     mesh.header.stamp = ros::Time::now();
     mesh.action = visualization_msgs::Marker::ADD;
@@ -309,7 +309,7 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
         mesh.pose.orientation.z = pose.rot.z;
         mesh.pose.orientation.w = pose.rot.w;
         char meshpath[200];
-        sprintf(meshpath,"package://roboy_models/legs_with_upper_body/cad/%s.STL",
+        sprintf(meshpath,"package://roboy_models/PaBiRoboy/visual/%s.dae",
                 parent_link->GetName().c_str() );
         mesh.mesh_resource = meshpath;
         marker_visualization_pub.publish(mesh);
@@ -330,7 +330,7 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
             mesh.pose.orientation.z = pose.rot.z;
             mesh.pose.orientation.w = pose.rot.w;
             char meshpath[200];
-            sprintf(meshpath,"package://roboy_models/legs_with_upper_body/cad/%s.STL",
+            sprintf(meshpath,"package://roboy_models/PaBiRoboy/visual/%s.dae",
                     child_link->GetName().c_str() );
             mesh.mesh_resource = meshpath;
             marker_visualization_pub.publish(mesh);
