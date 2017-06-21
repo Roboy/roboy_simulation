@@ -38,7 +38,6 @@
 #include <memory>
 
 #include <cmath>
-#define DUMMYMUSCLE
 
 enum MUSCLE_TYPE{
     EXTENSOR,
@@ -59,7 +58,7 @@ namespace roboy_simulation {
 		Gear gear;
 		Spindle spindle;
 		SEE see;
-        MUSCLE_TYPE muscle_type;
+		MUSCLE_TYPE muscle_type;
         physics::JointPtr spanningJoint;
 	};
 
@@ -78,8 +77,8 @@ namespace roboy_simulation {
 		string name;
 		vector<std::shared_ptr<IViaPoints>> viaPoints;
 		double cmd = 0;
-        math::Vector3 momentArm;
-        MUSCLE_TYPE muscle_type;
+
+		math::Vector3 momentArm;
         physics::JointPtr spanningJoint;
 	private:
         ros::NodeHandlePtr nh;
@@ -95,16 +94,19 @@ namespace roboy_simulation {
 		IActuator actuator;
 
 		double actuatorForce = 0;
-		//muscleLength discribes the TendonLength from the first viapoit to the last viapoint. (TendonLength outside the myoMotor)
+		//muscleLength describes the TendonLength from the first Viapoint to the last viapoint. (TendonLength outside the myoMotor)
         double muscleLength;
-		//tendonLength discribes the total TendonLength from then Motor until the last viapoint. (TendonLength excluding the tendon coiled up on the motor)
+		//tendonLength describes the total TendonLength from then Motor until the last viapoint. (TendonLength excluding the tendon coiled up on the motor)
         double tendonLength;
-		//initial TendonLength discribes the initial total tendonlength 
+		//initial TendonLength describes the initial total tendonlength 
         double initialTendonLength;
         bool firstUpdate;
 		double sinParm = 0;
-		
+
 		void setupTopics();
+		void publishTopics();
+		void initViaPoints( MyoMuscleInfo &myoMuscle );
+		void calculateTendonForceProgression();
 		void applyMotorCurrent( double &motorCurrent );
 		void applySpindleAngVel( double &spindleAngVel );
 	};
