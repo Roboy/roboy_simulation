@@ -103,6 +103,8 @@ namespace roboy_simulation {
         double initialTendonLength;
         bool firstUpdate;
 		double sinParm = 0;
+		
+		void setupTopics();
 		void applyMotorCurrent( double &motorCurrent );
 		void applySpindleAngVel( double &spindleAngVel );
 	};

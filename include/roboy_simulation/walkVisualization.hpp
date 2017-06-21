@@ -44,6 +44,8 @@ public:
 
     void publishModel(physics::LinkPtr parent_link, bool child_link);
 
+    void publishModel(const string robot_namespace, physics::LinkPtr parent_link, bool child_link);
+
     void publishSimulationState(ControllerParameters &params, gazebo::common::Time gz_time_now);
 
     void publishStateMachineParameters(math::Vector3 *center_of_mass,

@@ -308,7 +308,7 @@ private:
     gazebo::event::ConnectionPtr update_connection;
 
     // Strings
-    string robot_namespace, robot_description;
+    string robot_namespace, robot_description, robot_name;
 
     uint numberOfMyoMuscles;
 

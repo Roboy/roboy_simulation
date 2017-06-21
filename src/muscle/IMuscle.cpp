@@ -10,22 +10,12 @@ namespace roboy_simulation {
             ros::init(argc, argv, "MusclePlugin",
                       ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
         }
-        nh = ros::NodeHandlePtr(new ros::NodeHandle);
+        //x[0] = motorcurrent
+        //x[1] = sindleAngleVel
         x.resize(2);
-        char topic[100];
-        //snprintf(topic, 100, "/roboy%d/%s/actuatorForce", roboyID, name.c_str());
-        snprintf(topic, 100, "/roboy/motor/actuatorForce");
-        actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/motor/seeForce");
-        seeForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/motor/motorCurrent");
-        motorCurrent_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/motor/spindleAngVel");
-        spindleAngVel_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/motor/muscleLength");
-        muscleLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/motor/tendonLength");
-        tendonLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
+
+        // Setup topics for different motor values
+        setupTopics();
     }
 
     void IMuscle::Init(MyoMuscleInfo &myoMuscle) {
@@ -35,6 +25,8 @@ namespace roboy_simulation {
         x[1] = 0.0;
         actuator.motor.voltage = 0.0;
         actuator.spindle.angVel = 0;
+
+        //Init Viapoint Type for Wraping
         for (int i = 0; i < myoMuscle.viaPoints.size(); i++) {
             ViaPointInfo vp = myoMuscle.viaPoints[i];
             if (vp.type == IViaPoints::FIXPOINT) {
@@ -224,10 +216,28 @@ namespace roboy_simulation {
         // ROS_INFO("Time: %f;     Period:%f", time.toSec(), period.toSec());
         // ROS_INFO("______________________________");
         
-            ROS_INFO("electric current: %.5f, angVel: %.5f, actuator.force %.5f, see.force: %f", actuator.motor.current,
-                            actuator.spindle.angVel, actuatorForce, see.see.force);
+        //    ROS_INFO("electric current: %.5f, angVel: %.5f, actuator.force %.5f, see.force: %f", actuator.motor.current,
+         //                   actuator.spindle.angVel, actuatorForce, see.see.force);
         //    ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength ); 
     
+    }
+    /////////////////////////////////////////////
+    /// Setup topics for different motor values
+    void IMuscle::setupTopics(){
+        nh = ros::NodeHandlePtr(new ros::NodeHandle);
+        char topic[100];
+        snprintf(topic, 100, "/roboy/motor/actuatorForce");
+        actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
+        snprintf(topic, 100, "/roboy/motor/seeForce");
+        seeForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
+        snprintf(topic, 100, "/roboy/motor/motorCurrent");
+        motorCurrent_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
+        snprintf(topic, 100, "/roboy/motor/spindleAngVel");
+        spindleAngVel_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
+        snprintf(topic, 100, "/roboy/motor/muscleLength");
+        muscleLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
+        snprintf(topic, 100, "/roboy/motor/tendonLength");
+        tendonLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
     }
 }
 // make it a plugin loadable via pluginlib
