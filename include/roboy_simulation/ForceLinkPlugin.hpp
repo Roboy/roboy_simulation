@@ -11,6 +11,7 @@
 #include <map>
 
 #include "roboy_communication_middleware/Pose.h"
+#include <std_srvs/Trigger.h>
 
 namespace gazebo
 {
@@ -30,6 +31,8 @@ namespace gazebo
         void OnUpdate(const common::UpdateInfo &_info);
     private:
         void PoseCommand(const roboy_communication_middleware::PoseConstPtr &_msg);
+        bool IsVectorZero(math::Vector3 v);
+        bool PrintLinkPose(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
         physics::ModelPtr model;
         /**
          * Binded event for the OnUpdate function
@@ -42,7 +45,8 @@ namespace gazebo
          */
         ros::Publisher pose_pub;
         ros::Subscriber pose_sub;
-        std::list<std::string> links;
+        ros::ServiceServer pose_service;
+        std::list<std::string> linkNames;
         /**
          * Map for storing the current joint angles, is updated in OnRosMsg
          */
