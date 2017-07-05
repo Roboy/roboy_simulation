@@ -7,4 +7,5 @@
 	<arg name="headless" value="false"/>
     	<arg name="debug" value="false"/>
     </include>
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 </launch>

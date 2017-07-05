@@ -73,13 +73,13 @@ void ForceJointPlugin::JointCommand(const roboy_communication_middleware::JointC
     for(uint i=0;i<msg->link_name.size();i++){
         jointAngles[msg->link_name[i]] = msg->angle[i];
     }
-    publishPose();
 }
 
 void ForceJointPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
-    // make the model stationary
-    model->SetWorldPose(initPose);
+    publishPose();
+    // make the model stationary! NOW MOVED TO SDF FILE!
+    // model->SetWorldPose(initPose);
     // set velocity and force to zero and force for every saved joint and set angle to saved value
     for(auto it = joints.begin(); it != joints.end(); it++)
     {

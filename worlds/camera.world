@@ -10,7 +10,7 @@
         </include>
 	<!--PabiRoboy -->
 	<include>
-	    <uri>model://legs_with_upper_body</uri>
+	    <uri>model://Roboy_with_camera_simplified</uri>
 	</include>
 	<!--Sun -->
         <include>

@@ -16,10 +16,10 @@ PaBiDanceSimulator::PaBiDanceSimulator()
     jointCommand_pub = nh->advertise<roboy_communication_middleware::JointCommand>("/roboy/middleware/JointCommand", 1);
 
     // link names
-    msg.link_name.push_back("hip_1");
-    msg.link_name.push_back("hip_2");
-    msg.link_name.push_back("knee_1");
-    msg.link_name.push_back("knee_2");
+    msg.link_name.push_back("Groin_right");
+    msg.link_name.push_back("Groin_left");
+    msg.link_name.push_back("Knee_right");
+    msg.link_name.push_back("Knee_left");
 
     // publish the same angle for all joints
     msg.angle.push_back(0);

@@ -7,5 +7,5 @@
 	<arg name="headless" value="false"/>
     	<arg name="debug" value="false"/>
     </include>
-    <node name="PaBiDanceSimulator" pkg="roboy_simulation" type="PaBiDanceSimulator"/>
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 </launch>
