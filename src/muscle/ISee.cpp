@@ -55,9 +55,19 @@ using namespace roboy_simulation;
 
 	void ISee::ElasticElementModel( const double &tendonLength, const double &muscleLength )
     {
-		bool complex = false;
+		bool complex = true;
 		if(complex){//this calculation of the internal length is based on the real myoMuscle geometry
-			
+			double deltaLength = (muscleLength+internalLength - tendonLength);
+			deltaX = c4 - ( (internalLength - deltaLength - length_c1 - length_c2 - c3/std::cos(alpha_2)) / (1/std::cos(alpha_1) + 1/std::cos(alpha_2)) );
+			//if(deltaX < 0) {deltaX = 0;}
+			length_1 = sqrt( c1*c1 + (c4-deltaX)*(c4-deltaX) );
+			length_2 = sqrt( c2*c2 + (c3+c4-deltaX)*(c3+c4-deltaX) );
+
+			alpha_1 = std::atan( c1 / (c4-deltaX) );
+			alpha_2 = std::atan( c2 / (c3+c4-deltaX) );
+
+			internalLength = length_c1 + length_1 + length_2 + length_c2;
+
 		}else{//this is a simple simulation of the internal Length
 			auto tmp = (muscleLength+internalLength - tendonLength) / 2.0;
 			deltaX = ( 0 < tmp) ? tmp : 0;
@@ -75,6 +85,11 @@ using namespace roboy_simulation;
         }
     }
 
+	void ISee::applyTendonForce( double &_muscleForce , double &_actuatorForce ){
+		// since the tendon runs over a spindle the force on both tendons will be equal.
+		// Only their horizontal and vertical forces will differ due to the different angles toward the spring
+		_muscleForce = _actuatorForce = see.force / ( std::cos(alpha_1) + std::cos(alpha_2) );
+	}
 /*
 	math::Vector3 ISee::CalculateForce(double _elasticForce, double _motorForce,
 										  const math::Vector3 &_tendonOrien) {

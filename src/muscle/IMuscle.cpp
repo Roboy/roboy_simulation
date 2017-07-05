@@ -74,8 +74,7 @@ namespace roboy_simulation {
 
         //calculate elastic force
         see.ElasticElementModel( tendonLength, muscleLength );
-        muscleForce = see.see.force / 2;
-        actuator.elasticForce = see.see.force / 2;
+        see.applyTendonForce( muscleForce, actuator.elasticForce );
 
         calculateTendonForceProgression();
 
