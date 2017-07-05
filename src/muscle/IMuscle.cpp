@@ -74,7 +74,8 @@ namespace roboy_simulation {
 
         //calculate elastic force
         see.ElasticElementModel( tendonLength, muscleLength );
-        actuator.elasticForce = see.see.force;
+        muscleForce = see.see.force / 2;
+        actuator.elasticForce = see.see.force / 2;
 
         calculateTendonForceProgression();
 
@@ -88,21 +89,27 @@ namespace roboy_simulation {
             // x[0] - motor electric current
             // x[1] - spindle angular velocity
             double totalIM = actuator.motor.inertiaMoment + actuator.gear.inertiaMoment; // total moment of inertia
-            dxdt[0] = 1 / actuator.motor.inductance * (-actuator.motor.resistance * x[0] -
-                                                       actuator.motor.BEMFConst * actuator.gear.ratio * x[1] +
-                                                       actuator.motor.voltage);
+            dxdt[0] = 1 / actuator.motor.inductance * (-actuator.motor.resistance * x[0] 
+                                                       -actuator.motor.BEMFConst * actuator.gear.ratio * x[1]
+                                                       +actuator.motor.voltage);
 
             dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
+            
         }, x, time.toSec(), (period.toSec()/1000 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
 
         applyMotorCurrent( x[0] );
-        applySpindleAngVel( x[1] );
 
         // calculate resulting actuatorforce
-        actuatorForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
+        actuatorForce = actuator.gear.ratio * actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
                                                     actuator.spindle.radius);
+        /*doublemuscle;
+        if ( actuatorForce > muscle = actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius) ){
+            actuatorForce =muscle;
+        }
+        */
+        applySpindleAngVel( x[1] );
 
         //ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
         //                  actuator.spindle.angVel, actuatorForce);
@@ -199,10 +206,10 @@ namespace roboy_simulation {
         for (int i = 0; i < viaPoints.size(); i++) {
             if (viaPoints[i]->prevPoint && viaPoints[i]->nextPoint) {
                 viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
-                viaPoints[i]->fb = viaPoints[i]->prevPoint->fb; // viaPoints[i]->fa; 
+                viaPoints[i]->fb = viaPoints[i]->prevPoint->fb;
             } else if (!viaPoints[i]->prevPoint) {
                 viaPoints[i]->fa = 0;
-                viaPoints[i]->fb = actuator.elasticForce + actuatorForce;
+                viaPoints[i]->fb = muscleForce;
             } else if (!viaPoints[i]->nextPoint) {
                 viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
                 viaPoints[i]->fb = 0;
@@ -226,15 +233,14 @@ namespace roboy_simulation {
 	void IMuscle::applySpindleAngVel( double &spindleAngVel ){
         //der mottor kann sich nur solange drehen wie sich die kraft gegen die dreht unter der stallforce liegt. Da der moter über eine feder zeiht 
         //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.   
-            if( spindleAngVel > 0 && see.see.force >= actuator.motor.continuousTorque*actuator.gear.ratio / actuator.spindle.radius * 2){
+            if( spindleAngVel > 0 && ( see.deltaX >= 0.02 || actuator.elasticForce >= actuatorForce ) ){
                 actuator.spindle.angVel = spindleAngVel = 0;
             //}else if( x[1] < 0 && see.see.force <= actuator.motor.stallTorque*actuator.gear.ratio / actuator.spindle.radius ){
             //    actuator.spindle.angVel = spindleAngVel = 0;
             }else{
                 actuator.spindle.angVel = spindleAngVel;
             }
-        //calculate motor force
-    }
+        }
 }
 // make it a plugin loadable via pluginlib
 PLUGINLIB_EXPORT_CLASS(roboy_simulation::IMuscle, roboy_simulation::IMuscle)

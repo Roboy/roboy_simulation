@@ -30,13 +30,22 @@ namespace roboy_simulation
 		
     class ISee {
 
-		
+		// c1-c3 are constand values. documentation can be found at ____________________
+		double c1, c2, c3;
+		// the angles alpha_* describe the angle the tendons attach to the see.element
+		double alpha_1, alpha_2;
+		// the angles beta_* describe the third angles of the corresponding triangles  
+		double beta_1, beta_2;
+		// length_* is the tendonlength from the two triangles inside the motor
+		double length_1, length_2;
+		// length_c* are constand tendonlengths inside the motor
+		double length_c1, length_c2;
 
-        public:
+       public:
 		//deltaX is the dispöacement of the spring inside the motor
 		double deltaX = 0.0; //m
 		// the Length of the tendon inside the motor. the internal length changes depending on the displacement of the spring.
-		double internalLength = 0.1; //m
+		double internalLength = 0.1; //m // length_c1 + length_1 + length_2 + length_c2;
         SEE see;
 
 

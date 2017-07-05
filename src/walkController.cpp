@@ -205,7 +205,7 @@ void WalkController::Update() {
     message_counter = 1000;
 
     publishID();
-    //publishForce(&sim_muscles);
+    publishForce(&sim_muscles);
     publishTendon(&sim_muscles);
     //publishModel(robot_namespace, parent_model->GetLink(link_names[0] + ""), false);
     publishModel(parent_model->GetLink(link_names[0] + ""), false);

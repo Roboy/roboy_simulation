@@ -14,7 +14,7 @@ using namespace roboy_simulation;
 		double displacement;
 		displacement = windingLength + _length - _length0;
 
-		// gzdbg << "displacement: "
+		// gzdbg << "displacement: " 
 		// 	  << displacement
 		// 	  << "\n"
 		//          << "windingLength: "
@@ -55,11 +55,15 @@ using namespace roboy_simulation;
 
 	void ISee::ElasticElementModel( const double &tendonLength, const double &muscleLength )
     {
-		//this is a simple simulation of the internal Length
-		deltaX = (muscleLength+internalLength - tendonLength) / 2.0;
-		internalLength = 0.1 - 2* deltaX;
-
-		//ROS_INFO("deltaX: %f", deltaX);
+		bool complex = false;
+		if(complex){//this calculation of the internal length is based on the real myoMuscle geometry
+			
+		}else{//this is a simple simulation of the internal Length
+			auto tmp = (muscleLength+internalLength - tendonLength) / 2.0;
+			deltaX = ( 0 < tmp) ? tmp : 0;
+			internalLength = 0.1 - 2* deltaX;
+		}
+		ROS_INFO("deltaX: %f", deltaX);
 		
         if (deltaX >= 0)
         {
