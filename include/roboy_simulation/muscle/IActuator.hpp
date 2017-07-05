@@ -7,14 +7,16 @@ namespace gazebo{
 
     struct Motor {
         double current = 0.0; // [A]
-        double torqueConst = 0.0142; // [Nm/A]
+        double torqueConst = 14.2e-03; // [Nm/A]
         double resistance = 0.797; // [Ohm]
         double inductance = 0.118e-03; // [H]
         double voltage = 0.0; // [V]
         double BEMFConst = 14.2e-03; // [V/s]
-        double inertiaMoment = 4.09e-07; // [kgm^2]
-		double continuousTorque = 0.0476; //Nm
-		double stallTorque	= 0.857; // Nm
+        double inertiaMoment = 4.09e-06; // [kgm^2]
+		double continuousTorque = 47.6e-03; // [Nm]
+		double stallTorque	= 857e-03; //[Nm]
+		double continuousCurrent = 3.45; // [A]
+		double stallCurrent	= 60.2; //[A]
 	};
 
 	struct Gear {
