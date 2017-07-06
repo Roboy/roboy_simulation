@@ -5,8 +5,8 @@
 #include <boost/numeric/odeint.hpp>
 #include <cmath>
 # define M_PI           3.14159265358979323846  /* pi */
-#define toRadian( x ){ return x / 180 * M_PI }
-#define toDegree( x ){ return x / M_PI * 180 }
+#define toRadian( x )	( (x) / 180 * M_PI )
+#define toDegree( x )	( (x) / M_PI * 180 )
 namespace roboy_simulation
 {
     using namespace std;

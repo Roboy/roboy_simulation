@@ -73,7 +73,7 @@ using namespace roboy_simulation;
 			deltaX = ( 0 < tmp) ? tmp : 0;
 			internalLength = 0.1 - 2* deltaX;
 		}
-		ROS_INFO("deltaX: %f", deltaX);
+		ROS_INFO("deltaX: %f;	_1: %f;		_2:%f", deltaX, toDegree(alpha_1), toDegree(alpha_2) );
 		
         if (deltaX >= 0)
         {
