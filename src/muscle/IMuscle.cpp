@@ -229,10 +229,10 @@ namespace roboy_simulation {
         //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.   
             if( spindleAngVel > 0 && ( see.deltaX >= 0.02 || actuator.elasticForce >= actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius ) ){
                 actuator.spindle.angVel = spindleAngVel = 0;
-            //}else if( x[1] < 0 && see.see.force <= actuator.motor.stallTorque*actuator.gear.ratio / actuator.spindle.radius ){
+            //}else if(spindleAngVel < 0 &&  actuator.elasticForce < actuator.motor.stallTorque * actuator.gear.ratio / actuator.spindle.radius ){
             //    actuator.spindle.angVel = spindleAngVel = 0;
             }else{
-                actuator.spindle.angVel = spindleAngVel;
+                actuator.spindle.angVel = spindleAngVel * (1 - ( actuator.elasticForce / (actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius)) );
             }
         }
 }
