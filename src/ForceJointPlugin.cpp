@@ -34,7 +34,7 @@ void ForceJointPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
     jointCommand_sub = nh->subscribe("/roboy/middleware/JointCommand", 1, &ForceJointPlugin::JointCommand, this);
     pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/simulation/pabi_pose", 1);
-
+    hip_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensor_location", 1, &ForceJointPlugin::DarkRoomSensor, this);
     for(auto joint = jointVector.begin(); joint != jointVector.end(); joint++)
     {
         // Test if joint type is revolute
@@ -73,13 +73,35 @@ void ForceJointPlugin::JointCommand(const roboy_communication_middleware::JointC
     for(uint i=0;i<msg->link_name.size();i++){
         jointAngles[msg->link_name[i]] = msg->angle[i];
     }
+    publishPose();
+}
+
+void ForceJointPlugin::DarkRoomSensor(const roboy_communication_middleware::DarkRoomSensorConstPtr &msg)
+{
+    int hipIDPos = -1;
+    for(int i = 0; i < msg->ids.size(); i++)
+    {
+	// hip id of the sensor should be 4
+	if(msg->ids[i] == hipID)
+	{
+	    hipIDPos = msg->ids[i];
+	    break;
+	}
+    }
+    if(hipIDPos == -1)
+	return;
+    
+    // move the position of the model
+    math::Quaternion modelRot = model->GetWorldPose().rot;
+    math::Vector3 modelPos = math::Vector3(msg->position[hipIDPos].x, msg->position[hipIDPos].y, msg->position[hipIDPos].z);
+    initPose = math::Pose(math::Pose(modelPos, modelRot));
 }
 
 void ForceJointPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
+    // make the model stationary
     publishPose();
-    // make the model stationary! NOW MOVED TO SDF FILE!
-    // model->SetWorldPose(initPose);
+    model->SetWorldPose(initPose);
     // set velocity and force to zero and force for every saved joint and set angle to saved value
     for(auto it = joints.begin(); it != joints.end(); it++)
     {

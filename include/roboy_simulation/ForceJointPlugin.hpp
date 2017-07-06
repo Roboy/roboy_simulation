@@ -12,6 +12,7 @@
 #include <map>
 
 #include "roboy_communication_middleware/Pose.h"
+#include "roboy_communication_middleware/DarkRoomSensor.h"
 
 namespace gazebo
 {
@@ -32,6 +33,7 @@ namespace gazebo
     private:
         void publishPose();
         void JointCommand(const roboy_communication_middleware::JointCommandConstPtr &_msg);
+	void DarkRoomSensor(const roboy_communication_middleware::DarkRoomSensorConstPtr &_msg);
         physics::ModelPtr model;
         /**
          * Binded event for the OnUpdate function
@@ -43,6 +45,7 @@ namespace gazebo
          * List of all joint subsribers
          */
         ros::Publisher pose_pub;
+	ros::Subscriber hip_sub;
         ros::Subscriber jointCommand_sub;
         std::list<std::string> joints;
         /**
@@ -50,5 +53,6 @@ namespace gazebo
          */
         std::map<std::string, double> jointAngles;
         math::Pose initPose;
+	int hipID = 4;
     };
 }
