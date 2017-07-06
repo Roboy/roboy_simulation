@@ -47,7 +47,7 @@ physics::WorldPtr SimulationControl::loadWorld(string worldName){
 }
 
 physics::ModelPtr SimulationControl::loadModel(physics::WorldPtr world, string modelName){
-    world->InsertModelFile(modelName);
+    world->InsertModelFile("model://" + modelName);
     physics::ModelPtr model = nullptr;
     // wait until the model is loaded
     int modelCountBefore = world->GetModelCount();
@@ -61,7 +61,7 @@ physics::ModelPtr SimulationControl::loadModel(physics::WorldPtr world, string m
     }
     if (world->GetModelCount() == modelCountBefore + 1) {
         ROS_INFO("Successfully inserted model");
-        model = world->GetModel("legs_with_upper_body");
+        model = world->GetModel(modelName);
     } else {
         ROS_WARN("Failed inserting model");
     }
