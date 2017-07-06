@@ -42,8 +42,6 @@ public:
 
     void publishMomentArm(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles);
 
-    void publishModel(physics::LinkPtr parent_link, bool child_link);
-
     void publishModel(const string robot_namespace, physics::LinkPtr parent_link, bool child_link);
 
     void publishSimulationState(ControllerParameters &params, gazebo::common::Time gz_time_now);

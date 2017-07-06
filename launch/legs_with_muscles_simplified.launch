@@ -16,7 +16,7 @@
     </include>
 
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-    	args="-sdf -file $(find roboy_models)/PaBiRoboy/model.sdf -model PaBiRoboy"
+    	args="-sdf -file $(find roboy_models)/legs_with_muscles_simplified/model.sdf -model legs_with_muscles_simplified"
 	/>
      <!--the following two nodes transform gazebo link_states to rviz marker/tf -->
 <!--    
