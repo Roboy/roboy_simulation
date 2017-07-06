@@ -111,7 +111,7 @@ namespace roboy_simulation {
 		void initViaPoints( MyoMuscleInfo &myoMuscle );
 		void calculateTendonForceProgression();
 		void applyMotorCurrent( double &motorCurrent, const double &spindleAngVel );
-		void applySpindleAngVel( double &spindleAngVel );
+		void applySpindleAngVel( const double &motorCurrent, double &spindleAngVel );
 	};
 
 

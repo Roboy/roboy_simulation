@@ -98,7 +98,7 @@ namespace roboy_simulation {
             
         }, x, time.toSec(), (period.toSec()/1000 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
 
-        applySpindleAngVel( x[1] );
+        applySpindleAngVel( x[0], x[1] );
         applyMotorCurrent( x[0], x[1] );
 
         // calculate resulting actuatorforce
@@ -224,17 +224,17 @@ namespace roboy_simulation {
     }
     //////////////////////////////////////////////////////
     // adds physical restrictions to motor anglVel 
-	void IMuscle::applySpindleAngVel( double &spindleAngVel ){
+	void IMuscle::applySpindleAngVel( const double &motorCurrent, double &spindleAngVel ){
         //der mottor kann sich nur solange drehen wie sich die kraft gegen die dreht unter der stallforce liegt. Da der moter über eine feder zeiht 
         //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.   
-            if( spindleAngVel > 0 && ( see.deltaX >= 0.02 || actuator.elasticForce >= actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius ) ){
+            if( spindleAngVel > 0 && see.deltaX >= 0.02 || actuator.elasticForce >= actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius ){
                 actuator.spindle.angVel = spindleAngVel = 0;
-            //}else if(spindleAngVel < 0 &&  actuator.elasticForce < actuator.motor.stallTorque * actuator.gear.ratio / actuator.spindle.radius ){
-            //    actuator.spindle.angVel = spindleAngVel = 0;
+            }else if(spindleAngVel < 0 && motorCurrent > 0 && actuator.elasticForce < actuator.motor.stallTorque * actuator.gear.ratio / actuator.spindle.radius ){
+                actuator.spindle.angVel = spindleAngVel = 0;
             }else{
                 actuator.spindle.angVel = spindleAngVel * (1 - ( actuator.elasticForce / (actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius)) );
             }
-        }
+    }
 }
 // make it a plugin loadable via pluginlib
 PLUGINLIB_EXPORT_CLASS(roboy_simulation::IMuscle, roboy_simulation::IMuscle)
