@@ -96,10 +96,12 @@ namespace roboy_simulation {
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
             
-        }, x, time.toSec(), (period.toSec()/1000 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
+        }, x, time.toSec(), (period.toSec()/10 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
 
-        applySpindleAngVel( x[0], x[1] );
-        applyMotorCurrent( x[0], x[1] );
+        //applySpindleAngVel( x[0], x[1] );
+        //applyMotorCurrent( x[0], x[1] );
+        actuator.motor.current = x[0];
+        actuator.spindle.angVel = x[1];
 
         // calculate resulting actuatorforce
         actuatorForce = 0.9 * actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
@@ -156,7 +158,7 @@ namespace roboy_simulation {
         msg.data = actuator.spindle.angVel;
         spindleAngVel_pub.publish(msg);
                 
-        msg.data = (muscleLength) * 100;
+        msg.data = (muscleLength + see.internalLength ) * 100;
         muscleLength_pub.publish(msg);
 
         msg.data = tendonLength *100 ;

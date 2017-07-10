@@ -59,7 +59,7 @@ using namespace roboy_simulation;
 		if(complex){//this calculation of the internal length is based on the real myoMuscle geometry
 			double deltaLength = (muscleLength+internalLength - tendonLength);
 			deltaX = c4 - ( (internalLength - deltaLength - length_c1 - length_c2 - c3/std::cos(alpha_2)) / (1/std::cos(alpha_1) + 1/std::cos(alpha_2)) );
-			//if(deltaX < 0) {deltaX = 0;}
+			if(deltaX > 0.02) { deltaX = 0.02;}
 			length_1 = sqrt( c1*c1 + (c4-deltaX)*(c4-deltaX) );
 			length_2 = sqrt( c2*c2 + (c3+c4-deltaX)*(c3+c4-deltaX) );
 
