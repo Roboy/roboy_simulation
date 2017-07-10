@@ -96,13 +96,16 @@ namespace roboy_simulation {
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
             
-        }, x, time.toSec(), (period.toSec()/1000 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
+        }, x, time.toSec(), (period.toSec()/5 /* devide by 1000 to obtain plausible results. Why needs further investigation. Deviding by smaller nummbers increases changeing rate of the values.*/) );
 
-        applySpindleAngVel( x[0], x[1] );
-        applyMotorCurrent( x[0], x[1] );
+        //applySpindleAngVel( x[0], x[1] );
+        //applyMotorCurrent( x[0], x[1] );
+        actuator.motor.current = x[0];
+        actuator.spindle.angVel = x[1];
+
 
         // calculate resulting actuatorforce
-        actuatorForce = 0.9 * actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
+        actuatorForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
                                                     actuator.spindle.radius);
 
         //ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
@@ -156,7 +159,7 @@ namespace roboy_simulation {
         msg.data = actuator.spindle.angVel;
         spindleAngVel_pub.publish(msg);
                 
-        msg.data = (muscleLength) * 100;
+        msg.data = (muscleLength + see.internalLength) * 100;
         muscleLength_pub.publish(msg);
 
         msg.data = tendonLength *100 ;
@@ -216,23 +219,23 @@ namespace roboy_simulation {
     // adds physical restrictions to motor current
     void IMuscle::applyMotorCurrent( double &motorCurrent, const double &spindleAngVel ){
         //Motor has a max current it can handle while spinning
-        if( spindleAngVel > 0 && motorCurrent > actuator.motor.continuousCurrent ){
-            actuator.motor.current = motorCurrent = actuator.motor.continuousCurrent;
-        }else{
+       // if( spindleAngVel > 0 && motorCurrent > actuator.motor.continuousCurrent ){
+       //     actuator.motor.current = motorCurrent = actuator.motor.continuousCurrent;
+       // }else{
                 actuator.motor.current = motorCurrent;
-        }
+       // }
     }
     //////////////////////////////////////////////////////
     // adds physical restrictions to motor anglVel 
 	void IMuscle::applySpindleAngVel( const double &motorCurrent, double &spindleAngVel ){
         //der mottor kann sich nur solange drehen wie sich die kraft gegen die dreht unter der stallforce liegt. Da der moter über eine feder zeiht 
         //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.   
-            if( spindleAngVel > 0 && see.deltaX >= 0.02 || actuator.elasticForce >= actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius ){
+            if( spindleAngVel > 0 && ( actuatorForce >= actuator.motor.continuousTorque / actuator.spindle.radius) ){
                 actuator.spindle.angVel = spindleAngVel = 0;
-            }else if(spindleAngVel < 0 && motorCurrent > 0 && actuator.elasticForce < actuator.motor.stallTorque * actuator.gear.ratio / actuator.spindle.radius ){
+            }else if(spindleAngVel < 0 && motorCurrent > 0 && actuatorForce < actuator.motor.stallTorque / actuator.spindle.radius ){
                 actuator.spindle.angVel = spindleAngVel = 0;
             }else{
-                actuator.spindle.angVel = spindleAngVel * (1 - ( actuator.elasticForce / (actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius)) );
+                actuator.spindle.angVel = spindleAngVel;//  * (1 - ( actuatorForce / (actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius)) );
             }
     }
 }
