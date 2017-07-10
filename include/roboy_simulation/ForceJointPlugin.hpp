@@ -53,6 +53,6 @@ namespace gazebo
          */
         std::map<std::string, double> jointAngles;
         math::Pose initPose;
-	int hipID = 4;
+	int hipID = 0;
     };
 }
