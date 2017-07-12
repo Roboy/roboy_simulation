@@ -49,6 +49,9 @@ namespace roboy_simulation {
 
         //update force points and calculate muscle length for each Viapoint
         //muscleLength is set zero and then added up again
+        if ( !firstUpdate ){
+            prevMuscleLength = muscleLength;
+        } 
         muscleLength = 0;
         for (int i = 0; i < viaPoints.size(); i++) {
             viaPoints[i]->UpdateForcePoints();
@@ -66,6 +69,7 @@ namespace roboy_simulation {
         };
 
         if (firstUpdate) {
+            prevMuscleLength = muscleLength;
             initialTendonLength = tendonLength = muscleLength + see.internalLength;
 
             ROS_INFO("Calculated musclelength is %f m", muscleLength);
@@ -80,6 +84,12 @@ namespace roboy_simulation {
 
         // calculate the approximation of gear's efficiency
         actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
+
+        // x[1] will be changed to the actual angvel of the motor. this has to  be done to take into account the inertia of the model in the simulation.
+        // this is done by checking how much the tendon length has actually changed and devide by the period time to get the angvel.
+        double deltaMuscleLength = prevMuscleLength - muscleLength;
+        double sim_angVel = deltaMuscleLength / ( actuator.spindle.radius * period.toSec() );
+        x[1] = sim_angVel;
 
         // do 1 step of integration of DiffModel() at current time        
         actuator.stepper.do_step([this](const IActuator::state_type &x, IActuator::state_type &dxdt, const double ) {
@@ -96,7 +106,7 @@ namespace roboy_simulation {
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
             
-        }, x, time.toSec(), (period.toSec()/10 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
+        }, x, time.toSec(), (period.toSec()/2 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
 
         //applySpindleAngVel( x[0], x[1] );
         //applyMotorCurrent( x[0], x[1] );
@@ -161,7 +171,7 @@ namespace roboy_simulation {
         msg.data = (muscleLength + see.internalLength ) * 100;
         muscleLength_pub.publish(msg);
 
-        msg.data = tendonLength *100 ;
+        msg.data = tendonLength * 100;
         tendonLength_pub.publish(msg);
     }
     ////////////////////////////////////////////////////
