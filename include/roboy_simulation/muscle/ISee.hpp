@@ -49,6 +49,8 @@ namespace roboy_simulation
 		double deltaX = 0.0; //m
 		// the Length of the tendon inside the motor. the internal length changes depending on the displacement of the spring.
 		double internalLength = length_c1 + length_1 + length_2 + length_c2; //m
+		double tendonStiffness = 1e6; // N/m
+		double tendonForce = 0;
         SEE see;
 
 

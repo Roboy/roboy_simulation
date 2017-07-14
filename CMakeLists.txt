@@ -91,9 +91,7 @@ include_directories(
 #==============================================================================
 # Application
 #==============================================================================
-add_library(muscle_plugin SHARED src/muscle/IMuscle.cpp src/muscle/CylindricalWrapping.cpp src/muscle/IActuator.cpp
-        src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp src/muscle/SphericalWrapping.cpp
-        src/muscle/StateMachine.cpp)
+add_library(muscle_plugin SHARED src/muscle/MuscleController src/muscle/IMuscle.cpp src/muscle/CylindricalWrapping.cpp src/muscle/IActuator.cpp src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp src/muscle/SphericalWrapping.cpp src/muscle/StateMachine.cpp src/muscle/ModelViz.cpp)
 target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
 
 #add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
@@ -124,9 +122,9 @@ add_library(force_compensating_halterung SHARED src/ForceCompensatingHalterung.c
 add_dependencies(force_compensating_halterung common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(force_compensating_halterung ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
-add_library(WalkController SHARED src/walkController.cpp src/walkVisualization.cpp src/helperClasses.cpp)
-add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
-target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+#add_library(WalkController SHARED src/walkController.cpp src/walkVisualization.cpp src/helperClasses.cpp)
+#add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
+#target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(roboySim src/main.cpp src/simulationControl.cpp)
 add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
@@ -140,12 +138,12 @@ target_link_libraries(VRRoboy ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LI
 #==============================================================================
 install(TARGETS
         muscle_plugin
-#        dummy_muscle_plugin
+#      dummy_muscle_plugin
         roboy_rviz
         roboy_rviz_balancing
         contact_plugin
         force_torque_plugin
-	WalkController
+#		WalkController
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
@@ -159,7 +157,7 @@ install(FILES
         package.xml
 #	dummy_muscle_plugin.xml
         muscle_plugin.xml
-        walking_plugin.xml
+#        walking_plugin.xml
         balancing_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

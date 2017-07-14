@@ -84,9 +84,10 @@ namespace roboy_simulation {
         ros::NodeHandlePtr nh;
         ros::Publisher actuatorForce_pub;
 		ros::Publisher seeForce_pub;
+		ros::Publisher tendonForce_pub;
 		ros::Publisher motorCurrent_pub;
 		ros::Publisher spindleAngVel_pub;
-		ros::Publisher muscleLength_pub;
+		ros::Publisher actualLength_pub;
 		ros::Publisher tendonLength_pub;
         int roboyID;
 		IActuator::state_type x;
@@ -98,11 +99,15 @@ namespace roboy_simulation {
 		//Motorforce is the force getting applied onto the first Viapoint
 		double muscleForce = 0;
 		//muscleLength describes the TendonLength from the first Viapoint to the last viapoint. (TendonLength outside the myoMotor)
-        double muscleLength;
+        double muscleLength = 0;
+		// prevMuscleLength is needded to calculate the actual angVel of the motor
+		double prevMuscleLength;
 		//tendonLength describes the total TendonLength from then Motor until the last viapoint. (TendonLength excluding the tendon coiled up on the motor)
         double tendonLength;
 		//initial TendonLength describes the initial total tendonlength 
         double initialTendonLength;
+		//actual angVel
+		double sim_angVel;
         bool firstUpdate;
 		double sinParm = 0;
 
