@@ -84,9 +84,10 @@ namespace roboy_simulation {
         ros::NodeHandlePtr nh;
         ros::Publisher actuatorForce_pub;
 		ros::Publisher seeForce_pub;
+		ros::Publisher tendonForce_pub;
 		ros::Publisher motorCurrent_pub;
 		ros::Publisher spindleAngVel_pub;
-		ros::Publisher muscleLength_pub;
+		ros::Publisher actualLength_pub;
 		ros::Publisher tendonLength_pub;
         int roboyID;
 		IActuator::state_type x;
@@ -105,6 +106,8 @@ namespace roboy_simulation {
         double tendonLength;
 		//initial TendonLength describes the initial total tendonlength 
         double initialTendonLength;
+		//actual angVel
+		double sim_angVel;
         bool firstUpdate;
 		double sinParm = 0;
 
