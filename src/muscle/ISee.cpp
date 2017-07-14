@@ -70,11 +70,6 @@ using namespace roboy_simulation;
 
 			internalLength = length_c1 + length_1 + length_2 + length_c2;
 
-			// deltaLength will be zero at this point until the spring reaches its limit.
-			deltaLength = ( muscleLength+internalLength - tendonLength );
-			if(deltaX >= 0.02)
-				tendonForce = tendonStiffness * deltaLength;	
-
 		}else{//this is a simple simulation of the internal Length
 			auto tmp = (muscleLength+internalLength - tendonLength) / 2.0;
 			deltaX = ( 0 < tmp) ? tmp : 0;
@@ -96,8 +91,6 @@ using namespace roboy_simulation;
 		// since the tendon runs over a spindle the force on both tendons will be equal.
 		// Only their horizontal and vertical forces will differ due to the different angles toward the spring
 		_muscleForce = _actuatorForce = see.force / ( std::cos(alpha_1) + std::cos(alpha_2) );
-		_muscleForce += tendonForce;
-		_actuatorForce += tendonForce;
 	}
 /*
 	math::Vector3 ISee::CalculateForce(double _elasticForce, double _motorForce,

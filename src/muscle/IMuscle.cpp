@@ -142,8 +142,6 @@ namespace roboy_simulation {
         actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
         snprintf(topic, 100, "/roboy/motor/seeForce");
         seeForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/motor/tendonForce");
-        tendonForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
         snprintf(topic, 100, "/roboy/motor/motorCurrent");
         motorCurrent_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
         snprintf(topic, 100, "/roboy/motor/spindleAngVel");
@@ -162,9 +160,6 @@ namespace roboy_simulation {
 
         msg.data = see.see.force;
         seeForce_pub.publish(msg);
-
-        msg.data = see.tendonForce;
-        tendonForce_pub.publish(msg);
     
         msg.data = actuator.motor.current;
         motorCurrent_pub.publish(msg);
