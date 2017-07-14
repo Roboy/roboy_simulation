@@ -1,4 +1,4 @@
-#include "roboy_simulation/muscle/ModelViz.hpp"
+#include "roboy_simulation/RobotSimulation/ModelViz.hpp"
 
 ModelViz::ModelViz(){
     if (!ros::isInitialized()) {

@@ -91,7 +91,18 @@ include_directories(
 #==============================================================================
 # Application
 #==============================================================================
-add_library(muscle_plugin SHARED src/muscle/MuscleController src/muscle/IMuscle.cpp src/muscle/CylindricalWrapping.cpp src/muscle/IActuator.cpp src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp src/muscle/SphericalWrapping.cpp src/muscle/StateMachine.cpp src/muscle/ModelViz.cpp)
+add_library(muscle_plugin SHARED 
+	src/RobotSimulation/ModelController.cpp
+	src/RobotSimulation/ModelViz.cpp	
+	src/RobotSimulation/muscle/IMuscle.cpp
+	src/RobotSimulation/muscle/CylindricalWrapping.cpp
+	src/RobotSimulation/muscle/IActuator.cpp
+	src/RobotSimulation/muscle/ISee.cpp
+	src/RobotSimulation/muscle/IViaPoints.cpp
+	src/RobotSimulation/muscle/MeshWrapping.cpp
+	src/RobotSimulation/muscle/SphericalWrapping.cpp
+	src/RobotSimulation/muscle/StateMachine.cpp
+	)
 target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
 
 #add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
@@ -158,6 +169,6 @@ install(FILES
 #	dummy_muscle_plugin.xml
         muscle_plugin.xml
 #        walking_plugin.xml
-        balancing_plugin.xml
+#        balancing_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
