@@ -133,22 +133,13 @@ void ForceJointPlugin::OnUpdate(const common::UpdateInfo &_info)
         model->GetJoint(*it)->SetVelocity(0, 0);
         model->GetJoint(*it)->SetForce(0, 0);
         model->GetJoint(*it)->SetPosition(0, jointAnglesRevolute[*it]);
-        //cout << model->GetJoint(*it)->HasType(physics::Entity::EntityType.HINGE_JOINT) << endl;
     }
-
-    cout << jointAnglesRevolute2["neck_3"][0] << endl;
-    cout << jointAnglesRevolute2["neck_3"][1] << endl;
 
     for(auto it = jointsRevolute2.begin(); it != jointsRevolute2.end(); it++)
     {
-        cout << jointAnglesRevolute2[*it][0] << endl;
-        cout << jointAnglesRevolute2[*it][1] << endl;
-
         model->GetJoint(*it)->SetVelocity(0, 0);
         model->GetJoint(*it)->SetForce(0, 0);
-        cout << model->GetJoint(*it)->GetMsgType() << endl;
-        //model->GetJoint(*it)->SetAngle(0, jointAnglesRevolute2[*it][0]);
-        //model->GetJoint(*it)->SetAngle(1, jointAnglesRevolute2[*it][1]);
+        //TODO: Set Position of axis one and two
     }
     
 }
