@@ -1,6 +1,8 @@
 #pragma once
 #include <ros/ros.h>
-#include <roboy_communication_middleware/JointCommand.h>
+#include <roboy_communication_middleware/JointCommandRevolute.h>
+#include <roboy_communication_middleware/JointCommandRevolute2.h>
+
 
 #include <gazebo/gazebo.hh>
 #include <boost/bind.hpp>
@@ -32,7 +34,8 @@ namespace gazebo
         void OnUpdate(const common::UpdateInfo &_info);
     private:
         void publishPose();
-        void JointCommand(const roboy_communication_middleware::JointCommandConstPtr &_msg);
+        void JointCommandRevolute(const roboy_communication_middleware::JointCommandRevoluteConstPtr &_msg);
+	void JointCommandRevolute2(const roboy_communication_middleware::JointCommandRevolute2ConstPtr &_msg);
 	void DarkRoomSensor(const roboy_communication_middleware::DarkRoomSensorConstPtr &_msg);
         physics::ModelPtr model;
         /**
@@ -46,13 +49,16 @@ namespace gazebo
          */
         ros::Publisher pose_pub;
 	ros::Subscriber hip_sub;
-        ros::Subscriber jointCommand_sub;
-        std::list<std::string> joints;
+        ros::Subscriber jointCommandRevolute_sub;
+	ros::Subscriber jointCommandRevolute2_sub;
+        std::list<std::string> jointsRevolute;
+	std::list<std::string> jointsRevolute2;
         /**
          * Map for storing the current joint angles, is updated in OnRosMsg
          */
-        std::map<std::string, double> jointAngles;
+        std::map<std::string, double> jointAnglesRevolute;
+        std::map<std::string, double[2]> jointAnglesRevolute2;
         math::Pose initPose;
-	int hipID = 4;
+	int hipID = 0;
     };
 }
