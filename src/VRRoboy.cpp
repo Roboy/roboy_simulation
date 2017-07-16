@@ -33,6 +33,7 @@ void VRRoboy::initializeWorlds(uint numberOfWorlds){
     // load the legs in each world
     for (uint i = 0; i < numberOfWorlds; i++) {
         physics::ModelPtr m = loadModel(world[i], "legs_with_upper_body_simplified" );
+        physics::ModelPtr hands = loadModel(world[i], "hands");
         if (m != nullptr) {
             model.push_back(m);
         }
