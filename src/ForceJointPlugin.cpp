@@ -32,38 +32,22 @@ void ForceJointPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    jointCommandRevolute_sub = nh->subscribe("/roboy/middleware/JointCommandRevolute", 1, &ForceJointPlugin::JointCommandRevolute, this);
-    jointCommandRevolute2_sub = nh->subscribe("/roboy/middleware/JointCommandRevolute2", 1, &ForceJointPlugin::JointCommandRevolute2, this);
-    pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/simulation/"+ _parent->GetName() +"_pose", 1);
+    jointCommand_sub = nh->subscribe("/roboy/middleware/JointCommand", 1, &ForceJointPlugin::JointCommand, this);
+    pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/simulation/pabi_pose", 1);
     hip_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensor_location", 1, &ForceJointPlugin::DarkRoomSensor, this);
     for(auto joint = jointVector.begin(); joint != jointVector.end(); joint++)
-    {   
-        
-         // Test if joint type is revolute2
-        if((*joint)->GetType() == 320){
-            cout << (*joint)->GetName()<< endl;
-            // replace whitespace with underscore in the names
-            string _modelName = model->GetName();
-            string jointName = (*joint)->GetName();
-            string _jointName = jointName;
-            boost::algorithm::replace_all(_modelName, " ", "_");
-            boost::algorithm::replace_all(_jointName, " ", "_");
-            jointsRevolute2.push_back(jointName);
-            jointAnglesRevolute2[jointName][0] = (*joint)->GetAngle(0).Radian();
-            jointAnglesRevolute2[jointName][1]= (*joint)->GetAngle(1).Radian();
-
-        }
+    {
         // Test if joint type is revolute
-        else if((*joint)->GetType() == 576){
-            // replace whitespace with underscore in the names
-            string _modelName = model->GetName();
-            string jointName = (*joint)->GetName();
-            string _jointName = jointName;
-            boost::algorithm::replace_all(_modelName, " ", "_");
-            boost::algorithm::replace_all(_jointName, " ", "_");
-            jointsRevolute.push_back(jointName);
-            jointAnglesRevolute[jointName] = (*joint)->GetAngle(0).Radian();
-        }
+        if((*joint)->GetType() != 576)
+            continue;
+        // replace whitespace with underscore in the names
+        string _modelName = model->GetName();
+        string jointName = (*joint)->GetName();
+        string _jointName = jointName;
+        boost::algorithm::replace_all(_modelName, " ", "_");
+        boost::algorithm::replace_all(_jointName, " ", "_");
+        joints.push_back(jointName);
+        jointAngles[jointName] = (*joint)->GetAngle(0).Radian();
     }
 }
 
@@ -85,21 +69,12 @@ void ForceJointPlugin::publishPose()
     pose_pub.publish(msg);
 }
 
-void ForceJointPlugin::JointCommandRevolute(const roboy_communication_middleware::JointCommandRevoluteConstPtr &msg){
-        for(uint i=0;i<msg->link_name.size();i++){
-        jointAnglesRevolute[msg->link_name[i]] = msg->angle[i];
+void ForceJointPlugin::JointCommand(const roboy_communication_middleware::JointCommandConstPtr &msg){
+    for(uint i=0;i<msg->link_name.size();i++){
+        jointAngles[msg->link_name[i]] = msg->angle[i];
     }
-
+    publishPose();
 }
-void ForceJointPlugin::JointCommandRevolute2(const roboy_communication_middleware::JointCommandRevolute2ConstPtr &msg){
-        for(uint i=0;i<msg->link_name.size();i++){
-        jointAnglesRevolute2[msg->link_name[i]][0] = msg->angle1[i];
-        jointAnglesRevolute2[msg->link_name[i]][1] = msg->angle2[i];
-    }
-
-}
-
-
 
 void ForceJointPlugin::DarkRoomSensor(const roboy_communication_middleware::DarkRoomSensorConstPtr &msg)
 {
@@ -128,20 +103,10 @@ void ForceJointPlugin::OnUpdate(const common::UpdateInfo &_info)
     publishPose();
     model->SetWorldPose(initPose);
     // set velocity and force to zero and force for every saved joint and set angle to saved value
-    for(auto it = jointsRevolute.begin(); it != jointsRevolute.end(); it++)
+    for(auto it = joints.begin(); it != joints.end(); it++)
     {
         model->GetJoint(*it)->SetVelocity(0, 0);
         model->GetJoint(*it)->SetForce(0, 0);
-        model->GetJoint(*it)->SetPosition(0, jointAnglesRevolute[*it]);
+        model->GetJoint(*it)->SetPosition(0, jointAngles[*it]);
     }
-
-    for(auto it = jointsRevolute2.begin(); it != jointsRevolute2.end(); it++)
-    {
-        model->GetJoint(*it)->SetVelocity(0, 0);
-        model->GetJoint(*it)->SetForce(0, 0);
-        //TODO: Set Position of axis one and two
-    }
-    
 }
-
-
