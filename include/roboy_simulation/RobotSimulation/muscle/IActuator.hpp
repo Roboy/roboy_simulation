@@ -17,6 +17,7 @@ namespace gazebo{
 		double stallTorque	= 857e-03; //[Nm]
 		double continuousCurrent = 3.45; // [A]
 		double stallCurrent	= 60.2; //[A]
+		double speed_torque_gradient = 626.667; // [rps/Nm] = 37.6[rpm/mNm]
 	};
 
 	struct Gear {
@@ -58,7 +59,7 @@ namespace gazebo{
 		/// \param[in] _spindleRadius Radius of the spindle that coils up the tendon
 		/// \return Calculated force according to the model
 		double ElectricMotorModel(const double _current, const double _torqueConstant,
-								  const double _spindleRadius);
+								  const double _spindleRadius, const double _simAngVel);
 
 		Motor motor;
 		Gear gear;
