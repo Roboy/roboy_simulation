@@ -84,7 +84,6 @@ namespace roboy_simulation {
         ros::NodeHandlePtr nh;
         ros::Publisher actuatorForce_pub;
 		ros::Publisher seeForce_pub;
-		ros::Publisher tendonForce_pub;
 		ros::Publisher motorCurrent_pub;
 		ros::Publisher spindleAngVel_pub;
 		ros::Publisher actualLength_pub;

@@ -1,29 +1,29 @@
-#include "roboy_simulation/muscle/MuscleController.hpp"
+#include "roboy_simulation/RobotSimulation/ModelController.hpp"
 
-int MuscleController::roboyID_generator = 0;
+int ModelController::roboyID_generator = 0;
 
-MuscleController::MuscleController() {
+ModelController::ModelController() {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "MuscleController",
+        ros::init(argc, argv, "ModelController",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
     abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
-    motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &MuscleController::motorControl, this);
+    motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &ModelController::motorControl, this);
 
     roboyID = roboyID_generator++;
     ID = roboyID;
 }
 
-MuscleController::~MuscleController() {
+ModelController::~ModelController() {
 }
 
-void MuscleController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
-    ROS_INFO("Loading MuscleController plugin");
+void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
+    ROS_INFO("Loading ModelController plugin");
     // Save pointers to the model
     parent_model = parent_;
     sdf = sdf_;
@@ -150,7 +150,7 @@ void MuscleController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr s
     last_e_stop_active = false;
     if (sdf_->HasElement("eStopTopic")) {
         const std::string e_stop_topic = sdf_->GetElement("eStopTopic")->Get<std::string>();
-        e_stop_sub = nh->subscribe(e_stop_topic, 1, &MuscleController::eStopCB, this);
+        e_stop_sub = nh->subscribe(e_stop_topic, 1, &ModelController::eStopCB, this);
     }
 
     ROS_INFO("Parsing myoMuscles");
@@ -183,12 +183,12 @@ void MuscleController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr s
     hip_CS = CoordSys(new CoordinateSystem(parent_model->GetLink(link_names[0] + "")));
 
     // Listen to the update event. This event is broadcast every simulation iteration.
-    update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&MuscleController::Update, this));
+    update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&ModelController::Update, this));
 
-    ROS_INFO("MuscleController ready");
+    ROS_INFO("ModelController ready");
 }
 
-void MuscleController::Update() {
+void ModelController::Update() {
     // Get the simulation time and period
     gz_time_now = parent_model->GetWorld()->GetSimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
@@ -214,7 +214,7 @@ void MuscleController::Update() {
     checkAbort();
 }
 
-void MuscleController::readSim(ros::Time time, ros::Duration period) {
+void ModelController::readSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("read simulation");
     // update muscle plugins
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
@@ -227,7 +227,7 @@ void MuscleController::readSim(ros::Time time, ros::Duration period) {
     }
 }
 
-void MuscleController::writeSim(ros::Time time, ros::Duration period) {
+void ModelController::writeSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("write simulation");
     // apply the calculated forces
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
@@ -241,7 +241,7 @@ void MuscleController::writeSim(ros::Time time, ros::Duration period) {
     }
 }
 
-void MuscleController::Reset() {
+void ModelController::Reset() {
     // Reset timing variables to not pass negative update periods to controllers on world reset
     last_update_sim_time_ros = ros::Time();
     last_write_sim_time_ros = ros::Time();
@@ -253,7 +253,7 @@ void MuscleController::Reset() {
     }
 }
 
-bool MuscleController::checkAbort(){
+bool ModelController::checkAbort(){
     if(center_of_mass[POSITION].z<0.1*initial_center_of_mass_height.z) {
         roboy_simulation::Abortion msg;
         msg.roboyID = roboyID;
@@ -290,11 +290,11 @@ bool MuscleController::checkAbort(){
     return false;
 }
 
-void MuscleController::eStopCB(const std_msgs::BoolConstPtr &msg) {
+void ModelController::eStopCB(const std_msgs::BoolConstPtr &msg) {
     e_stop_active = msg->data;
 }
 
-bool MuscleController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {
+bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {
     // initialize TiXmlDocument doc with a string
     TiXmlDocument doc;
     if (!doc.Parse(sdf.c_str()) && doc.Error()) {
@@ -615,13 +615,13 @@ bool MuscleController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulat
     return true;
 }
 
-void MuscleController::publishID(){
+void ModelController::publishID(){
     std_msgs::Int32 msg;
     msg.data = roboyID;
     roboyID_pub.publish(msg);
 }
 
-void MuscleController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
+void ModelController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
     // only react to messages for me
       if(msg->roboyID == roboyID) {
         // switch to manual control
@@ -634,4 +634,4 @@ void MuscleController::motorControl(const roboy_simulation::MotorControl::ConstP
         }
     }
 }
-GZ_REGISTER_MODEL_PLUGIN(MuscleController)
+GZ_REGISTER_MODEL_PLUGIN(ModelController)

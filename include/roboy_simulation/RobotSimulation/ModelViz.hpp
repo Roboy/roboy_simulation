@@ -21,7 +21,7 @@
 // common definitions
 #include "common_utilities/CommonDefinitions.h"
 // muscle plugin
-#include "roboy_simulation/muscle/IMuscle.hpp"
+#include "roboy_simulation/RobotSimulation/muscle/IMuscle.hpp"
 #include "roboy_simulation/helperClasses.hpp"
 #include "roboy_simulation/controllerParameters.hpp"
 

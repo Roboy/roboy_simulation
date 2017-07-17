@@ -1,4 +1,4 @@
-#include "roboy_simulation/muscle/IActuator.hpp"
+#include "roboy_simulation/RobotSimulation/muscle/IActuator.hpp"
 
 using namespace gazebo;
 
@@ -10,11 +10,18 @@ double IActuator::EfficiencyApproximation() {
 }
 
 	double IActuator::ElectricMotorModel(const double _current, const double _torqueConstant,
-									   const double _spindleRadius) {
+									   const double _spindleRadius, const double _simAngVel) {
 		double motorForce;
 
 		if (_current >= 0) {
-			motorForce = _current * _torqueConstant / _spindleRadius;
+			//force at the motor
+			motorForce = _current * _torqueConstant;// - motor.inertiaMoment *(_simAngVel * gear.ratio)* (_simAngVel * gear.ratio);
+			//force after the gear
+			motorForce *= gear.ratio;// - gear.inertiaMoment *_simAngVel* _simAngVel;
+			//Force left after turning the motor
+			motorForce -= motor.speed_torque_gradient * _simAngVel;
+			// lineat Force after the spindle
+			motorForce /= _spindleRadius;
 		}
 		else {
 			motorForce = 0;

@@ -25,7 +25,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 // muscle plugin
-#include "roboy_simulation/muscle/IMuscle.hpp"
+#include "roboy_simulation/RobotSimulation/muscle/IMuscle.hpp"
 // ros messages
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
@@ -51,7 +51,7 @@
 #include "roboy_simulation/COM.h"
 #include "roboy_simulation/Input.h"
 
-#include "roboy_simulation/walkVisualization.hpp"
+#include "roboy_simulation/RobotSimulation/ModelViz.hpp"
 #include "roboy_simulation/helperClasses.hpp"
 #include "roboy_simulation/controllerParameters.hpp"
 #include "roboy_simulation/simulationControl.hpp"
@@ -67,12 +67,12 @@ static const char * LEG_NAMES_STRING[] = { "left leg", "right leg" };
 
 static const uint ACCEL_WIN_SIZE = 20;
 
-class MuscleController : public gazebo::ModelPlugin, public WalkVisualization{
+class ModelController : public gazebo::ModelPlugin, public ModelViz{
 public:
     /** Constructor */
-    MuscleController();
+    ModelController();
     /** Destructor */
-    ~MuscleController();
+    ~ModelController();
 
     /**
      * Overloaded Gazebo entry point

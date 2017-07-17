@@ -1,4 +1,4 @@
-#include "roboy_simulation/muscle/IViaPoints.hpp"
+#include "roboy_simulation/RobotSimulation/muscle/IViaPoints.hpp"
 
 using namespace roboy_simulation;
 
