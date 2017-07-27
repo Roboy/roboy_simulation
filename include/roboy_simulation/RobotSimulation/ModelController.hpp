@@ -45,6 +45,7 @@
 #include "common_utilities/RoboyState.h"
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
+#include "roboy_simulation/PIDControl.h"
 #include "roboy_simulation/IMU.h"
 #include "roboy_simulation/Joint.h"
 #include "roboy_simulation/BodyPart.h"
@@ -55,6 +56,8 @@
 #include "roboy_simulation/helperClasses.hpp"
 #include "roboy_simulation/controllerParameters.hpp"
 #include "roboy_simulation/simulationControl.hpp"
+#include "roboy_simulation/RobotSimulation/pid.hpp"
+
 
 using namespace gazebo;
 using namespace std;
@@ -185,6 +188,11 @@ public:
     /** Publishes the roboyID of this instantiation */
     void publishID();
 
+    /**
+    *
+    * */
+    void pidControl(const roboy_simulation::PIDControl::ConstPtr &msg);
+
     /** Callback for manual motor control
      * @param msg contains vector with voltage values for every motor
      * */
@@ -219,7 +227,7 @@ private:
     static int roboyID_generator;
     int roboyID = 0;
     ros::NodeHandlePtr nh;
-    ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
+    ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub, pid_control_sub,
             steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;
     ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub, imu_pub, joint_pub, body_pub, COM_pub, input_pub;
     ros::ServiceServer roboyID_srv, control_parameters_srv, energies_srv;
@@ -260,7 +268,7 @@ private:
 
     LEG_STATE leg_state[2];
 
-    bool control = false;
+    bool pid_control = false;
 
     ControllerParameters params;
 
@@ -315,6 +323,9 @@ private:
     boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
     vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
     vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
+    vector<PID> sim_pids;
+    vector<double> pid_values;
+    int feedback_type = 0;
 
     map<string, double> desiredAngles;
     //Mapping of joint's name and its own pid

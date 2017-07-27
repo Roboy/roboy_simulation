@@ -13,8 +13,8 @@ ModelController::ModelController() {
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
     abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
+    pid_control_sub = nh->subscribe("/roboy/pid_control", 100, &ModelController::pidControl, this);
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &ModelController::motorControl, this);
-
     roboyID = roboyID_generator++;
     ID = roboyID;
 }
@@ -171,7 +171,8 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
                            myoMuscles[muscle].name.c_str());
             sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
             sim_muscles.back()->Init(myoMuscles[muscle]);
-
+            sim_pids.push_back( PID( 48, -48, 0.1, 0.01, 0.5)  );
+            pid_values.push_back( 0.0 );
             a[sim_muscles[muscle]->name] = 0.0;
         }
         catch (pluginlib::PluginlibException &ex) {
@@ -194,17 +195,14 @@ void ModelController::Update() {
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
     last_update_sim_time_ros = sim_time_ros;
-
     // get modelpose and update mucles
     readSim(sim_time_ros, sim_period);
-
     // Update the gazebo model with the result of the controller computation
     writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
-    
     last_write_sim_time_ros = sim_time_ros;
     message_counter = 1000;
 
-    publishID();
+    publishID(); 
     publishForce(&sim_muscles);
     publishTendon(&sim_muscles);
     // Parent_moddel->GetName comes from launch file
@@ -221,8 +219,13 @@ void ModelController::readSim(ros::Time time, ros::Duration period) {
         for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
             math::Pose linkPose = sim_muscles[muscle]->viaPoints[i]->link->GetWorldPose();
             sim_muscles[muscle]->viaPoints[i]->linkPosition = linkPose.pos;
-            sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;
+            sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;  
         }
+        if(pid_control){
+                ROS_INFO("PID-working");
+                sim_muscles[muscle]->cmd = sim_pids[muscle].calculate(period.toSec(), pid_values[muscle], sim_muscles[muscle]->feedback[feedback_type]);
+                ROS_INFO("CMD: %f", sim_muscles[muscle]->cmd);
+            } 
         sim_muscles[muscle]->Update(time, period);
     }
 }
@@ -621,11 +624,25 @@ void ModelController::publishID(){
     roboyID_pub.publish(msg);
 }
 
+void ModelController::pidControl( const roboy_simulation::PIDControl::ConstPtr &msg){
+    // only react to messages for me
+      if(msg->roboyID == roboyID) {
+        pid_control = true;
+        // update pid setvalues
+        if(msg->value.size() == sim_muscles.size()) {
+            for (uint i = 0; i < sim_muscles.size(); i++) {
+                pid_values[i] = msg->value[i];
+            }
+            feedback_type = msg->type;
+        }
+    }
+}
+
 void ModelController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
     // only react to messages for me
       if(msg->roboyID == roboyID) {
         // switch to manual control
-        control = false;
+        pid_control = false;
         // update commanded motor voltages
         if(msg->voltage.size() == sim_muscles.size()) {
             for (uint i = 0; i < sim_muscles.size(); i++) {

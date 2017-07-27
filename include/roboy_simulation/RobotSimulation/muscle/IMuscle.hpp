@@ -77,7 +77,7 @@ namespace roboy_simulation {
 		string name;
 		vector<std::shared_ptr<IViaPoints>> viaPoints;
 		double cmd = 0;
-
+		double feedback[3] = {0.0, 0.0, 0.0};
 		math::Vector3 momentArm;
         physics::JointPtr spanningJoint;
 	private:

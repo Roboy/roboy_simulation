@@ -52,6 +52,7 @@ add_message_files(
         ControllerParameters.msg
         Abortion.msg
         MotorControl.msg
+		PIDControl.msg
         Joint.msg
         BodyPart.msg
         COM.msg
@@ -94,6 +95,7 @@ include_directories(
 add_library(muscle_plugin SHARED 
 	src/RobotSimulation/ModelController.cpp
 	src/RobotSimulation/ModelViz.cpp	
+	src/RobotSimulation/pid.cpp	
 	src/RobotSimulation/muscle/IMuscle.cpp
 	src/RobotSimulation/muscle/CylindricalWrapping.cpp
 	src/RobotSimulation/muscle/IActuator.cpp
