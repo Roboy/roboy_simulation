@@ -56,8 +56,6 @@
 #include "roboy_simulation/helperClasses.hpp"
 #include "roboy_simulation/controllerParameters.hpp"
 #include "roboy_simulation/simulationControl.hpp"
-#include "roboy_simulation/RobotSimulation/pid.hpp"
-
 
 using namespace gazebo;
 using namespace std;
@@ -268,8 +266,6 @@ private:
 
     LEG_STATE leg_state[2];
 
-    bool pid_control = false;
-
     ControllerParameters params;
 
     double v_forward = 1.0;
@@ -322,10 +318,7 @@ private:
 
     boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
     vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
-    vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
-    vector<PID> sim_pids;
-    vector<double> pid_values;
-    int feedback_type = 0;
+    vector<roboy_simulation::MyoMuscleInfo> myoMuscles; 
 
     map<string, double> desiredAngles;
     //Mapping of joint's name and its own pid

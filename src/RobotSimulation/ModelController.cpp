@@ -171,8 +171,6 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
                            myoMuscles[muscle].name.c_str());
             sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
             sim_muscles.back()->Init(myoMuscles[muscle]);
-            sim_pids.push_back( PID( 48, -48, 0.1, 0.01, 0.5)  );
-            pid_values.push_back( 0.0 );
             a[sim_muscles[muscle]->name] = 0.0;
         }
         catch (pluginlib::PluginlibException &ex) {
@@ -221,11 +219,6 @@ void ModelController::readSim(ros::Time time, ros::Duration period) {
             sim_muscles[muscle]->viaPoints[i]->linkPosition = linkPose.pos;
             sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;  
         }
-        if(pid_control){
-                ROS_INFO("PID-working");
-                sim_muscles[muscle]->cmd = sim_pids[muscle].calculate(period.toSec(), pid_values[muscle], sim_muscles[muscle]->feedback[feedback_type]);
-                ROS_INFO("CMD: %f", sim_muscles[muscle]->cmd);
-            } 
         sim_muscles[muscle]->Update(time, period);
     }
 }
@@ -627,13 +620,13 @@ void ModelController::publishID(){
 void ModelController::pidControl( const roboy_simulation::PIDControl::ConstPtr &msg){
     // only react to messages for me
       if(msg->roboyID == roboyID) {
-        pid_control = true;
         // update pid setvalues
         if(msg->value.size() == sim_muscles.size()) {
             for (uint i = 0; i < sim_muscles.size(); i++) {
-                pid_values[i] = msg->value[i];
+                sim_muscles[i]->pid_control = true;
+                sim_muscles[i]->feedback_type = msg->type;
+                sim_muscles[i]->cmd = msg->value[i];
             }
-            feedback_type = msg->type;
         }
     }
 }
@@ -642,10 +635,11 @@ void ModelController::motorControl(const roboy_simulation::MotorControl::ConstPt
     // only react to messages for me
       if(msg->roboyID == roboyID) {
         // switch to manual control
-        pid_control = false;
+
         // update commanded motor voltages
         if(msg->voltage.size() == sim_muscles.size()) {
             for (uint i = 0; i < sim_muscles.size(); i++) {
+                sim_muscles[i]->pid_control = false;
                 sim_muscles[i]->cmd = msg->voltage[i];
             }
         }

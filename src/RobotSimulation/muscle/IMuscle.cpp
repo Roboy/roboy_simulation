@@ -39,9 +39,13 @@ namespace roboy_simulation {
     }
 
     void IMuscle::Update(ros::Time &time, ros::Duration &period) {
-        ROS_INFO("%f", cmd);
-        actuator.motor.voltage = cmd * 24;//simulated PWM 
-
+        
+        if( pid_control ){
+            actuator.motor.voltage = 24 * musclePID.calculate( period.toSec(), cmd, feedback[feedback_type] );
+        }else{
+             actuator.motor.voltage = cmd * 24;//simulated PWM 
+        }        
+       
         for (int i = 0; i < viaPoints.size(); i++) {
             // absolute position + relative position=actual position of each via point
             viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +

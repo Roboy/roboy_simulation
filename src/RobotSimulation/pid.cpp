@@ -42,7 +42,7 @@ PID::~PID()
 /**
  * Implementation
  */
-PIDImpl::PIDImpl( double max, double min, double Kp, double Kd, double Ki ) :
+PIDImpl::PIDImpl( double max, double min, double Kp, double Ki, double Kd ) :
     _max(max),
     _min(min),
     _Kp(Kp),
@@ -58,22 +58,19 @@ double PIDImpl::calculate( double dt,double setpoint, double pv )
 {
     // Calculate error
     double error = setpoint - pv;
-
     // Proportional term
     double Pout = _Kp * error;
-
     // Integral term
     _integral += error * dt;
     double Iout = _Ki * _integral;
-
     // Derivative term
-    if(dt != 0.0)return 0;
+    if(dt == 0.0)return 0;
     double derivative = (error - _pre_error) / dt;
     double Dout = _Kd * derivative;
 
     // Calculate total output
+    
     double output = Pout + Iout + Dout;
-
     // Restrict to max/min
     if( output > _max )
         output = _max;
@@ -83,8 +80,7 @@ double PIDImpl::calculate( double dt,double setpoint, double pv )
     // Save error to previous error
     _pre_error = error;
 
-    ROS_INFO("output: %f", output);
-    return output;
+    return output/_max;
 }
 
 PIDImpl::~PIDImpl()

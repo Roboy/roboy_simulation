@@ -38,6 +38,7 @@
 #include <memory>
 
 #include <cmath>
+#include "roboy_simulation/RobotSimulation/pid.hpp"
 
 enum MUSCLE_TYPE{
     EXTENSOR,
@@ -77,7 +78,9 @@ namespace roboy_simulation {
 		string name;
 		vector<std::shared_ptr<IViaPoints>> viaPoints;
 		double cmd = 0;
-		double feedback[3] = {0.0, 0.0, 0.0};
+		bool pid_control = false;
+		int feedback_type = 0;
+		
 		math::Vector3 momentArm;
         physics::JointPtr spanningJoint;
 	private:
@@ -109,6 +112,8 @@ namespace roboy_simulation {
 		double sim_angVel;
         bool firstUpdate;
 		double sinParm = 0;
+		double feedback[3] = {0.0, 0.0, 0.0};
+		PID musclePID = PID( 24.0, -24.0, 2.0, 0.05, 0.5);
 
 		void setupTopics();
 		void publishTopics();
