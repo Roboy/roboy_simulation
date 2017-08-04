@@ -1,21 +1,21 @@
-#include "roboy_simulation/ForceJointPlugin.hpp"
+#include "roboy_simulation/BeRoboyPlugin.hpp"
 #include <math.h>
 
 using namespace std;
 using namespace gazebo;
 
-GZ_REGISTER_MODEL_PLUGIN(ForceJointPlugin)
+GZ_REGISTER_MODEL_PLUGIN(BeRoboyPlugin)
 
-ForceJointPlugin::ForceJointPlugin() : ModelPlugin() {}
+BeRoboyPlugin::BeRoboyPlugin() : ModelPlugin() {}
 
-ForceJointPlugin::~ForceJointPlugin(){}
+BeRoboyPlugin::~BeRoboyPlugin(){}
 
-void ForceJointPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
+void BeRoboyPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 {
     // get the model
     model = _parent;
     // bind the gazebo update function to OnUpdate
-    updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&ForceJointPlugin::OnUpdate, this, _1));
+    updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&BeRoboyPlugin::OnUpdate, this, _1));
     // get all joints and the initial pose
     physics::Joint_V jointVector = model->GetJoints();
     initPose = model->GetWorldPose();
@@ -25,17 +25,18 @@ void ForceJointPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "PaBiRoboy");
+        ros::init(argc, argv, "BeRoboy");
     }
 
     // Create ros node
-    nh = ros::NodeHandlePtr(new ros::NodeHandle("roboy"));
+    nh = ros::NodeHandlePtr(new ros::NodeHandle("BeRoboy"));
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    jointCommand_sub = nh->subscribe("/roboy/middleware/JointCommand", 1, &ForceJointPlugin::JointCommand, this);
+    jointCommand_sub = nh->subscribe("/roboy/middleware/JointCommand", 1, &BeRoboyPlugin::JointCommand, this);
+    setPosition_sub = nh->subscribe("/roboy/middleware/Position", 1, &BeRoboyPlugin::SetPosition, this);
     pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/simulation/"+ _parent->GetName() +"_pose", 1);
-    hip_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensor_location", 1, &ForceJointPlugin::DarkRoomSensor, this);
+    hip_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensor_location", 1, &BeRoboyPlugin::DarkRoomSensor, this);
     for(auto joint = jointVector.begin(); joint != jointVector.end(); joint++)
     {
         // Test if joint type is revolute
@@ -52,7 +53,7 @@ void ForceJointPlugin::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     }
 }
 
-void ForceJointPlugin::publishPose()
+void BeRoboyPlugin::publishPose()
 {
     roboy_communication_middleware::Pose msg;
     for(auto link:model->GetLinks()){
@@ -70,14 +71,19 @@ void ForceJointPlugin::publishPose()
     pose_pub.publish(msg);
 }
 
-void ForceJointPlugin::JointCommand(const roboy_communication_middleware::JointCommandConstPtr &msg){
+void BeRoboyPlugin::JointCommand(const roboy_communication_middleware::JointCommandConstPtr &msg){
     for(uint i=0;i<msg->link_name.size();i++){
         jointAngles[msg->link_name[i]] = msg->angle[i];
     }
-
 }
 
-void ForceJointPlugin::DarkRoomSensor(const roboy_communication_middleware::DarkRoomSensorConstPtr &msg)
+void BeRoboyPlugin::SetPosition(const roboy_communication_middleware::PositionConstPtr &msg){
+	math::Vector3 pos(msg->x, msg->y, msg->z);
+    	gazebo::math::Pose p(pos, initPose.rot);
+	initPose = p;
+}
+
+void BeRoboyPlugin::DarkRoomSensor(const roboy_communication_middleware::DarkRoomSensorConstPtr &msg)
 {
     int hipIDPos = -1;
     for(int i = 0; i < msg->ids.size(); i++)
@@ -98,7 +104,7 @@ void ForceJointPlugin::DarkRoomSensor(const roboy_communication_middleware::Dark
     initPose = math::Pose(math::Pose(modelPos, modelRot));
 }
 
-void ForceJointPlugin::OnUpdate(const common::UpdateInfo &_info)
+void BeRoboyPlugin::OnUpdate(const common::UpdateInfo &_info)
 {
     // make the model stationary
     model->SetWorldPose(initPose);
