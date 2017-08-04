@@ -93,8 +93,13 @@ target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${B
 add_library(ForceJointPlugin SHARED src/ForceJointPlugin.cpp)
 target_link_libraries(ForceJointPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
+<<<<<<< HEAD
 add_library(BeRoboyPlugin SHARED src/BeRoboyPlugin.cpp)
 target_link_libraries(BeRoboyPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+=======
+add_library(ForceLinkPlugin SHARED src/ForceLinkPlugin.cpp)
+target_link_libraries(ForceLinkPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+>>>>>>> 90fe0fa3985e03b00b7a52324b78d8432c32cc94
 
 add_executable(roboySim src/main.cpp src/simulationControl.cpp)
 add_dependencies(roboySim roboy_communication_middleware_gencpp roboy_communication_simulation_gencpp)
