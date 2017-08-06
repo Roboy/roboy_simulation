@@ -80,7 +80,7 @@ double PIDImpl::calculate( double dt,double setpoint, double pv )
     // Save error to previous error
     _pre_error = error;
 
-    return output/_max;
+    return output;
 }
 
 PIDImpl::~PIDImpl()

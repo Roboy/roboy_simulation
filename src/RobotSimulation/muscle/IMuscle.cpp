@@ -41,7 +41,7 @@ namespace roboy_simulation {
     void IMuscle::Update(ros::Time &time, ros::Duration &period) {
         
         if( pid_control ){
-            actuator.motor.voltage = 24 * musclePID.calculate( period.toSec(), cmd, feedback[feedback_type] );
+            actuator.motor.voltage = musclePID.calculate( period.toSec(), cmd, feedback[feedback_type] );
         }else{
              actuator.motor.voltage = cmd * 24;//simulated PWM 
         }        
@@ -133,7 +133,7 @@ namespace roboy_simulation {
         // feedback for PID-controller
         feedback[0] = muscleForce;
         feedback[1] = actuator.gear.position;
-        feedback[2] = 0;
+        feedback[2] = see.deltaX;
 
         publishTopics();
 
@@ -168,7 +168,7 @@ namespace roboy_simulation {
         msg.data = muscleForce;
         actuatorForce_pub.publish(msg);
 
-        msg.data = see.see.force;
+        msg.data = see.deltaX;
         seeForce_pub.publish(msg);
     
         msg.data = actuator.motor.current;

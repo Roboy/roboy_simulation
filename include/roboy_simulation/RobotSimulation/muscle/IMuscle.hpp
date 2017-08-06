@@ -113,7 +113,7 @@ namespace roboy_simulation {
         bool firstUpdate;
 		double sinParm = 0;
 		double feedback[3] = {0.0, 0.0, 0.0};
-		PID musclePID = PID( 24.0, -24.0, 2.0, 0.05, 0.5);
+		PID musclePID = PID( 24.0, -24.0, 1500, 10, 100);
 
 		void setupTopics();
 		void publishTopics();
