@@ -68,7 +68,7 @@ void ModelViz::visualization_control(const roboy_simulation::VisualizationContro
            !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors ||
            !visualizeIMUs || !visualizeCollisions) {
             visualization_msgs::Marker marker;
-            marker.header.frame_id = "world";
+            marker.header.frame_id = "map";
             marker.id = message_counter++;
             marker.action = visualization_msgs::Marker::DELETEALL;
             marker_visualization_pub.publish(marker);
@@ -80,7 +80,7 @@ void ModelViz::visualization_control(const roboy_simulation::VisualizationContro
 void ModelViz::publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
 //    static bool add = true;
     visualization_msgs::Marker line_strip;
-    line_strip.header.frame_id = "world";
+    line_strip.header.frame_id = "map";
     line_strip.header.stamp = ros::Time::now();
     char tendonnamespace[20];
     sprintf(tendonnamespace, "tendon_%d", ID);
@@ -120,7 +120,7 @@ void ModelViz::publishCOM(math::Vector3 *center_of_mass) {
     visualization_msgs::Marker sphere;
     visualization_msgs::Marker arrow;
 
-    sphere.header.frame_id = "world";
+    sphere.header.frame_id = "map";
     char comnamespace[20];
     sprintf(comnamespace, "COM_%d", ID);
     sphere.ns = comnamespace;
@@ -156,7 +156,7 @@ void ModelViz::publishCOM(math::Vector3 *center_of_mass) {
     end_point.y = start_point.y + center_of_mass[VELOCITY].y * 0.02;
     end_point.z = start_point.z + center_of_mass[VELOCITY].z * 0.02;
 
-    arrow.header.frame_id = "world";
+    arrow.header.frame_id = "map";
     arrow.ns = comnamespace;
     arrow.type = visualization_msgs::Marker::ARROW;
 
@@ -183,7 +183,7 @@ void ModelViz::publishCOM(math::Vector3 *center_of_mass) {
 void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
 //    static bool add = true;
     visualization_msgs::Marker arrow;
-    arrow.header.frame_id = "world";
+    arrow.header.frame_id = "map";
     char forcenamespace[20];
     sprintf(forcenamespace, "force_%d", ID);
     arrow.ns = forcenamespace;
@@ -242,7 +242,7 @@ void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>>
 void ModelViz::publishMomentArm(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
 //    static bool add = true;
     visualization_msgs::Marker arrow;
-    arrow.header.frame_id = "world";
+    arrow.header.frame_id = "map";
     char momentarmnamespace[20];
     sprintf(momentarmnamespace, "momentarm_%d", ID);
     arrow.ns = momentarmnamespace;
@@ -281,7 +281,7 @@ void ModelViz::publishMomentArm(vector<boost::shared_ptr<roboy_simulation::IMusc
 
 void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr parent_link, bool child_link){
     visualization_msgs::Marker mesh;
-    mesh.header.frame_id = "world";
+    mesh.header.frame_id = "map";
     char modelnamespace[20];
     sprintf(modelnamespace, "model_%d", ID);
     mesh.ns = modelnamespace;
@@ -365,7 +365,7 @@ void ModelViz::publishStateMachineParameters(math::Vector3 *center_of_mass,
                                                       math::Vector3 *foot_sole_global,
                                                       CoordSys hip_CS, ControllerParameters &params){
     visualization_msgs::Marker arrow;
-    arrow.header.frame_id = "world";
+    arrow.header.frame_id = "map";
     char momentarmnamespace[20];
     sprintf(momentarmnamespace, "statemachineparams_%d", ID);
     arrow.ns = momentarmnamespace;
@@ -380,7 +380,7 @@ void ModelViz::publishStateMachineParameters(math::Vector3 *center_of_mass,
     arrow.action = visualization_msgs::Marker::ADD;
 
     visualization_msgs::Marker text;
-    text.header.frame_id = "world";
+    text.header.frame_id = "map";
     text.ns = momentarmnamespace;
     text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     text.color.r = 1.0;
@@ -525,7 +525,7 @@ void ModelViz::publishCoordinateSystems(physics::LinkPtr parent_link, ros::Time 
     tf0.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
     tf0.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
     if(!child_link) { // parent_link is top link and connected to world frame
-        tf_broadcaster.sendTransform(tf::StampedTransform(tf0, time, "world", parent_link->GetName()));
+        tf_broadcaster.sendTransform(tf::StampedTransform(tf0, time, "map", parent_link->GetName()));
     }
     physics::Link_V child_links = parent_link->GetChildJointsLinks();
     if (child_links.empty()) {

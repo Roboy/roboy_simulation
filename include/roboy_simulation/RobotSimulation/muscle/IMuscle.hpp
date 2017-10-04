@@ -89,7 +89,7 @@ namespace roboy_simulation {
 		ros::Publisher seeForce_pub;
 		ros::Publisher motorCurrent_pub;
 		ros::Publisher spindleAngVel_pub;
-		ros::Publisher actualLength_pub;
+		ros::Publisher totalLength_pub;
 		ros::Publisher tendonLength_pub;
         int roboyID;
 		IActuator::state_type x;

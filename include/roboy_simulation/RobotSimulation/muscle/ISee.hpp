@@ -43,7 +43,10 @@ namespace roboy_simulation
 		double length_1 = sqrt( c1*c1 + c4*c4 ), length_2 = sqrt( c2*c2 + (c3+c4)*(c3+c4) ); //m
 		// length_c* are constand tendonlengths inside the motor
 		double length_c1 = 0.04, length_c2 = 0.013; //m
-
+		// Tendon stiffness (this is a random high number. A real number still has to be set) 
+		double tendonStiffness = 1e6; // N/m 
+		double tendonForce = 0; 
+		
        public:
 		//deltaX is the displacement of the spring inside the motor
 		double deltaX = 0.0; //m

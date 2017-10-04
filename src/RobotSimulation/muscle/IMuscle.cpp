@@ -89,9 +89,9 @@ namespace roboy_simulation {
 
         // x[1] will be changed to the actual angvel of the motor. this has to  be done to take into account the inertia of the model in the simulation.
         // this is done by checking how much the tendon length has actually changed and devide by the period time to get the angvel.
-        double deltaMuscleLength = prevMuscleLength - muscleLength;
-        sim_angVel = deltaMuscleLength / ( actuator.spindle.radius * period.toSec() );
-        x[1] = sim_angVel;
+        //double deltaMuscleLength = prevMuscleLength - muscleLength;
+        //sim_angVel = deltaMuscleLength / ( actuator.spindle.radius * period.toSec() );
+        //x[1] = sim_angVel;
 
                 // calculate the approximation of gear's efficiency
         actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
@@ -109,7 +109,7 @@ namespace roboy_simulation {
             dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-        }, x, time.toSec(), (period.toSec()/2 /* devide by 1000 to obtain plausible results. Why needs further investigation*/) );
+        }, x, time.toSec(), (period.toSec()/2 /* devide by any number to obtain plausible results. Why needs further investigation*/) );
 
         //applySpindleAngVel( x[0], x[1] );
         //applyMotorCurrent( x[0], x[1] );
@@ -119,6 +119,10 @@ namespace roboy_simulation {
         // calculate resulting actuatorforce
         //muscleForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
         //                                            actuator.spindle.radius, sim_angVel);
+
+        //calculate elastic force again after actuation. without the second update the motor will be a step ahead of the simulation. the spring is the comunication of force between robot and motor.
+        see.ElasticElementModel( tendonLength, muscleLength );
+        see.applyTendonForce( muscleForce, actuator.elasticForce );
 
         //ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
         //                  actuator.spindle.angVel, muscleForce);
@@ -155,8 +159,8 @@ namespace roboy_simulation {
         motorCurrent_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
         snprintf(topic, 100, "/roboy/motor/spindleAngVel");
         spindleAngVel_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
-        snprintf(topic, 100, "/roboy/motor/actualLength");
-        actualLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
+        snprintf(topic, 100, "/roboy/motor/totalLength");
+        totalLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
         snprintf(topic, 100, "/roboy/motor/tendonLength");
         tendonLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
     }
@@ -168,17 +172,17 @@ namespace roboy_simulation {
         msg.data = muscleForce;
         actuatorForce_pub.publish(msg);
 
-        msg.data = see.deltaX;
+        msg.data = (see.deltaX >= 0) ? (see.deltaX * 30680.0) : 0;
         seeForce_pub.publish(msg);
     
         msg.data = actuator.motor.current;
         motorCurrent_pub.publish(msg);
 
-        msg.data = sim_angVel;// actuator.spindle.angVel;
+        msg.data = actuator.spindle.angVel;// sim_angVel;
         spindleAngVel_pub.publish(msg);
                 
         msg.data = (muscleLength + see.internalLength ) * 100;
-        actualLength_pub.publish(msg);
+        totalLength_pub.publish(msg);
 
         msg.data = tendonLength * 100;
         tendonLength_pub.publish(msg);
