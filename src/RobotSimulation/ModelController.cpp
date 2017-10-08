@@ -3,12 +3,12 @@
 int ModelController::roboyID_generator = 0;
 
 ModelController::ModelController() {
-    if (!ros::isInitialized()) {
+    /*if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
         ros::init(argc, argv, "ModelController",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
-    }
+    }*/
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);

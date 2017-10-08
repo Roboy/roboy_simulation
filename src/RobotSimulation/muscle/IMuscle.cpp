@@ -85,8 +85,6 @@ namespace roboy_simulation {
         see.ElasticElementModel( tendonLength, muscleLength );
         see.applyTendonForce( muscleForce, actuator.elasticForce );
 
-        calculateTendonForceProgression();
-
         // x[1] will be changed to the actual angvel of the motor. this has to  be done to take into account the inertia of the model in the simulation.
         // this is done by checking how much the tendon length has actually changed and devide by the period time to get the angvel.
         //double deltaMuscleLength = prevMuscleLength - muscleLength;
@@ -109,7 +107,7 @@ namespace roboy_simulation {
             dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-        }, x, time.toSec(), (period.toSec()/2 /* devide by any number to obtain plausible results. Why needs further investigation*/) );
+        }, x, time.toSec(), (period.toSec()/2 /* devide by any number to obtain results. Why needs further investigation*/) );
 
         //applySpindleAngVel( x[0], x[1] );
         //applyMotorCurrent( x[0], x[1] );
@@ -124,6 +122,8 @@ namespace roboy_simulation {
         see.ElasticElementModel( tendonLength, muscleLength );
         see.applyTendonForce( muscleForce, actuator.elasticForce );
 
+
+        calculateTendonForceProgression();
         //ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
         //                  actuator.spindle.angVel, muscleForce);
 

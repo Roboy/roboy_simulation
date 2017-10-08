@@ -56,20 +56,29 @@ using namespace roboy_simulation;
 	void ISee::ElasticElementModel( const double &tendonLength, const double &muscleLength )
     {
 		//this calculation of the internal length is based on the real myoMuscle geometry
-		double deltaLength = ( muscleLength+internalLength - tendonLength );
+		double deltaLength = ( tendonLength - (muscleLength+internalLength) );
 
-		deltaX = c4 - ( (internalLength - deltaLength - length_c1 - length_c2 - c3/std::cos(alpha_2)) / (1/std::cos(alpha_1) + 1/std::cos(alpha_2)) );
+		//update internes length
+		internalLength += deltaLength;
+		
+		//update spring displacement
+		deltaX = c4 - ( (internalLength - length_c1 - length_c2 - c3/std::cos(alpha_2)) / (1/std::cos(alpha_1) + 1/std::cos(alpha_2)) );
+
+		//check for physical limits.
 		if(deltaX > 0.02) { deltaX = 0.02; }
 		if(deltaX < 0){ deltaX = 0; }
+		
+		//update geometry angles
+		alpha_1 = std::atan( c1 / (c4-deltaX) );
+		alpha_2 = std::atan( c2 / (c3+c4-deltaX) );  
 		
 		length_1 = sqrt( c1*c1 + (c4-deltaX)*(c4-deltaX) );
 		length_2 = sqrt( c2*c2 + (c3+c4-deltaX)*(c3+c4-deltaX) );
 
-		alpha_1 = std::atan( c1 / (c4-deltaX) );
-		alpha_2 = std::atan( c2 / (c3+c4-deltaX) );
+		//actual internal length after limit check
+		internalLength = c1 + c2 + length_1 + length_2;
 
-		internalLength = length_c1 + length_1 + length_2 + length_c2;  
-
+		// check wether SEE absorbed deltaLength completely 
 		// deltaLength will be zero at this point until the spring reaches its limit. 
 		deltaLength = ( muscleLength+internalLength - tendonLength ); 
 		if(deltaX >= 0.02) 

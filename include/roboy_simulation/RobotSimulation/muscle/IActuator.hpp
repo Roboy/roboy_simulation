@@ -8,7 +8,7 @@ namespace gazebo{
     struct Motor {
         double current = 0.0; // [A]
         double torqueConst = 14.2e-03; // [Nm/A]
-        double resistance = 0.797; // [Ohm]
+        double resistance = 0.797 + 0.12; // [Ohm] +0.12 for PWM simulation
         double inductance = 0.118e-03; // [H]
         double voltage = 0.0; // [V]
         double BEMFConst = 14.2e-03; // [V/s]

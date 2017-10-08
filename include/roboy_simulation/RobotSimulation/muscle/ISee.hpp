@@ -33,7 +33,7 @@ namespace roboy_simulation
 		
     class ISee {
 
-		// c1-c3 are constand values. documentation can be found at ____________________
+		// c1-c3 are constand values, c4 is x0. documentation can be found at ____________________
 		double c1 = 0.012, c2 = 0.008, c3 = 0.018, c4 = 0.039; //m
 		// the angles alpha_* describe the angle the tendons attach to the see.element
 		double alpha_1 = std::atan( c1 / c4 ), alpha_2 = std::atan( c2 /  (c3+c4) ); // radian
@@ -46,7 +46,7 @@ namespace roboy_simulation
 		// Tendon stiffness (this is a random high number. A real number still has to be set) 
 		double tendonStiffness = 1e6; // N/m 
 		double tendonForce = 0; 
-		
+
        public:
 		//deltaX is the displacement of the spring inside the motor
 		double deltaX = 0.0; //m
