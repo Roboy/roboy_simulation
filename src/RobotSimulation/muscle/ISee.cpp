@@ -76,7 +76,7 @@ using namespace roboy_simulation;
 		length_2 = sqrt( c2*c2 + (c3+c4-deltaX)*(c3+c4-deltaX) );
 
 		//actual internal length after limit check
-		internalLength = c1 + c2 + length_1 + length_2;
+		internalLength = length_c1 + length_c2 + length_1 + length_2;
 
 		// check wether SEE absorbed deltaLength completely 
 		// deltaLength will be zero at this point until the spring reaches its limit. 
@@ -102,8 +102,8 @@ using namespace roboy_simulation;
 			_muscleForce = _actuatorForce = see.force / ( std::cos(alpha_1) + std::cos(alpha_2) ) + tendonForce;
 		
 			//check for tendon rip
-		if(_muscleForce > 3000){ 
-			_muscleForce = _actuatorForce = 0;
-		}
+		//if(_muscleForce > 3000){ 
+		//	_muscleForce = _actuatorForce = 0;
+		//}
 		
 	}

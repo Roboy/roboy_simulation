@@ -39,7 +39,11 @@ namespace roboy_simulation {
     }
 
     void IMuscle::Update(ros::Time &time, ros::Duration &period) {
-        
+        if(time.toSec() >= 10.1){
+            pid_control = true;
+            cmd = 0.01;
+            feedback_type = 2;
+        }
         if( pid_control ){
             actuator.motor.voltage = musclePID.calculate( period.toSec(), cmd, feedback[feedback_type] );
         }else{
@@ -107,7 +111,7 @@ namespace roboy_simulation {
             dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-        }, x, time.toSec(), (period.toSec()/2 /* devide by any number to obtain results. Why needs further investigation*/) );
+        }, x, time.toSec(), (period.toSec()/4 /* devide by any number to obtain results. Why needs further investigation*/) );
 
         //applySpindleAngVel( x[0], x[1] );
         //applyMotorCurrent( x[0], x[1] );
