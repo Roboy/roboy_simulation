@@ -85,12 +85,14 @@ namespace roboy_simulation {
         physics::JointPtr spanningJoint;
 	private:
         ros::NodeHandlePtr nh;
-        ros::Publisher actuatorForce_pub;
+        ros::Publisher muscleForce_pub;
 		ros::Publisher seeForce_pub;
 		ros::Publisher motorCurrent_pub;
 		ros::Publisher spindleAngVel_pub;
 		ros::Publisher totalLength_pub;
 		ros::Publisher tendonLength_pub;
+
+		
         int roboyID;
 		IActuator::state_type x;
 		ISee see;
@@ -113,7 +115,7 @@ namespace roboy_simulation {
         bool firstUpdate;
 		double sinParm = 0;
 		double feedback[3] = {0.0, 0.0, 0.0};
-		PID musclePID = PID( 24.0, -24.0, 1500, 10, 100);
+		PID musclePID = PID( 24.0, -24.0, 150, 10, 100);
 
 		void setupTopics();
 		void publishTopics();
