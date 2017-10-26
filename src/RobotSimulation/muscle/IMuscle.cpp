@@ -94,14 +94,8 @@ namespace roboy_simulation {
         see.ElasticElementModel( tendonLength, muscleLength );
         see.applyTendonForce( muscleForce, actuator.elasticForce );
 
-        // x[1] will be changed to the actual angvel of the motor. this has to  be done to take into account the inertia of the model in the simulation.
-        // this is done by checking how much the tendon length has actually changed and devide by the period time to get the angvel.
-        //double deltaMuscleLength = prevMuscleLength - muscleLength;
-        //sim_angVel = deltaMuscleLength / ( actuator.spindle.radius * period.toSec() );
-        //x[1] = sim_angVel;
 
-
-    for(int i=0; i<4; i++){
+    for(int i=0; i<8; i++){
         // calculate the approximation of gear's efficiency
         actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
 
@@ -118,17 +112,11 @@ namespace roboy_simulation {
             dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
                       actuator.spindle.radius * actuator.elasticForce /
                       (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-        }, x, time.toSec() + i*period.toSec()/4, period.toSec()/4 /* devide by any number to obtain results. Why needs further investigation*/ );
+        }, x, time.toSec() + i*period.toSec()/8, period.toSec()/8 /* devide by any number to obtain results. Why needs further investigation*/ );
     }
-        //applySpindleAngVel( x[0], x[1] );
-        //applyMotorCurrent( x[0], x[1] );
+
         actuator.motor.current = x[0];
         actuator.spindle.angVel = x[1];
-    
-
-        // calculate resulting actuatorforce
-        //muscleForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
-        //                                            actuator.spindle.radius, sim_angVel);
 
          // update gearposition
          actuator.gear.position += actuator.spindle.angVel * period.toSec();
@@ -139,24 +127,21 @@ namespace roboy_simulation {
         see.ElasticElementModel( tendonLength, muscleLength );
         see.applyTendonForce( muscleForce, actuator.elasticForce );
 
-
         calculateTendonForceProgression();
-        //ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
-        //                  actuator.spindle.angVel, muscleForce);
 
-        ros::spinOnce();
-
-       
-        
+        ros::spinOnce();     
+      
         // feedback for PID-controller
         feedback[0] = muscleForce;
         feedback[1] = actuator.gear.position;
         feedback[2] = see.deltaX;
 
         publishTopics();
-
-        //    ROS_INFO("electric current: %.5f, angVel: %.5f, actuator.force %.5f, see.force: %f", actuator.motor.current,
-        //                   actuator.spindle.angVel, actuatorForce, see.see.force);
+        
+        //    ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
+        //                  actuator.spindle.angVel, muscleForce);
+        //    ROS_INFO("electric current: %.5f, angVel: %.5f, muscleForce %.5f, springDis: %f", actuator.motor.current,
+        //                   actuator.spindle.angVel, muscleForce, see.deltaX);
         //    ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength ); 
     
     }
@@ -187,13 +172,14 @@ namespace roboy_simulation {
         msg.data = muscleForce;
         muscleForce_pub.publish(msg);
 
+        // publisch spring displacemment or spring force:
         msg.data =  see.deltaX; //(see.deltaX >= 0) ? (see.deltaX * 30680.0) : 0;
         seeForce_pub.publish(msg);
     
         msg.data = actuator.motor.current;
         motorCurrent_pub.publish(msg);
 
-        msg.data = actuator.spindle.angVel;// sim_angVel;
+        msg.data = actuator.spindle.angVel;
         spindleAngVel_pub.publish(msg);
                 
         msg.data = tendonLength * 1;
@@ -251,29 +237,6 @@ namespace roboy_simulation {
             //CalculateForce differs for each wraping-type
             viaPoints[i]->CalculateForce();
         }
-    }
-    //////////////////////////////////////////////////////
-    // adds physical restrictions to motor current
-    void IMuscle::applyMotorCurrent( double &motorCurrent, const double &spindleAngVel ){
-        //Motor has a max current it can handle while spinning
-       // if( spindleAngVel > 0 && motorCurrent > actuator.motor.continuousCurrent ){
-       //     actuator.motor.current = motorCurrent = actuator.motor.continuousCurrent;
-       // }else{
-                actuator.motor.current = motorCurrent;
-       // }
-    }
-    //////////////////////////////////////////////////////
-    // adds physical restrictions to motor anglVel 
-	void IMuscle::applySpindleAngVel( const double &motorCurrent, double &spindleAngVel ){
-        //der mottor kann sich nur solange drehen wie sich die kraft gegen die dreht unter der stallforce liegt. Da der moter über eine feder zeiht 
-        //kann er die doppelte kraft über den so entstehenden seilzugmechanismus an der feder aufbringen.   
-            if( spindleAngVel > 0 && ( actuatorForce >= actuator.motor.continuousTorque / actuator.spindle.radius) ){
-                actuator.spindle.angVel = spindleAngVel = 0;
-            }else if(spindleAngVel < 0 && motorCurrent > 0 && actuatorForce < actuator.motor.stallTorque / actuator.spindle.radius ){
-                actuator.spindle.angVel = spindleAngVel = 0;
-            }else{
-                actuator.spindle.angVel = spindleAngVel;//  * (1 - ( actuatorForce / (actuator.motor.continuousTorque * actuator.gear.ratio / actuator.spindle.radius)) );
-            }
     }
 }
 // make it a plugin loadable via pluginlib

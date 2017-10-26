@@ -57,22 +57,6 @@ namespace roboy_simulation
 
         ISee();
 
-		////////////////////////////////////////
-		/// \brief Calculate elastic force of the series elastic element
-		/// \param[in] _length0 Resting length of the SEE
-		/// \param[in] _length Current length of the SEE
-		/// \param[in] _stiffness Deafault values for stiffness of the SEE
-		/// \return Elastic force in N
-		double ElasticElementModel(const double _length0, const double _length,
-								   double _stiffness, const double _speed,
-								   const double _spindleRadius, const double _time);
-
-        ////////////////////////////////////////
-	    /// \brief Calculate elastic force of the series elastic element
-	    /// \param[in] see the series elastic element
-	    /// \param[in] _length Current length of the spring
-	    void ElasticElementModel(SEE &see, const double &length);
-
 		///////////////////////////////////////
 		/// \brief Calculate elastic force of the series elastic element
 		/// \param[in] The tandonLength represents the length of the entire tendon.from the motor to the last viapoint.
@@ -84,24 +68,6 @@ namespace roboy_simulation
 		/// \parm[in] the force going out the muscle
 		/// \parm[in] the force going toward the motor
 		void applyTendonForce( double &_muscleForce , double &_actuatorForce );
-
-		//static void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);
-/*
-	private:
-		////////////////////////////////////////
-		/// \brief Calculate the dot product between two vectors
-		/// \param[in] _v1 vector 1 coordinates
-		/// \param[in] _v2 vector 2 coordinates
-		/// \return Dot product
-		double DotProduct(const math::Vector3 &_v1, const math::Vector3 &_v2);
-
-		////////////////////////////////////////
-		/// \brief Calculate the angle between two vectors
-		/// \param[in] _v1 vector 1 coordinates
-		/// \param[in] _v2 vector 2 coordinates
-		/// \return Angle between two vectors in radians
-		double Angle(const math::Vector3 &_v1, const math::Vector3 &_v2);
-*/
 	};
 }
 

@@ -2,56 +2,8 @@
 #include <ros/ros.h>
 using namespace roboy_simulation;
 
-    ISee::ISee()
-    {
-
-    };
-
-	double ISee::ElasticElementModel(const double _length0, const double _length, double _stiffness,
-										const double _speed, const double _spindleRadius, const double _time) {
-		// double realTimeUpdateRate=1000;
-		double windingLength = _spindleRadius * _speed * _time;
-		double displacement;
-		displacement = windingLength + _length - _length0;
-
-		// gzdbg << "displacement: " 
-		// 	  << displacement
-		// 	  << "\n"
-		//          << "windingLength: "
-		// 	  << windingLength
-		// 	  << "\n";
-
-		double elasticForce;
-
-		if (displacement >= 0) {
-			elasticForce = displacement * _stiffness;
-		}
-		else {
-			elasticForce = 0;
-		}
-
-		//return _stiffness[0] + (displacement*_stiffness[1]) + (displacement*displacement*_stiffness[2]) +
-		//			(displacement*displacement*displacement*_stiffness[3]) ;
-		//return displacement*_stiffness[0];
-		return elasticForce;
-
-	}
-
-	void ISee::ElasticElementModel(SEE &see, const double &length)
-    {
-		if( see.expansion > -0.02 ){
-        see.expansion = length - see.length0;
-		}
-		//ROS_INFO("expansion: %f", see.expansion);
-        if (see.expansion >= 0)
-        {
-            see.force=see.expansion*see.stiffness;
-        }
-        else
-        {
-            see.force=0;
-        }
-    }
+    ISee::ISee(){
+	};
 
 	void ISee::ElasticElementModel( const double &tendonLength, const double &muscleLength )
     {
@@ -101,7 +53,8 @@ using namespace roboy_simulation;
 		// Only their horizontal and vertical forces will differ due to the different angles toward the spring
 			_muscleForce = _actuatorForce = see.force / ( std::cos(alpha_1) + std::cos(alpha_2) ) + tendonForce;
 		
-			//check for tendon rip
+		
+		//check for tendon rip
 		//if(_muscleForce > 3000){ 
 		//	_muscleForce = _actuatorForce = 0;
 		//}
