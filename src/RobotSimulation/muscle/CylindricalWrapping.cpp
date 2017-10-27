@@ -133,7 +133,7 @@ void CylindricalWrapping::CalculateForce()
         prevForce = A/A.GetLength() * fa;
         //link->AddForceAtRelativePosition(Fa, this->prevForcePoint);
     }
-    else if (nextPoint)
+    if (nextPoint)
     {
         math::Vector3 B = nextPoint->prevForcePoint - this->nextForcePoint;
         nextForce = B/B.GetLength() * fb;
