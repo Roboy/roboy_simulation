@@ -12,7 +12,6 @@ ModelController::ModelController() {
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
-    abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
     pid_control_sub = nh->subscribe("/roboy/pid_control", 100, &ModelController::pidControl, this);
     motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &ModelController::motorControl, this);
     roboyID = roboyID_generator++;
@@ -58,12 +57,6 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
     for (auto link : links) {
         string link_name = link->GetName();
         link_names.push_back(link_name);
-        acceleration_windows[link_name] = vector<math::Vector3>(ACCEL_WIN_SIZE, math::Vector3(0, 0, 0));
-    }
-
-    physics::Joint_V joints = parent_model->GetJoints();
-    for (auto joint : joints) {
-        joint_names.push_back(joint->GetName());
     }
 
     physics::PhysicsEnginePtr physics_engine = parent_model->GetWorld()->GetPhysicsEngine();
@@ -71,18 +64,11 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
     // Get the Gazebo solver type
     std::string solver_type = boost::any_cast<std::string>(physics_engine->GetParam("solver_type"));
 
-    // Give the global CFM (Constraint Force Mixing) a positive value (default 0) making the model a bit less stiff to avoid jittering
+    // Give the global CFM (Constraint Force Mixing) a positive value (default 0) making the model a bit less stiff to avoid 			jittering
     // Positive CFM allows links to overlap each other so the collisions aren't that hard
     physics_engine->SetParam("cfm", 0.00);
-    double cfm = boost::any_cast<double>(physics_engine->GetParam("cfm"));
-
-    // Get the global ERP (Error Reduction Parameter) which is similar to CFM but is about joints
-    double erp = boost::any_cast<double>(physics_engine->GetParam("erp"));
 
     ROS_INFO_STREAM("Simulation max_step_size: " << gazebo_max_step_size << " s");
-    ROS_INFO_STREAM("Solver type: " << solver_type);
-    ROS_INFO_STREAM("Global ERP: " << erp);
-    ROS_INFO_STREAM("Global CFM: " << cfm);
 
     // List all models in the world
     ROS_INFO_STREAM("List of models in the world:");
@@ -125,33 +111,7 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
 
     // Decide the plugin control period
     control_period = ros::Duration(0.1);
-    if (sdf_->HasElement("controlPeriod")) {
-        control_period = ros::Duration(sdf_->Get<double>("controlPeriod"));
-
-        ROS_INFO_STREAM("Desired controller update period: " << control_period);
-        // Check the period against the simulation period
-        if (control_period < gazebo_period) {
-            ROS_ERROR_STREAM("Desired controller update period (" << control_period
-                                                                  << " s) is faster than the gazebo simulation period ("
-                                                                  <<
-                                                                  gazebo_period << " s).");
-        } else if (control_period > gazebo_period) {
-            ROS_WARN_STREAM("Desired controller update period (" << control_period
-                                                                 << " s) is slower than the gazebo simulation period ("
-                                                                 <<
-                                                                 gazebo_period << " s).");
-        }
-    } else {
-                control_period = gazebo_period;
-            }
-
-    // Initialize the emergency stop code.
-    e_stop_active = false;
-    last_e_stop_active = false;
-    if (sdf_->HasElement("eStopTopic")) {
-        const std::string e_stop_topic = sdf_->GetElement("eStopTopic")->Get<std::string>();
-        e_stop_sub = nh->subscribe(e_stop_topic, 1, &ModelController::eStopCB, this);
-    }
+    control_period = gazebo_period;
 
     ROS_INFO("Parsing myoMuscles");
     if (!parseMyoMuscleSDF(sdf_->ToString(""), myoMuscles))
@@ -171,15 +131,13 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
                            myoMuscles[muscle].name.c_str());
             sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
             sim_muscles.back()->Init(myoMuscles[muscle]);
-            a[sim_muscles[muscle]->name] = 0.0;
+            //a[sim_muscles[muscle]->name] = 0.0;
         }
         catch (pluginlib::PluginlibException &ex) {
             //handle the class failing to load
             ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
         }
     }
-
-    hip_CS = CoordSys(new CoordinateSystem(parent_model->GetLink(link_names[0] + "")));
 
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&ModelController::Update, this));
@@ -205,9 +163,6 @@ void ModelController::Update() {
     publishTendon(&sim_muscles);
     // Parent_moddel->GetName comes from launch file
     publishModel(parent_model->GetName(), parent_model->GetLink(link_names[0] + ""), false);
-    
-
-    checkAbort();
 }
 
 void ModelController::readSim(ros::Time time, ros::Duration period) {
@@ -241,53 +196,7 @@ void ModelController::Reset() {
     // Reset timing variables to not pass negative update periods to controllers on world reset
     last_update_sim_time_ros = ros::Time();
     last_write_sim_time_ros = ros::Time();
-
-    // Reset the recorded acceleration data
-    for (auto it = acceleration_windows.begin(); it != acceleration_windows.end(); it++) {
-        it->second.clear();
-        it->second.resize(ACCEL_WIN_SIZE, math::Vector3(0.0, 0.0, 0.0));
-    }
-}
-
-bool ModelController::checkAbort(){
-    if(center_of_mass[POSITION].z<0.1*initial_center_of_mass_height.z) {
-        roboy_simulation::Abortion msg;
-        msg.roboyID = roboyID;
-        msg.reason = COMheight;
-        abort_pub.publish(msg);
-        ROS_WARN_THROTTLE(1.0,"center of mass below threshold, aborting");
-        return true;
-    }
-    if(radiansToDegrees(fabs(hip_CS->rot.GetYaw())-fabs(psi_heading)) > 45.0f) {
-        roboy_simulation::Abortion msg;
-        msg.roboyID = roboyID;
-        msg.reason = headingDeviation;
-        abort_pub.publish(msg);
-        ROS_WARN_THROTTLE(1.0,"deviation from target heading above threshold, aborting");
-        return true;
-    }
-    for(auto link_name:link_names){
-        physics::Collision_V collisions = parent_model->GetLink(link_name)->GetCollisions();
-        for(auto collision:collisions){
-            physics::LinkPtr link = collision->GetLink();
-            if(link->GetName().find("foot")!=string::npos || link->GetName().find("hip")!=string::npos)// collsions for
-                // the feed are ok or hip?!
-                continue;
-            else {
-                roboy_simulation::Abortion msg;
-                msg.roboyID = roboyID;
-                msg.reason = selfCollision;
-                abort_pub.publish(msg);
-                //ROS_WARN_THROTTLE(1.0, "self collision detected with %s, aborting", link->GetName().c_str());
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-void ModelController::eStopCB(const std_msgs::BoolConstPtr &msg) {
-    e_stop_active = msg->data;
+	//reset acceleration of links and the actuator simulation.
 }
 
 bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {
@@ -581,33 +490,6 @@ bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulati
         }
         myoMuscles.push_back(myoMuscle);
     }
-    TiXmlElement *foot_sole_left = NULL;
-    foot_sole_left = root->FirstChildElement("foot_sole_left");
-    if (foot_sole_left) {
-        float x, y, z;
-        if (sscanf(foot_sole_left->GetText(), "%lf %lf %lf", &foot_sole[LEG::LEFT].x, &foot_sole[LEG::LEFT].y,
-                   &foot_sole[LEG::LEFT].z) != 3) {
-            ROS_ERROR_STREAM_NAMED("parser", "error reading [foot_sole_left] (x y z)");
-            return false;
-        }
-    } else {
-        ROS_WARN_STREAM_NAMED("parser", "No foot_sole_left element found, using " << foot_sole[LEG::LEFT]);
-    }
-    TiXmlElement *foot_sole_right = NULL;
-    foot_sole_right = root->FirstChildElement("foot_sole_right");
-    if (foot_sole_right) {
-        float x, y, z;
-        if (sscanf(foot_sole_right->GetText(), "%lf %lf %lf", &foot_sole[LEG::RIGHT].x, &foot_sole[LEG::RIGHT].y,
-                   &foot_sole[LEG::RIGHT].z) != 3) {
-            ROS_ERROR_STREAM_NAMED("parser", "error reading [foot_sole_right] (x y z)");
-            return false;
-        }
-    } else {
-        ROS_WARN_STREAM_NAMED("parser", "No foot_sole_right element found, using " << foot_sole[LEG::RIGHT]);
-    }
-
-    ROS_INFO_STREAM("foot_soles: " << foot_sole[LEG::LEFT] << " / " << foot_sole[LEG::RIGHT]);
-
     return true;
 }
 
