@@ -1,9 +1,6 @@
 // by Bradley Snyder
 // githandle: bradley219
-#include <iostream>
-#include <cmath>
-#include "roboy_simulation/RobotSimulation/pid.hpp"
-#include <ros/ros.h>
+#include "roboy_simulation/pid.hpp"
 
 using namespace std;
 

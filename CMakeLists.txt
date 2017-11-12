@@ -21,7 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
 	tf
 	interactive_markers
 	visualization_msgs
-	common_utilities
+        common_utilities
+        roboy_communication_middleware
 )
 
 # Find includes in corresponding build directories
@@ -63,7 +64,6 @@ catkin_package(
 		rosbag
 		message_runtime
 		message_generation
-		common_utilities
 		flexrayusbinterface
 )
 
@@ -78,25 +78,26 @@ include_directories(
 #==============================================================================
 # Application
 #==============================================================================
-add_library(muscle_plugin SHARED 
-	src/RobotSimulation/ModelController.cpp
-	src/RobotSimulation/ModelViz.cpp	
-	src/RobotSimulation/pid.cpp	
-	src/RobotSimulation/muscle/IMuscle.cpp
-	src/RobotSimulation/muscle/CylindricalWrapping.cpp
-	src/RobotSimulation/muscle/IActuator.cpp
-	src/RobotSimulation/muscle/ISee.cpp
-	src/RobotSimulation/muscle/IViaPoints.cpp
-	src/RobotSimulation/muscle/MeshWrapping.cpp
-	src/RobotSimulation/muscle/SphericalWrapping.cpp
-	src/RobotSimulation/muscle/StateMachine.cpp
+add_library(myomuscle_plugin SHARED 
+	src/ModelController.cpp
+	src/ModelViz.cpp
+	src/pid.cpp
+	src/muscle/IMuscle.cpp
+	src/muscle/CylindricalWrapping.cpp
+	src/muscle/IActuator.cpp
+	src/muscle/ISee.cpp
+	src/muscle/IViaPoints.cpp
+	src/muscle/MeshWrapping.cpp
+	src/muscle/SphericalWrapping.cpp
+	src/muscle/StateMachine.cpp
 	)
-target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies( myomuscle_plugin roboy_communication_middleware_gencpp )
+target_link_libraries(myomuscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
 #==============================================================================
 # Installation
 #==============================================================================
 install(TARGETS
-        muscle_plugin
+        myomuscle_plugin
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
@@ -106,6 +107,6 @@ install(TARGETS
 
 install(FILES
         package.xml
-        muscle_plugin.xml
+        myomuscle_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

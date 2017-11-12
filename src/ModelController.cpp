@@ -1,24 +1,30 @@
-#include "roboy_simulation/RobotSimulation/ModelController.hpp"
+#include "roboy_simulation/ModelController.hpp"
 
 int ModelController::roboyID_generator = 0;
 
 ModelController::ModelController() {
-    /*if (!ros::isInitialized()) {
+    if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
         ros::init(argc, argv, "ModelController",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
-    }*/
+    }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
-    roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
-    pid_control_sub = nh->subscribe("/roboy/pid_control", 100, &ModelController::pidControl, this);
-    motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &ModelController::motorControl, this);
+    spinner.reset(new ros::AsyncSpinner(1));
+    spinner->start();
+
+    roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id", 1);
+    motorCommand_sub = nh->subscribe("/roboy/middleware/MotorCommand", 1, &ModelController::MotorCommand, this);
+    motorStatus_pub = nh->advertise<roboy_communication_middleware::MotorStatus>("/roboy/middleware/MotorStatus", 1);
     roboyID = roboyID_generator++;
     ID = roboyID;
 }
 
 ModelController::~ModelController() {
+    motor_status_publishing = false;
+    if(motor_status_publisher->joinable())
+        motor_status_publisher->join();
 }
 
 void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
@@ -128,7 +134,7 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
     for (uint muscle = 0; muscle < myoMuscles.size(); muscle++) {
         try {
             ROS_INFO("Loading Muscle Plugin for %s",
-                           myoMuscles[muscle].name.c_str());
+                     myoMuscles[muscle].name.c_str());
             sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
             sim_muscles.back()->Init(myoMuscles[muscle]);
             //a[sim_muscles[muscle]->name] = 0.0;
@@ -141,6 +147,9 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
 
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&ModelController::Update, this));
+
+    motor_status_publisher.reset(new boost::thread(&ModelController::MotorStatusPublisher,this));
+    motor_status_publisher->detach();
 
     ROS_INFO("ModelController ready");
 }
@@ -158,7 +167,7 @@ void ModelController::Update() {
     last_write_sim_time_ros = sim_time_ros;
     message_counter = 1000;
 
-    publishID(); 
+    publishID();
     publishForce(&sim_muscles);
     publishTendon(&sim_muscles);
     // Parent_moddel->GetName comes from launch file
@@ -169,10 +178,10 @@ void ModelController::readSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("read simulation");
     // update muscle plugins
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-        for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
+        for (int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++) {
             math::Pose linkPose = sim_muscles[muscle]->viaPoints[i]->link->GetWorldPose();
             sim_muscles[muscle]->viaPoints[i]->linkPosition = linkPose.pos;
-            sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;  
+            sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;
         }
         sim_muscles[muscle]->Update(time, period);
     }
@@ -182,9 +191,9 @@ void ModelController::writeSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("write simulation");
     // apply the calculated forces
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-        for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
+        for (int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++) {
             std::shared_ptr<roboy_simulation::IViaPoints> vp = sim_muscles[muscle]->viaPoints[i];
-            if(vp->prevForcePoint.IsFinite() && vp->nextForcePoint.IsFinite() ) {
+            if (vp->prevForcePoint.IsFinite() && vp->nextForcePoint.IsFinite()) {
                 vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
                 vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
             }
@@ -196,7 +205,7 @@ void ModelController::Reset() {
     // Reset timing variables to not pass negative update periods to controllers on world reset
     last_update_sim_time_ros = ros::Time();
     last_write_sim_time_ros = ros::Time();
-	//reset acceleration of links and the actuator simulation.
+    //reset acceleration of links and the actuator simulation.
 }
 
 bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {
@@ -234,21 +243,22 @@ bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulati
                             ROS_ERROR_STREAM_NAMED("parser", "error reading [via point] (x y z)");
                             return false;
                         }
-                        vp.point = math::Vector3(x,y,z);
-                        if (viaPoint_child_it->Attribute("type")){
+                        vp.point = math::Vector3(x, y, z);
+                        if (viaPoint_child_it->Attribute("type")) {
                             string type = viaPoint_child_it->Attribute("type");
                             if (type == "FIXPOINT") {
                                 vp.type = roboy_simulation::IViaPoints::FIXPOINT;
                             } else if (type == "SPHERICAL" || type == "CYLINDRICAL") {
-                                if (viaPoint_child_it->QueryDoubleAttribute("radius", &vp.radius) != TIXML_SUCCESS){
+                                if (viaPoint_child_it->QueryDoubleAttribute("radius", &vp.radius) != TIXML_SUCCESS) {
                                     ROS_ERROR_STREAM_NAMED("parser", "error reading radius");
                                     return false;
                                 }
-                                if (viaPoint_child_it->QueryIntAttribute("state", &vp.state) != TIXML_SUCCESS){
+                                if (viaPoint_child_it->QueryIntAttribute("state", &vp.state) != TIXML_SUCCESS) {
                                     ROS_ERROR_STREAM_NAMED("parser", "error reading state");
                                     return false;
                                 }
-                                if (viaPoint_child_it->QueryIntAttribute("revCounter", &vp.revCounter) != TIXML_SUCCESS){
+                                if (viaPoint_child_it->QueryIntAttribute("revCounter", &vp.revCounter) !=
+                                    TIXML_SUCCESS) {
                                     ROS_ERROR_STREAM_NAMED("parser", "error reading revCounter");
                                     return false;
                                 }
@@ -280,22 +290,24 @@ bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulati
                     continue;
                 }
             }
-            ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str() );
+            ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str());
 
             //check if wrapping surfaces are enclosed by fixpoints
-            for(int i = 0; i < myoMuscle.viaPoints.size(); i++){
-                if(i == 0 && myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
+            for (int i = 0; i < myoMuscle.viaPoints.size(); i++) {
+                if (i == 0 && myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT) {
                     ROS_ERROR_STREAM_NAMED("parser", "muscle insertion has to be a fix point");
                     return false;
                 }
-                if(i == myoMuscle.viaPoints.size()-1 && myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
+                if (i == myoMuscle.viaPoints.size() - 1 &&
+                    myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT) {
                     ROS_ERROR_STREAM_NAMED("parser", "muscle fixation has to be a fix point");
                     return false;
                 }
-                if(myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
-                    if(myoMuscle.viaPoints[i-1].type != roboy_simulation::IViaPoints::FIXPOINT
-                       || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
-                        ROS_ERROR_STREAM_NAMED("parser", "non-FIXPOINT via-points have to be enclosed by two FIXPOINT via-points");
+                if (myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT) {
+                    if (myoMuscle.viaPoints[i - 1].type != roboy_simulation::IViaPoints::FIXPOINT
+                        || myoMuscle.viaPoints[i + 1].type != roboy_simulation::IViaPoints::FIXPOINT) {
+                        ROS_ERROR_STREAM_NAMED("parser",
+                                               "non-FIXPOINT via-points have to be enclosed by two FIXPOINT via-points");
                         return false;
                     }
                 }
@@ -307,11 +319,11 @@ bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulati
                 string jointname = spans_joint_child_it->Attribute("name");
                 if (!jointname.empty()) {
                     myoMuscle.spanningJoint = parent_model->GetJoint(jointname);
-                    if(strcmp(spans_joint_child_it->GetText(),"extensor")==0)
+                    if (strcmp(spans_joint_child_it->GetText(), "extensor") == 0)
                         myoMuscle.muscle_type = EXTENSOR;
-                    else if(strcmp(spans_joint_child_it->GetText(),"flexor")==0)
+                    else if (strcmp(spans_joint_child_it->GetText(), "flexor") == 0)
                         myoMuscle.muscle_type = FLEXOR;
-                    else if(strcmp(spans_joint_child_it->GetText(),"stabilizer")==0)
+                    else if (strcmp(spans_joint_child_it->GetText(), "stabilizer") == 0)
                         myoMuscle.muscle_type = STABILIZER;
                     else
                         ROS_WARN_STREAM_NAMED("parser", "muscle type not defined for " << myoMuscle.name << "'.");
@@ -493,38 +505,40 @@ bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulati
     return true;
 }
 
-void ModelController::publishID(){
+void ModelController::publishID() {
     std_msgs::Int32 msg;
     msg.data = roboyID;
     roboyID_pub.publish(msg);
 }
 
-void ModelController::pidControl( const roboy_simulation::PIDControl::ConstPtr &msg){
+void ModelController::MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg) {
     // only react to messages for me
-      if(msg->roboyID == roboyID) {
+    if (msg->id == roboyID) {
         // update pid setvalues
-        if(msg->value.size() == sim_muscles.size()) {
-            for (uint i = 0; i < sim_muscles.size(); i++) {
-                sim_muscles[i]->pid_control = true;
-                sim_muscles[i]->feedback_type = msg->type;
-                sim_muscles[i]->cmd = msg->value[i];
+        for (uint i = 0; i < msg->motors.size(); i++) {
+            if(msg->motors[i]<sim_muscles.size()) {
+                sim_muscles[msg->motors[i]]->pid_control = true;
+                sim_muscles[msg->motors[i]]->feedback_type = 0;
+                sim_muscles[msg->motors[i]]->cmd = msg->setPoints[i];
             }
         }
     }
 }
 
-void ModelController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
-    // only react to messages for me
-      if(msg->roboyID == roboyID) {
-        // switch to manual control
-
-        // update commanded motor voltages
-        if(msg->voltage.size() == sim_muscles.size()) {
-            for (uint i = 0; i < sim_muscles.size(); i++) {
-                sim_muscles[i]->pid_control = false;
-                sim_muscles[i]->cmd = msg->voltage[i];
-            }
+void ModelController::MotorStatusPublisher(){
+    ros::Rate rate(100);
+    while(motor_status_publishing){
+        roboy_communication_middleware::MotorStatus msg;
+        for(auto const &muscle:sim_muscles){
+            msg.pwmRef.push_back(muscle->cmd);
+            msg.position.push_back(muscle->actuator.gear.position);
+            msg.velocity.push_back(muscle->actuator.spindle.angVel);
+            msg.displacement.push_back(muscle->muscleForce);
+            msg.current.push_back(muscle->actuator.motor.current);
         }
+        motorStatus_pub.publish(msg);
+        rate.sleep();
     }
 }
+
 GZ_REGISTER_MODEL_PLUGIN(ModelController)

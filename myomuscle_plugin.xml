@@ -1,8 +1,8 @@
-<library path="libmuscle_plugin">
+<library path="libmyomuscle_plugin">
   <class type="roboy_simulation::IMuscle" 
 	 base_class_type="roboy_simulation::IMuscle">
   <description>
-  	This is a tendon muscle plugin
+  	This is a myomuscle plugin
   </description>
   </class>
 </library>

@@ -25,21 +25,16 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 // muscle plugin
-#include "roboy_simulation/RobotSimulation/muscle/IMuscle.hpp"
+#include "roboy_simulation/muscle/IMuscle.hpp"
 // ros messages
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
-#include "common_utilities/Initialize.h"
-#include "common_utilities/EmergencyStop.h"
-#include "common_utilities/Record.h"
-#include "common_utilities/Steer.h"
-#include "common_utilities/Trajectory.h"
-#include "common_utilities/RoboyState.h"
 #include "roboy_simulation/MotorControl.h"
 #include "roboy_simulation/PIDControl.h"
-
-#include "roboy_simulation/RobotSimulation/ModelViz.hpp"
+#include "roboy_simulation/ModelViz.hpp"
+#include <roboy_communication_middleware/MotorCommand.h>
+#include <roboy_communication_middleware/MotorStatus.h>
 
 using namespace gazebo;
 using namespace std;
@@ -96,23 +91,23 @@ public:
     void publishID();
 
     /**
-    *
-    * */
-    void pidControl(const roboy_simulation::PIDControl::ConstPtr &msg);
-
-    /** Callback for manual motor control
-     * @param msg contains vector with voltage values for every motor
-     * */
-    void motorControl(const roboy_simulation::MotorControl::ConstPtr &msg);
+     *   Callback for motor commands
+     *   @param msg
+    */
+    void MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg);
 
 private:
+    void MotorStatusPublisher();
     static int roboyID_generator;
     int roboyID = 0;
     ros::NodeHandlePtr nh;
-    ros::Subscriber  motor_control_sub, pid_control_sub;
-    ros::Publisher visualizeTendon_pub, roboyID_pub;
+    ros::Subscriber  motorCommand_sub, pid_control_sub;
+    ros::Publisher visualizeTendon_pub, roboyID_pub, motorStatus_pub;
     ros::ServiceServer roboyID_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
+
+    bool motor_status_publishing = true;
+    boost::shared_ptr<boost::thread> motor_status_publisher;
 
     bool e_stop_active, last_e_stop_active;
 

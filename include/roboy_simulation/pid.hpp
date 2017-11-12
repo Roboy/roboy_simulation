@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include <ros/ros.h>
+#include <iostream>
+#include <cmath>
+
 class PIDImpl;
 class PID
 {

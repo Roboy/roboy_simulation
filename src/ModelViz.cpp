@@ -1,4 +1,4 @@
-#include "roboy_simulation/RobotSimulation/ModelViz.hpp"
+#include "roboy_simulation/ModelViz.hpp"
 
 ModelViz::ModelViz(){
     if (!ros::isInitialized()) {
@@ -15,7 +15,7 @@ ModelViz::ModelViz(){
 void ModelViz::publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
 //    static bool add = true;
     visualization_msgs::Marker line_strip;
-    line_strip.header.frame_id = "map";
+    line_strip.header.frame_id = "world";
     line_strip.header.stamp = ros::Time::now();
     char tendonnamespace[20];
     sprintf(tendonnamespace, "tendon_%d", ID);
@@ -50,7 +50,7 @@ void ModelViz::publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>
 void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
 //    static bool add = true;
     visualization_msgs::Marker arrow;
-    arrow.header.frame_id = "map";
+    arrow.header.frame_id = "world";
     char forcenamespace[20];
     sprintf(forcenamespace, "force_%d", ID);
     arrow.ns = forcenamespace;
@@ -105,7 +105,7 @@ void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>>
 
 void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr parent_link, bool child_link){
     visualization_msgs::Marker mesh;
-    mesh.header.frame_id = "map";
+    mesh.header.frame_id = "world";
     char modelnamespace[20];
     sprintf(modelnamespace, "model_%d", ID);
     mesh.ns = modelnamespace;
@@ -156,9 +156,9 @@ void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr paren
             char meshpath[200];
             sprintf(meshpath,"package://roboy_models/%s/meshes/visual/%s.dae",
                     robot_namespace.c_str(), child_link->GetName().c_str() );
-            mesh.mesh_resource = meshpath;   
+            mesh.mesh_resource = meshpath;
             marker_visualization_pub.publish(mesh);
-            publishModel(robot_namespace, child_link, true);            
+            publishModel(robot_namespace, child_link, true);
         }
     }
 }

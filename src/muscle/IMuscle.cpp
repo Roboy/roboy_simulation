@@ -1,4 +1,4 @@
-#include "roboy_simulation/RobotSimulation/muscle/IMuscle.hpp"
+#include "roboy_simulation/muscle/IMuscle.hpp"
 
 
 namespace roboy_simulation {
@@ -19,7 +19,7 @@ namespace roboy_simulation {
     }
 
     void IMuscle::Init(MyoMuscleInfo &myoMuscle) {
-        
+
         //state initialization
         x[0] = 0.0;
         x[1] = 0.0;
@@ -27,7 +27,7 @@ namespace roboy_simulation {
         actuator.spindle.angVel = 0;
 
         /// Build Linked Viapoint list with corresponding wraping
-        initViaPoints( myoMuscle );
+        initViaPoints(myoMuscle);
 
         actuator.motor = myoMuscle.motor;
         actuator.gear = myoMuscle.gear;
@@ -39,7 +39,7 @@ namespace roboy_simulation {
     }
 
     void IMuscle::Update(ros::Time &time, ros::Duration &period) {
-       //ROS_INFO("TIME:  %f", time.toSec());
+        //ROS_INFO("TIME:  %f", time.toSec());
         /*if(time.toSec() >= 1){
             pid_control = true;
             cmd = 0.01;
@@ -49,28 +49,44 @@ namespace roboy_simulation {
             cmd = 0.005;
         }*/
 
-        if( pid_control ){
-            actuator.motor.voltage = musclePID.calculate( period.toSec(), cmd, feedback[feedback_type] );
-        }else{
-             actuator.motor.voltage = cmd * 24;//simulated PWM 
-        }        
-       
+        if (pid_control) {
+            actuator.motor.voltage = musclePID.calculate(period.toSec(), cmd, feedback[feedback_type]);
+        } else {
+            actuator.motor.voltage = cmd * 24;//simulated PWM
+        }
+
         for (int i = 0; i < viaPoints.size(); i++) {
             // absolute position + relative position=actual position of each via point
-            viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
-                                              viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
+            switch (viaPoints[i]->type){
+                case IViaPoints::FIXPOINT:
+                    viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
+                                                      viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
+                    break;
+                case IViaPoints::CYLINDRICAL:
+                    if(this->spanningJoint!=nullptr)
+                        viaPoints[i]->globalCoordinates = this->spanningJoint->GetWorldPose().pos;
+                    break;
+                case IViaPoints::SPHERICAL:
+                    if(this->spanningJoint!=nullptr)
+                        viaPoints[i]->globalCoordinates = this->spanningJoint->GetWorldPose().pos;
+                    break;
+                case IViaPoints::MESH:
+                    viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
+                                                      viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
+                    break;
+            }
         }
 
         //update force points and calculate muscle length for each Viapoint
         //muscleLength is set zero and then added up again
-        if ( !firstUpdate ){
+        if (!firstUpdate) {
             prevMuscleLength = muscleLength;
-        } 
+        }
         muscleLength = 0;
         for (int i = 0; i < viaPoints.size(); i++) {
             viaPoints[i]->UpdateForcePoints();
             muscleLength += viaPoints[i]->previousSegmentLength;
-            
+
             if (firstUpdate) {
                 ROS_INFO("global coordinates are %f %f %f ", viaPoints[i]->globalCoordinates.x,
                          viaPoints[i]->globalCoordinates.y, viaPoints[i]->globalCoordinates.z);
@@ -91,63 +107,65 @@ namespace roboy_simulation {
         }
 
         //calculate elastic force
-        see.ElasticElementModel( tendonLength, muscleLength );
-        see.applyTendonForce( muscleForce, actuator.elasticForce );
+        see.ElasticElementModel(tendonLength, muscleLength);
+        see.applyTendonForce(muscleForce, actuator.elasticForce);
 
 
-    for(int i=0; i<8; i++){
-        // calculate the approximation of gear's efficiency
-        actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
+        for (int i = 0; i < 8; i++) {
+            // calculate the approximation of gear's efficiency
+            actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
 
-        // do 1 step of integration of DiffModel() at current time        
-        actuator.stepper.do_step([this](const IActuator::state_type &x, IActuator::state_type &dxdt, const double ) {
-            // This lambda function describes the differential model for the simulations of dynamics
-            // of a DC motor, a spindle, and a gear box`
-            // x[0] - motor electric current
-            // x[1] - spindle angular velocity
-            double totalIM = actuator.motor.inertiaMoment + actuator.gear.inertiaMoment; // total moment of inertia
-            dxdt[0] = 1 / actuator.motor.inductance * (-actuator.motor.resistance * x[0] 
-                                                       -actuator.motor.BEMFConst * actuator.gear.ratio * x[1]
-                                                       +actuator.motor.voltage);
-            dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
-                      actuator.spindle.radius * actuator.elasticForce /
-                      (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-        }, x, time.toSec() + i*period.toSec()/8, period.toSec()/8 /* devide by any number to obtain results. Why needs further investigation*/ );
-    }
+            // do 1 step of integration of DiffModel() at current time
+            actuator.stepper.do_step([this](const IActuator::state_type &x, IActuator::state_type &dxdt, const double) {
+                // This lambda function describes the differential model for the simulations of dynamics
+                // of a DC motor, a spindle, and a gear box`
+                // x[0] - motor electric current
+                // x[1] - spindle angular velocity
+                double totalIM = actuator.motor.inertiaMoment + actuator.gear.inertiaMoment; // total moment of inertia
+                dxdt[0] = 1 / actuator.motor.inductance * (-actuator.motor.resistance * x[0]
+                                                           - actuator.motor.BEMFConst * actuator.gear.ratio * x[1]
+                                                           + actuator.motor.voltage);
+                dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
+                          actuator.spindle.radius * actuator.elasticForce /
+                          (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
+            }, x, time.toSec() + i * period.toSec() / 8, period.toSec() /
+                                                         8 /* devide by any number to obtain results. Why needs further investigation*/ );
+        }
 
         actuator.motor.current = x[0];
         actuator.spindle.angVel = x[1];
 
-         // update gearposition
-         actuator.gear.position += actuator.spindle.angVel * period.toSec();
-         // update tendonLength
-         tendonLength = initialTendonLength - 2*3.141*actuator.spindle.radius * actuator.gear.position;
-         
+        // update gearposition
+        actuator.gear.position += actuator.spindle.angVel * period.toSec();
+        // update tendonLength
+        tendonLength = initialTendonLength - 2 * 3.141 * actuator.spindle.radius * actuator.gear.position;
+
         //calculate elastic force again after actuation. without the second update the motor will be a step ahead of the simulation. the spring is the comunication of force between robot and motor.
-        see.ElasticElementModel( tendonLength, muscleLength );
-        see.applyTendonForce( muscleForce, actuator.elasticForce );
+        see.ElasticElementModel(tendonLength, muscleLength);
+        see.applyTendonForce(muscleForce, actuator.elasticForce);
 
         calculateTendonForceProgression();
 
-        ros::spinOnce();     
-      
+        ros::spinOnce();
+
         // feedback for PID-controller
         feedback[0] = muscleForce;
         feedback[1] = actuator.gear.position;
         feedback[2] = see.deltaX;
 
         publishTopics();
-        
+
         //    ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
         //                  actuator.spindle.angVel, muscleForce);
         //    ROS_INFO("electric current: %.5f, angVel: %.5f, muscleForce %.5f, springDis: %f", actuator.motor.current,
         //                   actuator.spindle.angVel, muscleForce, see.deltaX);
         //    ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength ); 
-    
+
     }
+
     /////////////////////////////////////////////
     /// Setup topics for different motor values
-    void IMuscle::setupTopics(){
+    void IMuscle::setupTopics() {
         nh = ros::NodeHandlePtr(new ros::NodeHandle);
         char topic[100];
         snprintf(topic, 100, "/roboy/motor/muscleForce");
@@ -164,34 +182,37 @@ namespace roboy_simulation {
         tendonLength_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
 
     }
+
     //////////////////////////////////////////////
     // publishes motor information 
-    void IMuscle::publishTopics(){
+    void IMuscle::publishTopics() {
         std_msgs::Float32 msg;
 
         msg.data = muscleForce;
         muscleForce_pub.publish(msg);
 
         // publisch spring displacemment or spring force:
-        msg.data =  see.deltaX; //(see.deltaX >= 0) ? (see.deltaX * 30680.0) : 0;
+        msg.data = see.deltaX; //(see.deltaX >= 0) ? (see.deltaX * 30680.0) : 0;
         seeForce_pub.publish(msg);
-    
+
         msg.data = actuator.motor.current;
         motorCurrent_pub.publish(msg);
 
         msg.data = actuator.spindle.angVel;
         spindleAngVel_pub.publish(msg);
-                
+
         msg.data = tendonLength * 1;
         totalLength_pub.publish(msg);
 
-        msg.data =  (muscleLength + see.internalLength )* 1;
+        msg.data = (muscleLength + see.internalLength) * 1;
         tendonLength_pub.publish(msg);
     }
+
     ////////////////////////////////////////////////////
     // The Viapoint Wraping-type gets instantiated 
     // and built into a Linked list
-    void IMuscle::initViaPoints( MyoMuscleInfo &myoMuscle ){
+    void IMuscle::initViaPoints(MyoMuscleInfo &myoMuscle) {
+        static int message_counter = 6666;
         for (int i = 0; i < myoMuscle.viaPoints.size(); i++) {
             ViaPointInfo vp = myoMuscle.viaPoints[i];
             if (vp.type == IViaPoints::FIXPOINT) {
@@ -220,9 +241,10 @@ namespace roboy_simulation {
             }
         }
     }
+
     /////////////////////////////////////////////////
     // Calculates how the force goes along the tendon by going throught the Viapoint 
-    void IMuscle::calculateTendonForceProgression(){
+    void IMuscle::calculateTendonForceProgression() {
         for (int i = 0; i < viaPoints.size(); i++) {
             if (viaPoints[i]->prevPoint && viaPoints[i]->nextPoint) {
                 viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;

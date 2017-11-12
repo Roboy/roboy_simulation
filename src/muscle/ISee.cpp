@@ -1,5 +1,5 @@
-#include "roboy_simulation/RobotSimulation/muscle/ISee.hpp"
-#include <ros/ros.h>
+#include "roboy_simulation/muscle/ISee.hpp"
+
 using namespace roboy_simulation;
 
     ISee::ISee(){

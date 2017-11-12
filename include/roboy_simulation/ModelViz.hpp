@@ -13,9 +13,8 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 // common definitions
-#include "common_utilities/CommonDefinitions.h"
 // muscle plugin
-#include "roboy_simulation/RobotSimulation/muscle/IMuscle.hpp"
+#include "roboy_simulation/muscle/IMuscle.hpp"
 
 using namespace gazebo;
 using namespace std;

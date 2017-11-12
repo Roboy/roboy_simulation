@@ -1,4 +1,4 @@
-#include "roboy_simulation/RobotSimulation/muscle/StateMachine.hpp"
+#include "roboy_simulation/muscle/StateMachine.hpp"
 
 using namespace roboy_simulation;
 
