@@ -56,25 +56,28 @@ namespace roboy_simulation {
         }
 
         for (int i = 0; i < viaPoints.size(); i++) {
+            viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
+                                              viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
+
             // absolute position + relative position=actual position of each via point
-            switch (viaPoints[i]->type){
-                case IViaPoints::FIXPOINT:
-                    viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
-                                                      viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
-                    break;
-                case IViaPoints::CYLINDRICAL:
-                    if(this->spanningJoint!=nullptr)
-                        viaPoints[i]->globalCoordinates = this->spanningJoint->GetWorldPose().pos;
-                    break;
-                case IViaPoints::SPHERICAL:
-                    if(this->spanningJoint!=nullptr)
-                        viaPoints[i]->globalCoordinates = this->spanningJoint->GetWorldPose().pos;
-                    break;
-                case IViaPoints::MESH:
-                    viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
-                                                      viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
-                    break;
-            }
+//            switch (viaPoints[i]->type){
+//                case IViaPoints::FIXPOINT:
+//                    viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
+//                                                      viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
+//                    break;
+//                case IViaPoints::CYLINDRICAL:
+//                    if(this->spanningJoint!=nullptr)
+//                        viaPoints[i]->globalCoordinates = this->spanningJoint->GetWorldPose().pos;
+//                    break;
+//                case IViaPoints::SPHERICAL:
+//                    if(this->spanningJoint!=nullptr)
+//                        viaPoints[i]->globalCoordinates = this->spanningJoint->GetWorldPose().pos;
+//                    break;
+//                case IViaPoints::MESH:
+//                    viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition +
+//                                                      viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
+//                    break;
+//            }
         }
 
         //update force points and calculate muscle length for each Viapoint

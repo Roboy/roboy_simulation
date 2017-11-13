@@ -23,7 +23,7 @@ ModelController::ModelController() {
 
 ModelController::~ModelController() {
     motor_status_publishing = false;
-    if(motor_status_publisher->joinable())
+    if(motor_status_publisher!=nullptr)
         motor_status_publisher->join();
 }
 

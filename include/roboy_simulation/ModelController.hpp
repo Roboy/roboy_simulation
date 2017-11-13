@@ -107,7 +107,7 @@ private:
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     bool motor_status_publishing = true;
-    boost::shared_ptr<boost::thread> motor_status_publisher;
+    boost::shared_ptr<boost::thread> motor_status_publisher = nullptr;
 
     bool e_stop_active, last_e_stop_active;
 

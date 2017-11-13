@@ -133,7 +133,7 @@ void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr paren
         mesh.pose.orientation.z = pose.rot.z;
         mesh.pose.orientation.w = pose.rot.w;
         char meshpath[200];
-        sprintf(meshpath,"package://roboy_models/%s/meshes/visual/%s.dae",
+        sprintf(meshpath,"package://roboy_models/%s/meshes/CAD/%s.stl",
                 robot_namespace.c_str(), parent_link->GetName().c_str() );
         mesh.mesh_resource = meshpath;
         marker_visualization_pub.publish(mesh);
@@ -154,7 +154,7 @@ void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr paren
             mesh.pose.orientation.z = pose.rot.z;
             mesh.pose.orientation.w = pose.rot.w;
             char meshpath[200];
-            sprintf(meshpath,"package://roboy_models/%s/meshes/visual/%s.dae",
+            sprintf(meshpath,"package://roboy_models/%s/meshes/CAD/%s.stl",
                     robot_namespace.c_str(), child_link->GetName().c_str() );
             mesh.mesh_resource = meshpath;
             marker_visualization_pub.publish(mesh);
