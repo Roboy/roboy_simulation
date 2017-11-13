@@ -135,7 +135,7 @@ namespace roboy_simulation {
         // update gearposition
         actuator.gear.position += actuator.spindle.angVel * period.toSec();
         // update tendonLength
-        tendonLength = initialTendonLength - 2 * 3.141 * actuator.spindle.radius * actuator.gear.position;
+        tendonLength = initialTendonLength - 2.0 * M_PI * actuator.spindle.radius * actuator.gear.position;
 
         //calculate elastic force again after actuation. without the second update the motor will be a step ahead of the simulation. the spring is the comunication of force between robot and motor.
         see.ElasticElementModel(tendonLength, muscleLength);
