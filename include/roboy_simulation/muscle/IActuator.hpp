@@ -36,11 +36,11 @@ namespace gazebo{
     class IActuator {
 		// state vector for differential model
 	public:
-		typedef std::vector<double> state_type;
+        typedef boost::array< double , 2 > state_type;
 		// private: std::vector< double > x(2);
 
 		// stepper for integration
-		boost::numeric::odeint::runge_kutta_cash_karp54<state_type> stepper;
+//		boost::numeric::odeint::runge_kutta_cash_karp54<state_type> stepper;
 
 		////////////////////////////////////////
 		/// \brief Approximates gear's velocity

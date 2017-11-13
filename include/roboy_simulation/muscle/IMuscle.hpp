@@ -65,6 +65,7 @@ namespace roboy_simulation {
 
 	public:
 		IMuscle();
+		~IMuscle();
 
         ////////////////////
 		/// \brief The Init function.

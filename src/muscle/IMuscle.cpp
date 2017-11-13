@@ -12,7 +12,6 @@ namespace roboy_simulation {
         }
         //x[0] = motorcurrent
         //x[1] = sindleAngleVel
-        x.resize(2);
 
         // Setup topics for different motor values
         setupTopics();
@@ -104,9 +103,7 @@ namespace roboy_simulation {
         if (firstUpdate) {
             prevMuscleLength = muscleLength;
             initialTendonLength = tendonLength = muscleLength + see.internalLength;
-
-            ROS_INFO("Calculated musclelength is %f m", muscleLength);
-            firstUpdate = false;
+            ROS_INFO("inital tendon length is %f m", initialTendonLength);
         }
 
         //calculate elastic force
@@ -114,26 +111,23 @@ namespace roboy_simulation {
         see.applyTendonForce(muscleForce, actuator.elasticForce);
 
 
-        for (int i = 0; i < 8; i++) {
-            // calculate the approximation of gear's efficiency
-            actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
+        // calculate the approximation of gear's efficiency
+        actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
 
-            // do 1 step of integration of DiffModel() at current time
-            actuator.stepper.do_step([this](const IActuator::state_type &x, IActuator::state_type &dxdt, const double) {
-                // This lambda function describes the differential model for the simulations of dynamics
-                // of a DC motor, a spindle, and a gear box`
-                // x[0] - motor electric current
-                // x[1] - spindle angular velocity
-                double totalIM = actuator.motor.inertiaMoment + actuator.gear.inertiaMoment; // total moment of inertia
-                dxdt[0] = 1 / actuator.motor.inductance * (-actuator.motor.resistance * x[0]
-                                                           - actuator.motor.BEMFConst * actuator.gear.ratio * x[1]
-                                                           + actuator.motor.voltage);
-                dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
-                          actuator.spindle.radius * actuator.elasticForce /
-                          (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-            }, x, time.toSec() + i * period.toSec() / 8, period.toSec() /
-                                                         8 /* devide by any number to obtain results. Why needs further investigation*/ );
-        }
+        // do 1 step of integration of DiffModel() at current time
+        boost::numeric::odeint::integrate([this](const IActuator::state_type &x, IActuator::state_type &dxdt, double t) {
+            // This lambda function describes the differential model for the simulations of dynamics
+            // of a DC motor, a spindle, and a gear box`
+            // x[0] - motor electric current
+            // x[1] - spindle angular velocity
+            double totalIM = actuator.motor.inertiaMoment + actuator.gear.inertiaMoment; // total moment of inertia
+            dxdt[0] = 1.0 / actuator.motor.inductance * (-actuator.motor.resistance * x[0]
+                                                         - actuator.motor.BEMFConst * actuator.gear.ratio * x[1]
+                                                         + actuator.motor.voltage);
+            dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
+                      actuator.spindle.radius * actuator.elasticForce /
+                      (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
+        }, x, time.toSec(), time.toSec()+period.toSec(), period.toSec());
 
         actuator.motor.current = x[0];
         actuator.spindle.angVel = x[1];
@@ -157,6 +151,9 @@ namespace roboy_simulation {
         feedback[2] = see.deltaX;
 
         publishTopics();
+
+        if(firstUpdate)
+            firstUpdate = false;
 
         //    ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
         //                  actuator.spindle.angVel, muscleForce);

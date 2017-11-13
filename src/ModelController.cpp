@@ -160,10 +160,14 @@ void ModelController::Update() {
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
     last_update_sim_time_ros = sim_time_ros;
-    // get modelpose and update mucles
-    readSim(sim_time_ros, sim_period);
-    // Update the gazebo model with the result of the controller computation
-    writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
+    if(!firstLoop) {
+        // get modelpose and update mucles
+        readSim(sim_time_ros, sim_period);
+        // Update the gazebo model with the result of the controller computation
+        writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
+    }else{
+        firstLoop = false;
+    }
     last_write_sim_time_ros = sim_time_ros;
     message_counter = 1000;
 
