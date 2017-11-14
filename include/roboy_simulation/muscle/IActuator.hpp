@@ -25,7 +25,7 @@ namespace gazebo{
         double ratio = 53; // [1]
         double efficiency = 0.59; // [1]
         double appEfficiency; // approximated efficiency
-        double position = 0.0;
+        double position = 0.0; // [1]
 	};
 
 	struct Spindle {

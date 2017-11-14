@@ -522,8 +522,8 @@ void ModelController::MotorCommand(const roboy_communication_middleware::MotorCo
         for (uint i = 0; i < msg->motors.size(); i++) {
             if(msg->motors[i]<sim_muscles.size()) {
                 sim_muscles[msg->motors[i]]->pid_control = true;
-                sim_muscles[msg->motors[i]]->feedback_type = 0;
-                sim_muscles[msg->motors[i]]->cmd = msg->setPoints[i];
+                sim_muscles[msg->motors[i]]->feedback_type = 2;
+                sim_muscles[msg->motors[i]]->cmd = msg->setPoints[i]/1000000.0;
             }
         }
     }
@@ -536,8 +536,8 @@ void ModelController::MotorStatusPublisher(){
         for(auto const &muscle:sim_muscles){
             msg.pwmRef.push_back(muscle->cmd);
             msg.position.push_back(muscle->actuator.gear.position);
-            msg.velocity.push_back(muscle->actuator.spindle.angVel);
-            msg.displacement.push_back(muscle->muscleForce);
+            msg.velocity.push_back(muscle->actuator.spindle.angVel*1000.0);
+            msg.displacement.push_back(muscle->see.deltaX*1000000.0);
             msg.current.push_back(muscle->actuator.motor.current);
         }
         motorStatus_pub.publish(msg);
