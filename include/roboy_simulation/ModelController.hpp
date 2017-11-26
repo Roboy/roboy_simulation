@@ -150,7 +150,7 @@ private:
     map<string,double> feedback;
     map<string,double> a;
 
-   double *cmd, *pos, *vel, *eff;
+    double *cmd, *pos, *vel, *eff;
 
     // Pointer to the update event connection
     gazebo::event::ConnectionPtr update_connection;
@@ -162,7 +162,7 @@ private:
 
     boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
     vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
-    vector<roboy_simulation::MyoMuscleInfo> myoMuscles; 
+    vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
 
     map<string, double> desiredAngles;
     //Mapping of joint's name and its own pid

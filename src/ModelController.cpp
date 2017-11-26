@@ -517,10 +517,14 @@ void ModelController::publishID() {
 
 void ModelController::MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg) {
     // only react to messages for me
+    ROS_INFO("incoming msg");
+    ROS_INFO("roboyID %d", roboyID);
     if (msg->id == roboyID) {
         // update pid setvalues
         for (uint i = 0; i < msg->motors.size(); i++) {
+
             if(msg->motors[i]<sim_muscles.size()) {
+                ROS_INFO("setpoint %d is %d", i, msg->setPoints[i]);
                 sim_muscles[msg->motors[i]]->pid_control = true;
                 sim_muscles[msg->motors[i]]->feedback_type = 2;
                 sim_muscles[msg->motors[i]]->cmd = msg->setPoints[i]/1000000.0;

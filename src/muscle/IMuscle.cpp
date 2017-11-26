@@ -25,7 +25,7 @@ namespace roboy_simulation {
         actuator.motor.voltage = 0.0;
         actuator.spindle.angVel = 0;
 
-        /// Build Linked Viapoint list with corresponding wraping
+        /// Build Linked Viapoint list with corresponding wrapping
         initViaPoints(myoMuscle);
 
         actuator.motor = myoMuscle.motor;
@@ -166,6 +166,13 @@ namespace roboy_simulation {
     /////////////////////////////////////////////
     /// Setup topics for different motor values
     void IMuscle::setupTopics() {
+
+        if (!ros::isInitialized()) {
+            int argc = 0;
+            char **argv = NULL;
+            ros::init(argc, argv, "MusclePlugin");
+//                      ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+        }
         nh = ros::NodeHandlePtr(new ros::NodeHandle);
         char topic[100];
         snprintf(topic, 100, "/roboy/motor/muscleForce");

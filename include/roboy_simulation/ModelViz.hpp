@@ -30,7 +30,7 @@ public:
     void publishModel(const string robot_namespace, physics::LinkPtr parent_link, bool child_link);
 
 protected:
-    ros::NodeHandlePtr nh;
+//    ros::NodeHandlePtr nh;
     int ID;
     uint message_counter;
     bool visualizeTendon = false, visualizeForce = false, visualizeMesh = false;

@@ -1,13 +1,16 @@
 #include "roboy_simulation/ModelViz.hpp"
 
 ModelViz::ModelViz(){
+    int argc = 0;
+    char **argv = NULL;
+    ros::init(argc, argv, "ModelViz");
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "ModelViz",
-                  ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+        ros::init(argc, argv, "ModelViz");
+//                  ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
-    nh = ros::NodeHandlePtr(new ros::NodeHandle);
+    ros::NodeHandlePtr nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
 }

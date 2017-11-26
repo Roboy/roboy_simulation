@@ -5,7 +5,7 @@
     <arg name="use_sim_time" default="true"/>
     <arg name="gui" default="false"/>
     <arg name="headless" default="true"/>
-    <arg name="debug" default="true"/>
+    <arg name="debug" default="false"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="debug" value="$(arg debug)"/>
@@ -16,7 +16,7 @@
     </include>
 
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-    	args="-sdf -file $(find roboy_models)/PaBiRoboy/model.sdf -model PaBiRoboy"
+    	args="-sdf -file $(env HBP)/Models/roboy_models/PaBiRoboy/model.sdf -model PaBiRoboy"
 	/>
     <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
 </launch>
