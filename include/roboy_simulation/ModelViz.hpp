@@ -4,16 +4,12 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
-// messages
 #include <visualization_msgs/Marker.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
-// gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
-// common definitions
-// muscle plugin
 #include "roboy_simulation/muscle/IMuscle.hpp"
 
 using namespace gazebo;

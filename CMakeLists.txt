@@ -72,7 +72,7 @@ include_directories(
 # Application
 #==============================================================================
 add_library(myomuscle_plugin SHARED 
-	src/ModelController.cpp
+	src/MyoMusclePlugin.cpp
 	src/ModelViz.cpp
 	src/pid.cpp
 	src/muscle/IMuscle.cpp

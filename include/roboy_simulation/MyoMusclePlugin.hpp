@@ -39,12 +39,12 @@
 using namespace gazebo;
 using namespace std;
 
-class ModelController : public gazebo::ModelPlugin, public ModelViz{
+class MyoMusclePlugin : public gazebo::ModelPlugin, public ModelViz{
 public:
     /** Constructor */
-    ModelController();
+    MyoMusclePlugin();
     /** Destructor */
-    ~ModelController();
+    ~MyoMusclePlugin();
 
     /**
      * Overloaded Gazebo entry point
@@ -150,7 +150,7 @@ private:
     map<string,double> feedback;
     map<string,double> a;
 
-   double *cmd, *pos, *vel, *eff;
+    double *cmd, *pos, *vel, *eff;
 
     // Pointer to the update event connection
     gazebo::event::ConnectionPtr update_connection;

@@ -1,12 +1,12 @@
-#include "roboy_simulation/ModelController.hpp"
+#include "roboy_simulation/MyoMusclePlugin.hpp"
 
-int ModelController::roboyID_generator = 0;
+int MyoMusclePlugin::roboyID_generator = 0;
 
-ModelController::ModelController() {
+MyoMusclePlugin::MyoMusclePlugin() {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "ModelController",
+        ros::init(argc, argv, "MyoMusclePlugin",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
@@ -15,20 +15,20 @@ ModelController::ModelController() {
     spinner->start();
 
     roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id", 1);
-    motorCommand_sub = nh->subscribe("/roboy/middleware/MotorCommand", 1, &ModelController::MotorCommand, this);
+    motorCommand_sub = nh->subscribe("/roboy/middleware/MotorCommand", 1, &MyoMusclePlugin::MotorCommand, this);
     motorStatus_pub = nh->advertise<roboy_communication_middleware::MotorStatus>("/roboy/middleware/MotorStatus", 1);
     roboyID = roboyID_generator++;
     ID = roboyID;
 }
 
-ModelController::~ModelController() {
+MyoMusclePlugin::~MyoMusclePlugin() {
     motor_status_publishing = false;
     if(motor_status_publisher!=nullptr)
         motor_status_publisher->join();
 }
 
-void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
-    ROS_INFO("Loading ModelController plugin");
+void MyoMusclePlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
+    ROS_INFO("Loading MyoMusclePlugin plugin");
     // Save pointers to the model
     parent_model = parent_;
     sdf = sdf_;
@@ -146,15 +146,15 @@ void ModelController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
     }
 
     // Listen to the update event. This event is broadcast every simulation iteration.
-    update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&ModelController::Update, this));
+    update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&MyoMusclePlugin::Update, this));
 
-    motor_status_publisher.reset(new boost::thread(&ModelController::MotorStatusPublisher,this));
+    motor_status_publisher.reset(new boost::thread(&MyoMusclePlugin::MotorStatusPublisher,this));
     motor_status_publisher->detach();
 
-    ROS_INFO("ModelController ready");
+    ROS_INFO("MyoMusclePlugin ready");
 }
 
-void ModelController::Update() {
+void MyoMusclePlugin::Update() {
     // Get the simulation time and period
     gz_time_now = parent_model->GetWorld()->GetSimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
@@ -175,10 +175,10 @@ void ModelController::Update() {
     publishForce(&sim_muscles);
     publishTendon(&sim_muscles);
     // Parent_moddel->GetName comes from launch file
-    publishModel(parent_model->GetName(), parent_model->GetLink(link_names[0] + ""), false);
+    publishModel(parent_model->GetName(), parent_model->GetLink(link_names[0]), false);
 }
 
-void ModelController::readSim(ros::Time time, ros::Duration period) {
+void MyoMusclePlugin::readSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("read simulation");
     // update muscle plugins
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
@@ -191,7 +191,7 @@ void ModelController::readSim(ros::Time time, ros::Duration period) {
     }
 }
 
-void ModelController::writeSim(ros::Time time, ros::Duration period) {
+void MyoMusclePlugin::writeSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("write simulation");
     // apply the calculated forces
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
@@ -205,14 +205,14 @@ void ModelController::writeSim(ros::Time time, ros::Duration period) {
     }
 }
 
-void ModelController::Reset() {
+void MyoMusclePlugin::Reset() {
     // Reset timing variables to not pass negative update periods to controllers on world reset
     last_update_sim_time_ros = ros::Time();
     last_write_sim_time_ros = ros::Time();
     //reset acceleration of links and the actuator simulation.
 }
 
-bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {
+bool MyoMusclePlugin::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {
     // initialize TiXmlDocument doc with a string
     TiXmlDocument doc;
     if (!doc.Parse(sdf.c_str()) && doc.Error()) {
@@ -509,13 +509,13 @@ bool ModelController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulati
     return true;
 }
 
-void ModelController::publishID() {
+void MyoMusclePlugin::publishID() {
     std_msgs::Int32 msg;
     msg.data = roboyID;
     roboyID_pub.publish(msg);
 }
 
-void ModelController::MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg) {
+void MyoMusclePlugin::MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg) {
     // only react to messages for me
     if (msg->id == roboyID) {
         // update pid setvalues
@@ -523,21 +523,21 @@ void ModelController::MotorCommand(const roboy_communication_middleware::MotorCo
             if(msg->motors[i]<sim_muscles.size()) {
                 sim_muscles[msg->motors[i]]->pid_control = true;
                 sim_muscles[msg->motors[i]]->feedback_type = 2;
-                sim_muscles[msg->motors[i]]->cmd = msg->setPoints[i]/1000000.0;
+                sim_muscles[msg->motors[i]]->cmd = msg->setPoints[i]*0.01; // convert displacement ticks to mm
             }
         }
     }
 }
 
-void ModelController::MotorStatusPublisher(){
+void MyoMusclePlugin::MotorStatusPublisher(){
     ros::Rate rate(100);
     while(motor_status_publishing){
         roboy_communication_middleware::MotorStatus msg;
         for(auto const &muscle:sim_muscles){
             msg.pwmRef.push_back(muscle->cmd);
             msg.position.push_back(muscle->actuator.gear.position);
-            msg.velocity.push_back(muscle->actuator.spindle.angVel*1000.0);
-            msg.displacement.push_back(muscle->see.deltaX*1000000.0);
+            msg.velocity.push_back(muscle->actuator.spindle.angVel*M_PI*2.0); // convert 1/s to radians/sec
+            msg.displacement.push_back(muscle->see.deltaX/0.01); // convert mm to displacement ticks
             msg.current.push_back(muscle->actuator.motor.current);
         }
         motorStatus_pub.publish(msg);
@@ -545,4 +545,4 @@ void ModelController::MotorStatusPublisher(){
     }
 }
 
-GZ_REGISTER_MODEL_PLUGIN(ModelController)
+GZ_REGISTER_MODEL_PLUGIN(MyoMusclePlugin)

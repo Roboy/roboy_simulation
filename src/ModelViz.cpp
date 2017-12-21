@@ -137,6 +137,13 @@ void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr paren
                 robot_namespace.c_str(), parent_link->GetName().c_str() );
         mesh.mesh_resource = meshpath;
         marker_visualization_pub.publish(mesh);
+
+//        pose = parent_link->GetWorldCoGPose();
+//        pose.rot.Normalize();
+        tf::Transform trans;
+        trans.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
+        trans.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
+        tf_broadcaster.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "world", parent_link->GetName().c_str()));
     }
     physics::Link_V child_links = parent_link->GetChildJointsLinks();
     if (child_links.empty()) {
@@ -159,6 +166,13 @@ void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr paren
             mesh.mesh_resource = meshpath;
             marker_visualization_pub.publish(mesh);
             publishModel(robot_namespace, child_link, true);
+
+//            pose = child_link->GetWorldCoGPose();
+//            pose.rot.Normalize();
+            tf::Transform trans;
+            trans.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
+            trans.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
+            tf_broadcaster.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "world", child_link->GetName().c_str()));
         }
     }
 }
