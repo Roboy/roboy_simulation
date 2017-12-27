@@ -1,9 +1,8 @@
 #pragma once
-// std
+
 #include <cstdlib>
 #include <iostream>
 #include <deque>
-// ros
 #include <ros/ros.h>
 #include <controller_manager/controller_manager.h>
 #include <hardware_interface/robot_hw.h>
@@ -14,19 +13,15 @@
 #include <pluginlib/class_list_macros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
-// gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 #include <gazebo/msgs/msgs.hh>
 #include <gazebo/transport/transport.hh>
-// boost
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
-// muscle plugin
 #include "roboy_simulation/muscle/IMuscle.hpp"
-// ros messages
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
