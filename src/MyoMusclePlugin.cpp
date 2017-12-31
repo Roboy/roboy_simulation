@@ -175,7 +175,7 @@ void MyoMusclePlugin::Update() {
     publishForce(&sim_muscles);
     publishTendon(&sim_muscles);
     // Parent_moddel->GetName comes from launch file
-    publishModel(parent_model->GetName(), parent_model->GetLink(link_names[0]), false);
+    publishModel(parent_model->GetName(), parent_model->GetLink(link_names[1]), false);
 }
 
 void MyoMusclePlugin::readSim(ros::Time time, ros::Duration period) {

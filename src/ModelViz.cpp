@@ -60,6 +60,10 @@ void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>>
     arrow.scale.x = 0.005;
     arrow.scale.y = 0.01;
     arrow.scale.z = 0.01;
+    arrow.pose.orientation.w = 1;
+    arrow.pose.orientation.x = 0;
+    arrow.pose.orientation.y = 0;
+    arrow.pose.orientation.z = 0;
 
     arrow.action = visualization_msgs::Marker::ADD;
 
@@ -113,7 +117,7 @@ void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr paren
     mesh.color.r = 1.0f;
     mesh.color.g = 1.0f;
     mesh.color.b = 1.0f;
-    mesh.color.a = 0.5;
+    mesh.color.a = 1;
     mesh.scale.x = 0.001;
     mesh.scale.y = 0.001;
     mesh.scale.z = 0.001;
