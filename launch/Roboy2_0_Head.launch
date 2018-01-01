@@ -2,7 +2,7 @@
 
     <!-- these are the arguments you can pass to this launch file, for example paused:=true -->
     <arg name="paused" default="false"/>
-    <arg name="use_sim_time" default="true"/>
+    <arg name="use_sim_time" default="false"/>
     <arg name="gui" default="false"/>
     <arg name="headless" default="true"/>
     <arg name="debug" default="true"/>
@@ -24,7 +24,7 @@
     <!-- -robot_namespace lighthouse1"-->
     <!--/>-->
     <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
-    <!-- <node name="rqt" pkg="rqt_gui" type="rqt_gui" respawn="false" output="screen"
+    <node name="rqt" pkg="rqt_gui" type="rqt_gui" respawn="false" output="screen"
           args="-p DarkRoom"
-    /> -->
+    />
 </launch>

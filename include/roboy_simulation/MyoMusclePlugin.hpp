@@ -30,9 +30,11 @@
 #include "roboy_simulation/ModelViz.hpp"
 #include <roboy_communication_middleware/MotorCommand.h>
 #include <roboy_communication_middleware/MotorStatus.h>
+#include <chrono>
 
 using namespace gazebo;
 using namespace std;
+using namespace chrono;
 
 class MyoMusclePlugin : public gazebo::ModelPlugin, public ModelViz{
 public:
@@ -170,4 +172,6 @@ private:
 
     double outputMax = 500;
     double outputMin = -500;
+
+    high_resolution_clock::time_point t0,t1;
 };

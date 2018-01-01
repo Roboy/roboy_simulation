@@ -107,7 +107,7 @@ void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>>
 }
 
 
-void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr parent_link, bool child_link){
+void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr link){
     visualization_msgs::Marker mesh;
     mesh.header.frame_id = "world";
     char modelnamespace[20];
@@ -124,59 +124,23 @@ void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr paren
     mesh.lifetime = ros::Duration(0);
     mesh.header.stamp = ros::Time::now();
     mesh.action = visualization_msgs::Marker::ADD;
-
-    if(!child_link) { // parent_link is top link and connected to world frame
-        mesh.id = message_counter++;
-        math::Pose pose = parent_link->GetWorldPose();
-        pose.rot.Normalize();
-        mesh.pose.position.x = pose.pos.x;
-        mesh.pose.position.y = pose.pos.y;
-        mesh.pose.position.z = pose.pos.z;
-        mesh.pose.orientation.x = pose.rot.x;
-        mesh.pose.orientation.y = pose.rot.y;
-        mesh.pose.orientation.z = pose.rot.z;
-        mesh.pose.orientation.w = pose.rot.w;
-        char meshpath[200];
-        sprintf(meshpath,"package://roboy_models/%s/meshes/CAD/%s.stl",
-                robot_namespace.c_str(), parent_link->GetName().c_str() );
-        mesh.mesh_resource = meshpath;
-        marker_visualization_pub.publish(mesh);
-
-//        pose = parent_link->GetWorldCoGPose();
-//        pose.rot.Normalize();
-        tf::Transform trans;
-        trans.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
-        trans.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
-        tf_broadcaster.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "world", parent_link->GetName().c_str()));
-    }
-    physics::Link_V child_links = parent_link->GetChildJointsLinks();
-    if (child_links.empty()) {
-        return;
-    } else {
-        for (auto child_link:child_links) { // each child relative pose to parent
-            mesh.id = message_counter++;
-            math::Pose pose = child_link->GetWorldPose();
-            pose.rot.Normalize();
-            mesh.pose.position.x = pose.pos.x;
-            mesh.pose.position.y = pose.pos.y;
-            mesh.pose.position.z = pose.pos.z;
-            mesh.pose.orientation.x = pose.rot.x;
-            mesh.pose.orientation.y = pose.rot.y;
-            mesh.pose.orientation.z = pose.rot.z;
-            mesh.pose.orientation.w = pose.rot.w;
-            char meshpath[200];
-            sprintf(meshpath,"package://roboy_models/%s/meshes/CAD/%s.stl",
-                    robot_namespace.c_str(), child_link->GetName().c_str() );
-            mesh.mesh_resource = meshpath;
-            marker_visualization_pub.publish(mesh);
-            publishModel(robot_namespace, child_link, true);
-
-//            pose = child_link->GetWorldCoGPose();
-//            pose.rot.Normalize();
-            tf::Transform trans;
-            trans.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
-            trans.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
-            tf_broadcaster.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "world", child_link->GetName().c_str()));
-        }
-    }
+    mesh.id = message_counter++;
+    math::Pose pose = link->GetWorldPose();
+    pose.rot.Normalize();
+    mesh.pose.position.x = pose.pos.x;
+    mesh.pose.position.y = pose.pos.y;
+    mesh.pose.position.z = pose.pos.z;
+    mesh.pose.orientation.x = pose.rot.x;
+    mesh.pose.orientation.y = pose.rot.y;
+    mesh.pose.orientation.z = pose.rot.z;
+    mesh.pose.orientation.w = pose.rot.w;
+    char meshpath[200];
+    sprintf(meshpath,"package://roboy_models/%s/meshes/CAD/%s.stl",
+            robot_namespace.c_str(), link->GetName().c_str() );
+    mesh.mesh_resource = meshpath;
+    marker_visualization_pub.publish(mesh);
+    tf::Transform trans;
+    trans.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
+    trans.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
+    tf_broadcaster.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "world", link->GetName().c_str()));
 }

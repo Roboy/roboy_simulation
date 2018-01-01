@@ -151,6 +151,8 @@ void MyoMusclePlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
     motor_status_publisher.reset(new boost::thread(&MyoMusclePlugin::MotorStatusPublisher,this));
     motor_status_publisher->detach();
 
+    t0 = high_resolution_clock::now();
+
     ROS_INFO("MyoMusclePlugin ready");
 }
 
@@ -171,11 +173,17 @@ void MyoMusclePlugin::Update() {
     last_write_sim_time_ros = sim_time_ros;
     message_counter = 1000;
 
-    publishID();
-    publishForce(&sim_muscles);
-    publishTendon(&sim_muscles);
-    // Parent_moddel->GetName comes from launch file
-    publishModel(parent_model->GetName(), parent_model->GetLink(link_names[1]), false);
+    t1 = high_resolution_clock::now();
+    microseconds time_span = duration_cast<microseconds>(t1-t0);
+
+    if(time_span.count()>10000){ // no need to rush
+        publishID();
+        publishForce(&sim_muscles);
+        publishTendon(&sim_muscles);
+        for(auto link:parent_model->GetLinks())
+            publishModel(parent_model->GetName(),link);
+        t0 = t1;
+    }
 }
 
 void MyoMusclePlugin::readSim(ros::Time time, ros::Duration period) {

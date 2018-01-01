@@ -23,7 +23,7 @@ public:
 
     void publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles);
 
-    void publishModel(const string robot_namespace, physics::LinkPtr parent_link, bool child_link);
+    void publishModel(const string robot_namespace, physics::LinkPtr link);
 
 protected:
     ros::NodeHandlePtr nh;
