@@ -15,9 +15,9 @@
 using namespace gazebo;
 using namespace std;
 
-class ModelViz{
+class MyoMuscleVisualization{
 public:
-    ModelViz();
+    MyoMuscleVisualization();
 
     void publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles);
 
@@ -27,11 +27,8 @@ public:
 
 protected:
     ros::NodeHandlePtr nh;
-    int ID;
     uint message_counter;
-    bool visualizeTendon = false, visualizeForce = false, visualizeMesh = false;
     ros::Publisher marker_visualization_pub;
-private:
-    ros::Subscriber visualization_control_sub;
     tf::TransformBroadcaster tf_broadcaster;
+    int ID;
 };

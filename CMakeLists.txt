@@ -9,21 +9,13 @@ SET(CMAKE_BUILD_TYPE Debug)
 #==============================================================================
 # Dependencies
 #==============================================================================
-find_package(catkin REQUIRED COMPONENTS
-	roscpp
-	rosbag
-	controller_manager
-	gazebo_ros_control
-	std_msgs
-	geometry_msgs
-	message_generation
-	rviz
-	tf
-	interactive_markers
-	visualization_msgs
-        common_utilities
-        roboy_communication_middleware
+find_package(catkin REQUIRED COMPONENTS roscpp rosbag controller_manager gazebo_ros_control std_msgs geometry_msgs
+	message_generation rviz common_utilities roboy_communication_middleware
 )
+
+catkin_package(CATKIN_DEPENDS roboy_communication_middleware common_utilities
+        INCLUDE_DIRS include
+        LIBRARIES myomuscle_plugin)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -39,27 +31,6 @@ message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
 find_package(PkgConfig)
 
-add_message_files(
-        DIRECTORY
-        msgs
-
-        FILES
-        MotorControl.msg
-		PIDControl.msg
-)
-
-generate_messages(DEPENDENCIES std_msgs geometry_msgs)
-
-catkin_package(
-	DEPENDS
-	GAZEBO
-	CATKIN_DEPENDS
-		rosbag
-		message_runtime
-		message_generation
-		flexrayusbinterface
-)
-
 include_directories(
 		include/
 		include/muscle
@@ -73,14 +44,14 @@ include_directories(
 #==============================================================================
 add_library(myomuscle_plugin SHARED 
 	src/MyoMusclePlugin.cpp
-	src/ModelViz.cpp
-	src/pid.cpp
+	src/MyoMuscleVisualization.cpp
+	src/MyoMusclePID.cpp
 	src/muscle/IMuscle.cpp
 	src/muscle/CylindricalWrapping.cpp
 	src/muscle/IActuator.cpp
 	src/muscle/ISee.cpp
 	src/muscle/IViaPoints.cpp
-	src/muscle/MeshWrapping.cpp
+#	src/muscle/MeshWrapping.cpp
 	src/muscle/SphericalWrapping.cpp
 	src/muscle/StateMachine.cpp
 	)

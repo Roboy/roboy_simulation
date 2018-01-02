@@ -1,10 +1,10 @@
-#include "roboy_simulation/ModelViz.hpp"
+#include "roboy_simulation/MyoMuscleVisualization.hpp"
 
-ModelViz::ModelViz(){
+MyoMuscleVisualization::MyoMuscleVisualization(){
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "ModelViz",
+        ros::init(argc, argv, "MyoMuscleVisualization",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
@@ -12,7 +12,7 @@ ModelViz::ModelViz(){
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
 }
 
-void ModelViz::publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
+void MyoMuscleVisualization::publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
 //    static bool add = true;
     visualization_msgs::Marker line_strip;
     line_strip.header.frame_id = "world";
@@ -47,7 +47,7 @@ void ModelViz::publishTendon(vector<boost::shared_ptr<roboy_simulation::IMuscle>
     }
 }
 
-void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
+void MyoMuscleVisualization::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>> *sim_muscles) {
 //    static bool add = true;
     visualization_msgs::Marker arrow;
     arrow.header.frame_id = "world";
@@ -107,7 +107,7 @@ void ModelViz::publishForce(vector<boost::shared_ptr<roboy_simulation::IMuscle>>
 }
 
 
-void ModelViz::publishModel(const string robot_namespace, physics::LinkPtr link){
+void MyoMuscleVisualization::publishModel(const string robot_namespace, physics::LinkPtr link){
     visualization_msgs::Marker mesh;
     mesh.header.frame_id = "world";
     char modelnamespace[20];

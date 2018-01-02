@@ -23,6 +23,14 @@
     <!--args="-sdf -file $(find roboy_models)/ViveBaseStation/model.sdf -model ViveBaseStation1-->
     <!-- -robot_namespace lighthouse1"-->
     <!--/>-->
+
+    <param name="number_of_fpgas" type="int" value="2" />
+
+    <!--these define the gains for the PID in each simulated muscle-->
+    <param name="Kp" type="double" value="1000" />
+    <param name="Ki" type="double" value="0" />
+    <param name="Kd" type="double" value="0" />
+
     <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
     <node name="rqt" pkg="rqt_gui" type="rqt_gui" respawn="false" output="screen"
           args="-p DarkRoom"

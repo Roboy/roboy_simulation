@@ -125,17 +125,12 @@ void MyoMusclePlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
     numberOfMyoMuscles = myoMuscles.size();
     ROS_INFO("Found %d MyoMuscles in sdf file", numberOfMyoMuscles);
 
-    // class laoder for loading muscle plugins
-    class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::IMuscle>
-                               ("roboy_simulation",
-                                "roboy_simulation::IMuscle"));
-
     sim_muscles.clear();
     for (uint muscle = 0; muscle < myoMuscles.size(); muscle++) {
         try {
             ROS_INFO("Loading Muscle Plugin for %s",
                      myoMuscles[muscle].name.c_str());
-            sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
+            sim_muscles.push_back(boost::shared_ptr<roboy_simulation::IMuscle>(new roboy_simulation::IMuscle()));
             sim_muscles.back()->Init(myoMuscles[muscle]);
             //a[sim_muscles[muscle]->name] = 0.0;
         }
@@ -152,6 +147,11 @@ void MyoMusclePlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sd
     motor_status_publisher->detach();
 
     t0 = high_resolution_clock::now();
+
+    motorConfig_srv = nh->advertiseService("/roboy/middleware/MotorConfig", &MyoMusclePlugin::MotorConfigService, this);
+    controlMode_srv = nh->advertiseService("/roboy/middleware/ControlMode", &MyoMusclePlugin::ControlModeService, this);
+    emergencyStop_srv = nh->advertiseService("/roboy/middleware/EmergencyStop", &MyoMusclePlugin::EmergencyStopService,
+                                             this);
 
     ROS_INFO("MyoMusclePlugin ready");
 }
@@ -195,6 +195,8 @@ void MyoMusclePlugin::readSim(ros::Time time, ros::Duration period) {
             sim_muscles[muscle]->viaPoints[i]->linkPosition = linkPose.pos;
             sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;
         }
+//        if(emergency_stop)
+//            sim_muscles[muscle]->cmd = 0;
         sim_muscles[muscle]->Update(time, period);
     }
 }
@@ -218,6 +220,142 @@ void MyoMusclePlugin::Reset() {
     last_update_sim_time_ros = ros::Time();
     last_write_sim_time_ros = ros::Time();
     //reset acceleration of links and the actuator simulation.
+}
+
+
+
+void MyoMusclePlugin::publishID() {
+    std_msgs::Int32 msg;
+    msg.data = roboyID;
+    roboyID_pub.publish(msg);
+}
+
+void MyoMusclePlugin::MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg) {
+    // update pid setvalues
+    lock_guard<mutex> lock(mux);
+    for (uint i = 0; i < msg->motors.size(); i++) {
+        if((msg->motors[i]+msg->id*NUMBER_OF_MOTORS_PER_FPGA)<sim_muscles.size()) {
+            switch(sim_muscles[msg->motors[i]+msg->id*NUMBER_OF_MOTORS_PER_FPGA]->PID->control_mode){
+                case POSITION:
+                    sim_muscles[msg->motors[i]+msg->id*NUMBER_OF_MOTORS_PER_FPGA]->cmd = msg->setPoints[i] * 2.0 * M_PI / (2000.0f * 53.0f); // convert ticks to rad
+                    break;
+                case VELOCITY:
+                    sim_muscles[msg->motors[i]+msg->id*NUMBER_OF_MOTORS_PER_FPGA]->cmd = msg->setPoints[i] / (2000.0f * 53.0f); // convert ticks/s to 1/s
+                    break;
+                case DISPLACEMENT:
+                    sim_muscles[msg->motors[i]+msg->id*NUMBER_OF_MOTORS_PER_FPGA]->cmd = msg->setPoints[i]*0.01*0.001; // convert displacement ticks to m
+                    break;
+                case FORCE:
+                    // TODO: convert force 2 displacement
+                    break;
+            }
+        }
+    }
+}
+
+void MyoMusclePlugin::MotorStatusPublisher(){
+    ros::Rate rate(100);
+    while(motor_status_publishing){
+        roboy_communication_middleware::MotorStatus msg;
+        for(auto const &muscle:sim_muscles){
+            msg.pwmRef.push_back(muscle->cmd);
+            msg.position.push_back(muscle->actuator.gear.position / (2.0 * M_PI / (2000.0f * 53.0f))); // convert to motor ticks
+            msg.velocity.push_back(muscle->actuator.spindle.angVel * (2000.0f * 53.0f)); // convert 1/s to ticks/sec
+            msg.displacement.push_back(muscle->see.deltaX/(0.01*0.001)); // convert m to displacement ticks
+            msg.current.push_back(muscle->actuator.motor.voltage); // this is actually the pid result
+        }
+        motorStatus_pub.publish(msg);
+        rate.sleep();
+    }
+}
+
+bool MyoMusclePlugin::MotorConfigService(roboy_communication_middleware::MotorConfigService::Request &req,
+                                     roboy_communication_middleware::MotorConfigService::Response &res) {
+    if (req.setPoints.size() != req.config.motors.size()) {
+        ROS_ERROR("the number of setpoints do not match the number of motor configs");
+        return false;
+    }
+
+    ROS_INFO("serving motor config service for %ld motors", req.config.motors.size());
+    control_Parameters_t params;
+    uint i = 0;
+    for (auto motor:req.config.motors) {
+        if (req.config.control_mode[i] < POSITION || req.config.control_mode[i] > DISPLACEMENT ) {
+            ROS_ERROR("trying to set an invalid control mode %d, available control modes: "
+                              "[0]Position [1]Velocity [2]Displacement", req.config.control_mode[i]);
+            continue;
+        }
+
+        int sim_muscle_number = req.config.id*NUMBER_OF_MOTORS_PER_FPGA+i;
+        if( sim_muscle_number > sim_muscles.size()){
+            ROS_ERROR("sim_muscle %d does not exist", req.config.id*NUMBER_OF_MOTORS_PER_FPGA+i);
+            continue;
+        }
+
+//        params.outputPosMax = req.config.outputPosMax[i];
+//        params.outputNegMax = req.config.outputNegMax[i];
+        params.spPosMax = req.config.spPosMax[i];
+        params.spNegMax = req.config.spNegMax[i];
+        params.Kp = req.config.Kp[i];
+        params.Ki = req.config.Ki[i];
+        params.Kd = req.config.Kd[i];
+        params.forwardGain = req.config.forwardGain[i];
+        params.deadBand = req.config.deadBand[i];
+        params.IntegralPosMax = req.config.IntegralPosMax[i];
+        params.IntegralNegMax = req.config.IntegralNegMax[i];
+
+        sim_muscles[sim_muscle_number]->PID->control_mode = req.config.control_mode[i];
+        sim_muscles[sim_muscle_number]->PID->params[req.config.control_mode[i]] = params;
+        sim_muscles[sim_muscle_number]->cmd = req.setPoints[i];
+
+        ROS_INFO("setting motor %d of fpga %d to control mode %d with setpoint %d", sim_muscle_number%NUMBER_OF_MOTORS_PER_FPGA,
+                sim_muscle_number/NUMBER_OF_MOTORS_PER_FPGA , req.config.control_mode[i], req.setPoints[i]);
+        i++;
+    }
+    return true;
+}
+
+bool MyoMusclePlugin::ControlModeService(roboy_communication_middleware::ControlMode::Request &req,
+                                     roboy_communication_middleware::ControlMode::Response &res) {
+    if (!emergency_stop) {
+        uint i = 0;
+        switch(req.control_mode){
+            case POSITION:
+                ROS_INFO("switch to POSITION control");
+                for (auto &muscle:sim_muscles){
+                    muscle->PID->control_mode = POSITION;
+                }
+                break;
+            case VELOCITY:
+                ROS_INFO("switch to VELOCITY control");
+                for (auto &muscle:sim_muscles){
+                    muscle->PID->control_mode = VELOCITY;
+                }
+                break;
+            case DISPLACEMENT:
+                ROS_INFO("switch to DISPLACEMENT control");
+                for (auto &muscle:sim_muscles){
+                    muscle->PID->control_mode = DISPLACEMENT;
+                }
+                break;
+            default:
+                return false;
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool MyoMusclePlugin::EmergencyStopService(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
+    if (req.data == 1) {
+        ROS_INFO("emergency stop service called");
+        emergency_stop = true;
+    } else {
+        ROS_INFO("resuming normal operation");
+        emergency_stop = false;
+    }
+    return true;
 }
 
 bool MyoMusclePlugin::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {
@@ -515,42 +653,6 @@ bool MyoMusclePlugin::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulati
         myoMuscles.push_back(myoMuscle);
     }
     return true;
-}
-
-void MyoMusclePlugin::publishID() {
-    std_msgs::Int32 msg;
-    msg.data = roboyID;
-    roboyID_pub.publish(msg);
-}
-
-void MyoMusclePlugin::MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg) {
-    // only react to messages for me
-    if (msg->id == roboyID) {
-        // update pid setvalues
-        for (uint i = 0; i < msg->motors.size(); i++) {
-            if(msg->motors[i]<sim_muscles.size()) {
-                sim_muscles[msg->motors[i]]->pid_control = true;
-                sim_muscles[msg->motors[i]]->feedback_type = 2;
-                sim_muscles[msg->motors[i]]->cmd = msg->setPoints[i]*0.01; // convert displacement ticks to mm
-            }
-        }
-    }
-}
-
-void MyoMusclePlugin::MotorStatusPublisher(){
-    ros::Rate rate(100);
-    while(motor_status_publishing){
-        roboy_communication_middleware::MotorStatus msg;
-        for(auto const &muscle:sim_muscles){
-            msg.pwmRef.push_back(muscle->cmd);
-            msg.position.push_back(muscle->actuator.gear.position);
-            msg.velocity.push_back(muscle->actuator.spindle.angVel*M_PI*2.0); // convert 1/s to radians/sec
-            msg.displacement.push_back(muscle->see.deltaX/0.01); // convert mm to displacement ticks
-            msg.current.push_back(muscle->actuator.motor.current);
-        }
-        motorStatus_pub.publish(msg);
-        rate.sleep();
-    }
 }
 
 GZ_REGISTER_MODEL_PLUGIN(MyoMusclePlugin)

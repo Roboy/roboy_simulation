@@ -1,6 +1,5 @@
 #include "roboy_simulation/muscle/IMuscle.hpp"
 
-
 namespace roboy_simulation {
 
     IMuscle::IMuscle() : muscleLength(0), tendonLength(0), initialTendonLength(0), firstUpdate(true) {
@@ -15,6 +14,34 @@ namespace roboy_simulation {
 
         // Setup topics for different motor values
         setupTopics();
+
+        PID.reset(new MyoMusclePID());
+
+        double Kp = 200, Ki = 0, Kd = 0;
+        if (nh->hasParam("Kp")) {
+            nh->getParam("Kp", Kp);
+            PID->params[POSITION].Kp = Kp;
+            PID->params[VELOCITY].Kp = Kp;
+            PID->params[DISPLACEMENT].Kp = Kp;
+            PID->params[FORCE].Kp = Kp;
+            ROS_INFO_ONCE_NAMED("IMuscle", "using Kp %lf", Kp);
+        }
+        if (nh->hasParam("Ki")) {
+            nh->getParam("Ki", Ki);
+            PID->params[POSITION].Ki = Ki;
+            PID->params[VELOCITY].Ki = Ki;
+            PID->params[DISPLACEMENT].Ki = Ki;
+            PID->params[FORCE].Ki = Ki;
+            ROS_INFO_ONCE_NAMED("IMuscle", "using Ki %lf", Ki);
+        }
+        if (nh->hasParam("Kd")) {
+            nh->getParam("Kd", Kd);
+            PID->params[POSITION].Kd = Kd;
+            PID->params[VELOCITY].Kd = Kd;
+            PID->params[DISPLACEMENT].Kd = Kd;
+            PID->params[FORCE].Kd = Kd;
+            ROS_INFO_ONCE_NAMED("IMuscle", "using Kd %lf", Kd);
+        }
     }
 
     void IMuscle::Init(MyoMuscleInfo &myoMuscle) {
@@ -38,18 +65,21 @@ namespace roboy_simulation {
     }
 
     void IMuscle::Update(ros::Time &time, ros::Duration &period) {
-        //ROS_INFO("TIME:  %f", time.toSec());
-        /*if(time.toSec() >= 1){
-            pid_control = true;
-            cmd = 0.01;
-            feedback_type = 2;
-        }
-        if(time.toSec() >= 10){
-            cmd = 0.005;
-        }*/
-
         if (pid_control) {
-            actuator.motor.voltage = musclePID.calculate(period.toSec(), cmd, feedback[feedback_type]);
+            switch (PID->control_mode) {
+                case POSITION:
+                    actuator.motor.voltage = PID->calculate(period.toSec(), cmd, feedback.position);
+                    break;
+                case VELOCITY:
+                    actuator.motor.voltage = PID->calculate(period.toSec(), cmd, feedback.velocity);
+                    break;
+                case DISPLACEMENT:
+                    actuator.motor.voltage = PID->calculate(period.toSec(), cmd, feedback.displacement);
+                    break;
+                default:
+                    actuator.motor.voltage = 0;
+            }
+
         } else {
             actuator.motor.voltage = cmd * 24;//simulated PWM
         }
@@ -115,19 +145,21 @@ namespace roboy_simulation {
         actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
 
         // do 1 step of integration of DiffModel() at current time
-        boost::numeric::odeint::integrate([this](const IActuator::state_type &x, IActuator::state_type &dxdt, double t) {
-            // This lambda function describes the differential model for the simulations of dynamics
-            // of a DC motor, a spindle, and a gear box`
-            // x[0] - motor electric current
-            // x[1] - spindle angular velocity
-            double totalIM = actuator.motor.inertiaMoment + actuator.gear.inertiaMoment; // total moment of inertia
-            dxdt[0] = 1.0 / actuator.motor.inductance * (-actuator.motor.resistance * x[0]
-                                                         - actuator.motor.BEMFConst * actuator.gear.ratio * x[1]
-                                                         + actuator.motor.voltage);
-            dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
-                      actuator.spindle.radius * actuator.elasticForce /
-                      (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-        }, x, time.toSec(), time.toSec()+period.toSec(), period.toSec());
+        boost::numeric::odeint::integrate(
+                [this](const IActuator::state_type &x, IActuator::state_type &dxdt, double t) {
+                    // This lambda function describes the differential model for the simulations of dynamics
+                    // of a DC motor, a spindle, and a gear box`
+                    // x[0] - motor electric current
+                    // x[1] - spindle angular velocity
+                    double totalIM =
+                            actuator.motor.inertiaMoment + actuator.gear.inertiaMoment; // total moment of inertia
+                    dxdt[0] = 1.0 / actuator.motor.inductance * (-actuator.motor.resistance * x[0]
+                                                                 - actuator.motor.BEMFConst * actuator.gear.ratio * x[1]
+                                                                 + actuator.motor.voltage);
+                    dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
+                              actuator.spindle.radius * actuator.elasticForce /
+                              (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
+                }, x, time.toSec(), time.toSec() + period.toSec(), period.toSec());
 
         actuator.motor.current = x[0];
         actuator.spindle.angVel = x[1];
@@ -143,24 +175,23 @@ namespace roboy_simulation {
 
         calculateTendonForceProgression();
 
-        ros::spinOnce();
-
         // feedback for PID-controller
-        feedback[0] = muscleForce;
-        feedback[1] = actuator.gear.position;
-        feedback[2] = see.deltaX;
+        feedback.position = actuator.gear.position;
+        feedback.velocity = actuator.spindle.angVel;
+        feedback.displacement = see.deltaX;
 
         publishTopics();
 
-        if(firstUpdate)
+        if (firstUpdate)
             firstUpdate = false;
 
         //    ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
         //                  actuator.spindle.angVel, muscleForce);
         //    ROS_INFO("electric current: %.5f, angVel: %.5f, muscleForce %.5f, springDis: %f", actuator.motor.current,
         //                   actuator.spindle.angVel, muscleForce, see.deltaX);
-        //    ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength ); 
+        //    ROS_INFO("tendonLength: %f, muscleLength: %f", tendonLength, muscleLength );
 
+        ros::spinOnce();
     }
 
     /////////////////////////////////////////////
@@ -184,7 +215,7 @@ namespace roboy_simulation {
     }
 
     //////////////////////////////////////////////
-    // publishes motor information 
+    // publishes motor information
     void IMuscle::publishTopics() {
         std_msgs::Float32 msg;
 
@@ -209,7 +240,7 @@ namespace roboy_simulation {
     }
 
     ////////////////////////////////////////////////////
-    // The Viapoint Wraping-type gets instantiated 
+    // The Viapoint Wraping-type gets instantiated
     // and built into a Linked list
     void IMuscle::initViaPoints(MyoMuscleInfo &myoMuscle) {
         static int message_counter = 6666;
@@ -243,7 +274,7 @@ namespace roboy_simulation {
     }
 
     /////////////////////////////////////////////////
-    // Calculates how the force goes along the tendon by going throught the Viapoint 
+    // Calculates how the force goes along the tendon by going throught the Viapoint
     void IMuscle::calculateTendonForceProgression() {
         for (int i = 0; i < viaPoints.size(); i++) {
             if (viaPoints[i]->prevPoint && viaPoints[i]->nextPoint) {
@@ -261,5 +292,3 @@ namespace roboy_simulation {
         }
     }
 }
-// make it a plugin loadable via pluginlib
-PLUGINLIB_EXPORT_CLASS(roboy_simulation::IMuscle, roboy_simulation::IMuscle)

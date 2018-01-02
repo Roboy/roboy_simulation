@@ -33,9 +33,11 @@ using namespace roboy_simulation;
 		// check wether SEE absorbed deltaLength completely 
 		// deltaLength will be zero at this point until the spring reaches its limit. 
 		deltaLength = ( muscleLength+internalLength - tendonLength ); 
-		if(deltaX >= 0.02) 
-				tendonForce = tendonStiffness * deltaLength; 
-		else{ tendonForce = 0; }
+		if(deltaX >= 0.02)
+            tendonForce = tendonStiffness * deltaLength;
+		else{
+            tendonForce = 0;
+        }
 		//ROS_INFO("deltaX: %f;	_1: %f;		_2:%f", deltaX, toDegree(alpha_1), toDegree(alpha_2) );
 		
         if (deltaX >= 0)

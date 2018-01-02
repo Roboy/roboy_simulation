@@ -9,8 +9,6 @@
 #include <gazebo_ros_control/robot_hw_sim.h>
 #include <visualization_msgs/Marker.h>
 #include <transmission_interface/transmission_parser.h>
-#include <pluginlib/class_loader.h>
-#include <pluginlib/class_list_macros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
 #include <gazebo/gazebo.hh>
@@ -22,21 +20,21 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include "roboy_simulation/muscle/IMuscle.hpp"
-#include <std_msgs/Bool.h>
-#include <std_msgs/Int32.h>
-#include <geometry_msgs/Vector3.h>
-#include "roboy_simulation/MotorControl.h"
-#include "roboy_simulation/PIDControl.h"
-#include "roboy_simulation/ModelViz.hpp"
+#include "roboy_simulation/MyoMuscleVisualization.hpp"
 #include <roboy_communication_middleware/MotorCommand.h>
 #include <roboy_communication_middleware/MotorStatus.h>
+#include <roboy_communication_middleware/MotorConfigService.h>
+#include <roboy_communication_middleware/ControlMode.h>
 #include <chrono>
+#include <common_utilities/CommonDefinitions.h>
+#include <mutex>
+#include <std_srvs/SetBool.h>
 
 using namespace gazebo;
 using namespace std;
 using namespace chrono;
 
-class MyoMusclePlugin : public gazebo::ModelPlugin, public ModelViz{
+class MyoMusclePlugin : public gazebo::ModelPlugin, public MyoMuscleVisualization{
 public:
     /** Constructor */
     MyoMusclePlugin();
@@ -86,21 +84,28 @@ public:
 
     /** Publishes the roboyID of this instantiation */
     void publishID();
-
+private:
     /**
      *   Callback for motor commands
      *   @param msg
     */
     void MotorCommand(const roboy_communication_middleware::MotorCommand::ConstPtr &msg);
-
-private:
     void MotorStatusPublisher();
+    bool MotorConfigService(roboy_communication_middleware::MotorConfigService::Request &req,
+                                             roboy_communication_middleware::MotorConfigService::Response &res);
+    bool ControlModeService(roboy_communication_middleware::ControlMode::Request &req,
+                                             roboy_communication_middleware::ControlMode::Response &res);
+    bool EmergencyStopService(std_srvs::SetBool::Request &req,
+                                               std_srvs::SetBool::Response &res);
+
+    bool emergency_stop = false;
+
     static int roboyID_generator;
     int roboyID = 0;
     ros::NodeHandlePtr nh;
     ros::Subscriber  motorCommand_sub, pid_control_sub;
     ros::Publisher visualizeTendon_pub, roboyID_pub, motorStatus_pub;
-    ros::ServiceServer roboyID_srv;
+    ros::ServiceServer roboyID_srv, motorConfig_srv,  controlMode_srv, emergencyStop_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     bool motor_status_publishing = true;
@@ -157,9 +162,8 @@ private:
 
     uint numberOfMyoMuscles;
 
-    boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
     vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
-    vector<roboy_simulation::MyoMuscleInfo> myoMuscles; 
+    vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
 
     map<string, double> desiredAngles;
     //Mapping of joint's name and its own pid
@@ -174,4 +178,5 @@ private:
     double outputMin = -500;
 
     high_resolution_clock::time_point t0,t1;
+    mutex mux;
 };

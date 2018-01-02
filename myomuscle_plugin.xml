@@ -1,6 +1,6 @@
 <library path="libmyomuscle_plugin">
-  <class type="roboy_simulation::IMuscle" 
-	 base_class_type="roboy_simulation::IMuscle">
+  <class type="MyoMusclePlugin"
+	 base_class_type="MyoMusclePlugin">
   <description>
   	This is a myomuscle plugin
   </description>

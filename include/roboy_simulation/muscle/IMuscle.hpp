@@ -6,7 +6,6 @@
 #include "SphericalWrapping.hpp"
 #include "CylindricalWrapping.hpp"
 #include "MeshWrapping.hpp"
-// gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/common/common.hh>
@@ -14,15 +13,11 @@
 #include <gazebo/util/system.hh>
 #include <gazebo/math/Vector3.hh>
 #include <gazebo/math/Pose.hh>
-// ros
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-// messages
 #include <std_msgs/Float32.h>
-// boost
 #include <boost/numeric/odeint.hpp>
 #include <boost/bind.hpp>
-//std
 #include <math.h>
 #include <map>
 #include <stdio.h>
@@ -36,7 +31,7 @@
 #include <memory>
 #include <cmath>
 #include <common_utilities/rviz_visualization.hpp>
-#include "roboy_simulation/pid.hpp"
+#include "roboy_simulation/MyoMusclePID.hpp"
 
 enum MUSCLE_TYPE{
     EXTENSOR,
@@ -77,9 +72,9 @@ namespace roboy_simulation {
 		string name;
 		vector<std::shared_ptr<IViaPoints>> viaPoints;
 		double cmd = 0;
-		bool pid_control = false;
-		int feedback_type = 0;
-		
+		bool pid_control = true;
+        boost::shared_ptr<MyoMusclePID> PID;
+
 		math::Vector3 momentArm;
         physics::JointPtr spanningJoint = nullptr;
 	private:
@@ -110,21 +105,22 @@ namespace roboy_simulation {
 		double prevMuscleLength;
 		//tendonLength describes the total TendonLength from then Motor until the last viapoint. (TendonLength excluding the tendon coiled up on the motor)
         double tendonLength;
-		//initial TendonLength describes the initial total tendonlength 
+		//initial TendonLength describes the initial total tendonlength
         double initialTendonLength;
 		//actual angVel
 		double sim_angVel;
         bool firstUpdate;
 		double sinParm = 0;
-		double feedback[3] = {0.0, 0.0, 0.0};
-		PID musclePID = PID( 24.0, -24.0, 150, 10, 100);
+        struct{
+            double position = 0;
+            double velocity = 0;
+            double displacement = 0;
+        }feedback;
 
 		void setupTopics();
 		void publishTopics();
 		void initViaPoints( MyoMuscleInfo &myoMuscle );
 		void calculateTendonForceProgression();
-		void applyMotorCurrent( double &motorCurrent, const double &spindleAngVel );
-		void applySpindleAngVel( const double &motorCurrent, double &spindleAngVel );
 	};
 
 
