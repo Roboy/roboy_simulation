@@ -36,22 +36,35 @@ void SimulateRoboyInRViz::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    external_force_sub = nh->subscribe("/roboy/external_Force", 1, &SimulateRoboyInRViz::ApplyExternalForce, this);
+    external_force_sub = nh->subscribe("/roboy/external_force", 1, &SimulateRoboyInRViz::ApplyExternalForce, this);
     pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/pose", 100);
 }
 
+/** Applies external force to model and publishes message so that force is displayed in RVIZ
+ * External force is applied locally: the given coordinates describe the local position with respect to the respective
+ * roboy body part, the force is a vector in local direction
+ * */
 void SimulateRoboyInRViz::ApplyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg) {
-    /** "Displplaying external force in rviz"*/
-    Vector3d force3d(msg->f_x, msg->f_y, msg->f_z);
-    Vector3d world_pos3d(msg->x, msg->y, msg->z);
-    publishRay(world_pos3d, force3d, "world", "model", 0, COLOR(1,0,1,1), 0 ); // got its own node handler nh
-
-    /** Applying force in simulation*/
+    /** Find concerned body part*/
     physics::LinkPtr link = model->GetChildLink(msg->name);
     if (link != nullptr) {
-        math::Vector3 force(msg->f_x, msg->f_y, msg->f_z);
-        math::Vector3 world_pos(msg->x, msg->y, msg->z);
-        link->AddForceAtWorldPosition(force, world_pos);
+
+        /** Applying force in simulation*/
+        math::Vector3 localforce(msg->f_x, msg->f_y, msg->f_z);
+        math::Vector3 worldforce =  link->GetWorldPose().rot.GetAsMatrix4() *localforce;
+        math::Vector3 localpos(msg->x, msg->y, msg->z); //local pos with respect to link
+        math::Vector3 worldpos = link->GetWorldPose().pos + link->GetWorldPose().rot.GetAsMatrix4() * localpos;
+        link->AddForceAtWorldPosition(worldforce, worldpos);
+        //link->AddForceAtWorldPosition(localforce, localpos);
+
+        /** "Displplaying external force in rviz, vector with unit length"*/
+        Vector3d force3d(worldforce.x, worldforce.y, worldforce.z);
+        //Vector3d force3d(localforce.x, localforce.y, localforce.z);
+        force3d.normalize();
+        Vector3d pos3d(worldpos.x, worldpos.y, worldpos.z);
+        //Vector3d pos3d(localpos.x, localpos.y, localpos.z);
+        //sends message for rviz
+        publishRay(pos3d, force3d, "world", "model", 0, COLOR(1,0,1,1), 0 ); // got its own node handler nh
     }
 }
 
@@ -94,7 +107,13 @@ void SimulateRoboyInRViz::publishPose()
 void SimulateRoboyInRViz::OnUpdate(const common::UpdateInfo &_info)
 {
     //TODO: needed?
-    // this->simulate(model->GetWorld())
+    //model->simulate(model->GetWorld());
     //for each link: publish pose
     publishPose();
 }
+
+
+/*
+ * Known issues:
+ * UNITY Issues:
+ *  - Unity sends messages*/

@@ -10,5 +10,4 @@
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
         <arg name="port" value="8888"/>
     </include>
-    <node name="VRRoboy2" pkg="roboy_simulation" type="VRRoboy2"/>
 </launch>
