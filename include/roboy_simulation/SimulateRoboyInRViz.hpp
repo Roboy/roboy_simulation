@@ -21,7 +21,6 @@
 #include "roboy_simulation/helperClasses.hpp"
 #include "roboy_simulation/simulationControl.hpp"
 
-
 namespace gazebo
 {
     class SimulateRoboyInRViz : public ModelPlugin, public rviz_visualization

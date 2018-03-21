@@ -51,6 +51,10 @@ public:
      * @param msg the external force
      */
     void applyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg);
+
+    /**
+     * List of created worlds
+     */
     vector<physics::WorldPtr> world;
     bool apply_external_force = false;
     int32_t duration_in_milliseconds = 0;
