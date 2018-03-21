@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 	visualization_msgs
 	roboy_communication_middleware
 	roboy_communication_simulation
+	common_utilities
 )
 
 # Find includes in corresponding build directories
@@ -38,7 +39,7 @@ message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
 find_package(PkgConfig)
 
-catkin_package( DEPENDS GAZEBO CATKIN_DEPENDS rosbag message_runtime message_generation roboy_communication_middleware
+catkin_package( DEPENDS GAZEBO CATKIN_DEPENDS common_utilities rosbag message_runtime message_generation roboy_communication_middleware
 		roboy_communication_simulation INCLUDE_DIRS include
 )
 
@@ -93,6 +94,12 @@ target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${B
 add_library(ForceJointPlugin SHARED src/ForceJointPlugin.cpp)
 target_link_libraries(ForceJointPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
+add_library(SimulateRoboyInRViz SHARED src/SimulateRoboyInRViz.cpp)
+target_link_libraries(SimulateRoboyInRViz ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
+add_library(BeRoboyPlugin SHARED src/BeRoboyPlugin.cpp)
+target_link_libraries(BeRoboyPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
 add_library(ForceLinkPlugin SHARED src/ForceLinkPlugin.cpp)
 target_link_libraries(ForceLinkPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -103,6 +110,10 @@ target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_L
 add_executable(VRRoboy src/VRRoboy.cpp src/simulationControl.cpp)
 add_dependencies(VRRoboy roboy_communication_middleware_gencpp roboy_communication_simulation_gencpp)
 target_link_libraries(VRRoboy ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
+
+add_executable(VRRoboy2 src/VRRoboy2.cpp src/simulationControl.cpp)
+add_dependencies(VRRoboy2 roboy_rviz_balancing roboy_communication_middleware_gencpp roboy_communication_simulation_gencpp)
+target_link_libraries(VRRoboy2 ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} )
 
 add_executable(PaBiDanceSimulator src/PaBiDanceSimulator.cpp)
 add_dependencies(roboy_rviz_balancing roboy_communication_middleware_gencpp)
@@ -125,6 +136,7 @@ install(TARGETS
 install(TARGETS
         roboySim
         VRRoboy
+		VRRoboy2
 	    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

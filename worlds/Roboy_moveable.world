@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-    <!-- We use a custom world for pabi so that the camera angle is launched correctly -->
+    <!-- We use a custom world for Roboy so that the camera angle is launched correctly -->
 
     <world name="default">
 
@@ -10,7 +10,7 @@
         </include>
 	<!--PabiRoboy -->
 	<include>
-	    <uri>model://Roboy_with_camera_simplified</uri>
+	    <uri>model://Roboy_simplified_moveable</uri>
 	</include>
 	<!--Sun -->
         <include>

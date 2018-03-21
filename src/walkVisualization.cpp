@@ -300,7 +300,7 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
     if(!child_link) { // parent_link is top link and connected to world frame
         mesh.id = message_counter++;
         math::Pose pose = parent_link->GetWorldPose();
-        pose.rot.Normalize();
+//        pose.rot.Normalize();
         mesh.pose.position.x = pose.pos.x;
         mesh.pose.position.y = pose.pos.y;
         mesh.pose.position.z = pose.pos.z;
@@ -309,7 +309,7 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
         mesh.pose.orientation.z = pose.rot.z;
         mesh.pose.orientation.w = pose.rot.w;
         char meshpath[200];
-        sprintf(meshpath,"package://roboy_models/legs_with_upper_body/cad/%s.STL",
+        sprintf(meshpath,"package://roboy_models/legs_with_upper_body_simplified/meshes/visual/VIS_%s.STL",
                 parent_link->GetName().c_str() );
         mesh.mesh_resource = meshpath;
         marker_visualization_pub.publish(mesh);
@@ -321,7 +321,7 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
         for (auto child_link:child_links) { // each child relative pose to parent
             mesh.id = message_counter++;
             math::Pose pose = child_link->GetWorldPose();
-            pose.rot.Normalize();
+//            pose.rot.Normalize();
             mesh.pose.position.x = pose.pos.x;
             mesh.pose.position.y = pose.pos.y;
             mesh.pose.position.z = pose.pos.z;
@@ -330,7 +330,7 @@ void WalkVisualization::publishModel(physics::LinkPtr parent_link, bool child_li
             mesh.pose.orientation.z = pose.rot.z;
             mesh.pose.orientation.w = pose.rot.w;
             char meshpath[200];
-            sprintf(meshpath,"package://roboy_models/legs_with_upper_body/cad/%s.STL",
+            sprintf(meshpath,"package://roboy_models/legs_with_upper_body_simplified/meshes/visual/VIS_%s.STL",
                     child_link->GetName().c_str() );
             mesh.mesh_resource = meshpath;
             marker_visualization_pub.publish(mesh);
