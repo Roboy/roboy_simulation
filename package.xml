@@ -25,6 +25,7 @@
     <build_depend>tf</build_depend>
     <build_depend>roboy_communication_middleware</build_depend>
     <build_depend>roboy_communication_simulation</build_depend>
+    <build_depend>common_utilities</build_depend>
 
     <run_depend>roscpp</run_depend>
     <run_depend>rosbag</run_depend>
@@ -34,6 +35,7 @@
     <run_depend>message_generation</run_depend>
     <run_depend>gazebo_ros_control</run_depend>
     <run_depend>controller_manager</run_depend>
+    <run_depend>common_utilities</run_depend>
     <run_depend>gazebo</run_depend>
     <run_depend>gazebo_ros</run_depend>
     <run_depend>control_toolbox</run_depend>
