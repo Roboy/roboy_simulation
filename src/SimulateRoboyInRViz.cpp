@@ -7,18 +7,11 @@ using namespace gazebo;
 
 GZ_REGISTER_MODEL_PLUGIN(SimulateRoboyInRViz)
 
-/** TIME Related variables (For msg / frame counts)*/
-int FRAMESPERSEC = 80;
-std::time_t seconds = 0;
-int PoseCounter = 0;
-int ForceCounter = 0;
-std::chrono::high_resolution_clock::time_point prevTime;
-int deltaframerate;
+
 
 
 SimulateRoboyInRViz::SimulateRoboyInRViz() : ModelPlugin() {
     prevTime = std::chrono::high_resolution_clock::now();
-    deltaframerate =  1000/ FRAMESPERSEC;
     printf("\n\nInitiated Simulation with %i FPS\n\n", FRAMESPERSEC);
 }
 
@@ -36,7 +29,7 @@ void SimulateRoboyInRViz::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     // get all joints and the initial pose
     initPose = model->GetWorldPose();
 
-    // Init ros if it is has not been initialized
+    // Initialize ROS if it is has not been initialized
     if(!ros::isInitialized())
     {
         int argc = 0;
@@ -49,6 +42,7 @@ void SimulateRoboyInRViz::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
+    //create publisher and subscriber
     external_force_sub = nh->subscribe("/roboy/external_force", 1, &SimulateRoboyInRViz::ApplyExternalForce, this);
     pose_pub = nh->advertise<roboy_communication_middleware::Pose>("/roboy/pose", 100);
 }
@@ -73,7 +67,8 @@ void SimulateRoboyInRViz::ApplyExternalForce(const roboy_communication_simulatio
         //link->AddForceAtWorldPosition(worldforce, worldpos);
         link->AddForceAtWorldPosition(localforce, localpos);
         //link->AddForceAtRelativePosition(localforce, localpos);
-        /** "Displplaying external force in rviz, vector with unit length"*/
+
+        /** Displplaying external force in rviz, vector has unit length*/
         //Vector3d force3d(worldforce.x, worldforce.y, worldforce.z);
         Vector3d force3d(localforce.x, localforce.y, localforce.z);
         force3d.normalize();
@@ -87,12 +82,13 @@ void SimulateRoboyInRViz::ApplyExternalForce(const roboy_communication_simulatio
 void SimulateRoboyInRViz::publishPose()
 {
     roboy_communication_middleware::Pose msg;
-    int counter = 1;
+    int linkCounter = 1; // for rviz messages
     for(auto link:model->GetLinks()){
         math::Pose p = link->GetWorldPose();
-        /** rviz message*/
+        /** rviz message construction & publish*/
         //since in CAD folder no "neck_spinal.stl" specified but model.sdf contains it -> have to ignore it in order to make rviz work
         //for now: workaround / dirty hack -> make prettier or adapt model files
+        //TODO: don't know if this is still necessary
         if (link->GetName() == "neck_spinal") {
             continue;
         }
@@ -100,9 +96,10 @@ void SimulateRoboyInRViz::publishPose()
         Quaterniond eigenrot(p.rot.w, p.rot.x, p.rot.y, p.rot.z);
         // namespace not important -> rviz separates in certain namespaces, choose same one and you're fine
         // got its own node handler nh
+        // keep message id the same for same obj (message id #0-> force)
         publishMesh( "roboy_models", "Roboy_simplified_moveable/meshes/CAD", (link->GetName() +".stl").c_str(), eigenpos, eigenrot,
-                0.001, "world", "model", counter, 0); // keep message id the same for same obj (message id #0-> force)
-        counter ++;
+                0.001, "world", "model", linkCounter, 0);
+        linkCounter ++;
 
         /** second message construction*/
         msg.name.push_back(link->GetName());
@@ -114,13 +111,14 @@ void SimulateRoboyInRViz::publishPose()
         msg.qy.push_back(p.rot.y);
         msg.qz.push_back(p.rot.z);
         msg.qw.push_back(p.rot.w);
+
     }
     /** publish second message*/
     pose_pub.publish(msg);
     PoseCounter++;
 }
 
-void PrintStats(){
+void SimulateRoboyInRViz::PrintStats(){
     std::time_t currentseconds = std::time(nullptr);
     if(seconds != currentseconds ){
         seconds = currentseconds;
@@ -134,10 +132,13 @@ void PrintStats(){
 
 void SimulateRoboyInRViz::OnUpdate(const common::UpdateInfo &_info)
 {
-    /**Restrict framerate since other side has backlog of msgs otherwise*/
+    /**Restrict frame rate since UNITY (on windows) starts having a backlog of msgs otherwise
+     * - for now, unity is unable to do that itself*/
+    int deltaframerate =  1000/ FRAMESPERSEC;
     std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
     auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - prevTime);
     //Restriction: more than delta frame rate needs to have passed
+    // -> actual fps <= FRAMESPERSECOND (oftentimes a couple of frames less)
     if(milliseconds.count() > deltaframerate){
 
         prevTime = currentTime;
@@ -146,9 +147,3 @@ void SimulateRoboyInRViz::OnUpdate(const common::UpdateInfo &_info)
         PrintStats();
     }
 }
-
-
-/*
- * Known issues:
- * UNITY Issues:
- *  - Unity sends messages*/

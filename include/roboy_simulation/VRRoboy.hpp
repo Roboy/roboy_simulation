@@ -28,46 +28,47 @@ using namespace std;
 
 class VRRoboy : public SimulationControl{
 public:
+    /**
+     * Constructor: sets up connection to ROS, initializes world and loads model
+     */
     VRRoboy();
+
     ~VRRoboy();
+
     /**
-     * initializes numberOfWorlds worlds and populates them with the legs
-     * @param numberOfWorlds
+     * Publishes the current pose of the roboy of the model
      */
-    void initializeWorlds(uint numberOfWorlds);
+    void publishPose();
+
     /**
-     * Publishes the pose of a roboy
-     * @param modelNr the roboy id
+     * Publishes random motor values
      */
-    void publishPose(uint modelNr);
-    void publishTestPose( const geometry_msgs::Pose::ConstPtr& msg );
+    void publishRandomMotorStates();
+
     /**
-     * Publishes the motor state of a roboy
-     * @param modelNr the roboy id
-     */
-    void publishMotorStates(uint modelNr);
-    /**
-     * Applies the external force to all roboys
-     * @param msg the external force
+     * Applies force to initially instantiated ROboy model. Expects coordinates in gazebo's coordinate system,
+     * @param msg Message containing link and coordinates in local space of the given link
      */
     void applyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg);
 
     /**
-     * List of created worlds
+     * pointer to created world
      */
-    vector<physics::WorldPtr> world;
-    bool apply_external_force = false;
-    int32_t duration_in_milliseconds = 0;
-private:
-    transport::NodePtr node;
-    transport::PublisherPtr serverControlPub, resetPub;
+    physics::WorldPtr world;
 
-    ros::NodeHandlePtr nh;
-    ros::ServiceServer reset_world_srv;
-    ros::Subscriber sim_control_sub, pose_sub, external_force_sub;
-    ros::Publisher marker_visualization_pub, pose_pub, muscle_state_pub;
+private:
+    //connection related
+    transport::NodePtr node;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
-    vector<physics::ModelPtr> model;
+    ros::NodeHandlePtr nh;
+
+    //publisher & subscriber
+    ros::Subscriber external_force_sub;
+    ros::Publisher  pose_pub, muscle_state_pub;
+    /**
+     * model loaded into the world (since messages cannot distinguish models, multiple models in one world useless-> one model)
+     */
+    physics::ModelPtr model;
 };
 
 int main(int _argc, char **_argv);

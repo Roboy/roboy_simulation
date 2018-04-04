@@ -11,7 +11,6 @@
 #include <gazebo/transport/transport.hh>
 #include <gazebo/sensors/sensors.hh>
 // additional
-
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/rendering/DynamicLines.hh"
 #include "gazebo/rendering/RenderTypes.hh"
@@ -39,42 +38,32 @@ class VRRoboy2 : public SimulationControl { //,public  rviz_visualization{
 public:
     VRRoboy2();
     ~VRRoboy2();
-    /**
-     * initializes numberOfWorlds worlds and populates them with the legs
-     * @param numberOfWorlds
-     */
-    void initializeWorlds(uint numberOfWorlds);
 
     void Load(gazebo::rendering::VisualPtr _parent, sdf::ElementPtr sdf);
     /**
-     * Publishes the pose of a roboy
-     * @param modelNr the roboy id
+     * Publishes the pose of roboy - coordinates are given in gazebo's world coordinate space
      */
-    void publishPose(uint modelNr);
+    void publishPose();
 
     /**
-     * Publishes the motor state of a roboy
-     * @param modelNr the roboy id
-     */
-    void publishMotorStates(uint modelNr);
-    /**
-     * Applies the external force to all roboys
-     * @param msg the external force
+     * Applies the external force to roboy - force is assumed to be defined in gazebo's world coordinate space
      */
     void applyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg);
 
     /**
-     * Reference to all created worlds
+     * Reference to created world
      */
-    vector<physics::WorldPtr> world;
+    physics::WorldPtr world;
 
 private:
-
+    // ROS connection params
     ros::NodeHandlePtr nh;
-    ros::Subscriber pose_sub, external_force_sub;
-    ros::Publisher  pose_pub, muscle_state_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
-    vector<physics::ModelPtr> model; // list of models
+    //publishers and subscribers
+    ros::Subscriber external_force_sub;
+    ros::Publisher  pose_pub, muscle_state_pub;
+
+    physics::ModelPtr model;
 };
 
 int main(int _argc, char **_argv);

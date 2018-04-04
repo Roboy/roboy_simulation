@@ -17,9 +17,6 @@
 #include <std_msgs/Int32.h>
 #include "roboy_communication_middleware/Pose.h"
 #include "roboy_communication_simulation/ExternalForce.h" //needed to receive and process (display) forces
-//TODO: simulation control files: for now not sure if needed
-#include "roboy_simulation/helperClasses.hpp"
-#include "roboy_simulation/simulationControl.hpp"
 
 namespace gazebo
 {
@@ -39,28 +36,30 @@ namespace gazebo
          */
         void OnUpdate(const common::UpdateInfo &_info);
 
-        /**
-         * Reference to world. Not needed for now, maybe later when additional models (such as hand  meshes) need
-         * to be added.
-         */
-        vector<physics::WorldPtr> world;
     private:
 
-        /** Sends two messages: one for RViz, one for the other recipients (Unity )
+        /** Sends two messages: one for RViz, one for the other recipients (e.g. Unity)
          */
         void publishPose();
 
         /**
          * Displays external force from message in RViz
-         * @param msg Contains force
+         * SEE IMPLEMENTATION FOR MORE DETAILS
+         * @param msg Contains force, pos & dir in gazebo coordinate space
          */
         void ApplyExternalForce(const roboy_communication_simulation::ExternalForce::ConstPtr &msg);
+
+        /**
+         * Prints simulation status: how many pose-msgs were published, how many force msgs received
+         */
+        void PrintStats();
 
         /**
          * Reference to model to which this plugin belongs
          */
         physics::ModelPtr model;
 
+        //connection params
         /**
          * Binded event for the OnUpdate function
          */
@@ -75,8 +74,31 @@ namespace gazebo
         ros::Publisher pose_pub;
 	    ros::Subscriber external_force_sub;
 
-
         math::Pose initPose;
-	    int hipID = 0;
+
+        /** TIME Related variables (For msg / frame counts)*/
+
+        /**
+         * CAP FOR FPS - ADJUST IF NECESSARY
+         * actual fps <= FRAMESPERSEC
+         */
+        int FRAMESPERSEC = 80;
+        /**
+         * Counter for seconds since simulation start - for PrintStats()
+         */
+        std::time_t seconds = 0;
+        /**
+         * counter of #pose_msgs sent in one second (reset for reach second) - for PrintStats()
+         */
+        int PoseCounter = 0;
+        /**
+         * counter of #force_msgs sent in one second (reset for reach second) -  for PrintStats()
+         */
+        int ForceCounter = 0;
+        /**
+         * Time of last frame
+         */
+        std::chrono::high_resolution_clock::time_point prevTime;
+
     };
 }
